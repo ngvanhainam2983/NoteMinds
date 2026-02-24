@@ -1,0 +1,99 @@
+import Database from 'better-sqlite3';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const dbPath = path.join(__dirname, '..', 'data', 'notemind.db');
+
+// Ensure data directory exists
+import fs from 'fs';
+const dataDir = path.dirname(dbPath);
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+
+const db = new Database(dbPath);
+
+// Enable WAL mode for better performance
+db.pragma('journal_mode = WAL');
+
+// Create tables
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    display_name TEXT,
+    role TEXT DEFAULT 'user',
+    plan TEXT DEFAULT 'free',
+    plan_expires_at TEXT,
+    last_ip TEXT,
+    last_login_at TEXT,
+    is_banned INTEGER DEFAULT 0,
+    ban_reason TEXT,
+    banned_at TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS upload_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    ip_address TEXT,
+    uploaded_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS banned_ips (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ip_address TEXT UNIQUE NOT NULL,
+    reason TEXT,
+    banned_by INTEGER,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (banned_by) REFERENCES users(id)
+  );
+`);
+
+// ── Migrations: add columns if missing (for existing DBs) ──
+const cols = db.prepare("PRAGMA table_info(users)").all().map(c => c.name);
+if (!cols.includes('role')) {
+  db.exec("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'");
+}
+if (!cols.includes('plan')) {
+  db.exec("ALTER TABLE users ADD COLUMN plan TEXT DEFAULT 'free'");
+}
+if (!cols.includes('plan_expires_at')) {
+  db.exec("ALTER TABLE users ADD COLUMN plan_expires_at TEXT");
+}
+if (!cols.includes('last_ip')) {
+  db.exec("ALTER TABLE users ADD COLUMN last_ip TEXT");
+}
+if (!cols.includes('last_login_at')) {
+  db.exec("ALTER TABLE users ADD COLUMN last_login_at TEXT");
+}
+if (!cols.includes('is_banned')) {
+  db.exec("ALTER TABLE users ADD COLUMN is_banned INTEGER DEFAULT 0");
+}
+if (!cols.includes('ban_reason')) {
+  db.exec("ALTER TABLE users ADD COLUMN ban_reason TEXT");
+}
+if (!cols.includes('banned_at')) {
+  db.exec("ALTER TABLE users ADD COLUMN banned_at TEXT");
+}
+
+// Create banned_ips table if it doesn't exist
+db.exec(`
+  CREATE TABLE IF NOT EXISTS banned_ips (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ip_address TEXT UNIQUE NOT NULL,
+    reason TEXT,
+    banned_by INTEGER,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (banned_by) REFERENCES users(id)
+  );
+`);
+
+export default db;

@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+client/dist/
+
+# Environment variables (contains API keys)
+.env
+server/.env
+
+# Uploaded files & runtime data
+server/uploads/
+server/public/
+server/data/
+
+# SQLite database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temp files
+gen-og.ps1
+*.tmp
