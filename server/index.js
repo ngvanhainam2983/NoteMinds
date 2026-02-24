@@ -19,6 +19,7 @@ import {
   banUser, unbanUser, banIp, unbanIp, getBannedIps, isIpBanned, updateLastIp,
   GUEST_DAILY_LIMIT, PLANS,
 } from './services/authService.js';
+import { decryptMiddleware } from './middleware/encryptionMiddleware.js';
 
 dotenv.config();
 
@@ -35,6 +36,9 @@ app.set('trust proxy', true);
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
+
+// Decryption middleware for encrypted requests
+app.use(decryptMiddleware);
 
 // Serve static frontend in production
 const publicDir = path.join(__dirname, 'public');

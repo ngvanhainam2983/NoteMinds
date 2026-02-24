@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { encryptDataForServer, decryptDataFromServer } from './encryptionService.js';
 
 const API_BASE = '/api';
 
@@ -35,14 +36,48 @@ export function clearAuth() {
   localStorage.removeItem(USER_KEY);
 }
 
-// Attach token to every request automatically
+// Attach token to every request automatically and encrypt if needed
 api.interceptors.request.use((config) => {
   const token = getStoredToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // Encrypt POST, PUT, PATCH requests (except file uploads)
+  if (['POST', 'PUT', 'PATCH'].includes(config.method.toUpperCase())) {
+    if (config.data && !(config.data instanceof FormData)) {
+      try {
+        const encrypted = encryptDataForServer(config.data);
+        config.data = encrypted;
+        config.headers['X-Encrypted'] = 'true';
+      } catch (error) {
+        console.error('Request encryption failed:', error);
+        // Continue without encryption if it fails
+      }
+    }
+  }
+
   return config;
 });
+
+// Decrypt responses
+api.interceptors.response.use(
+  (response) => {
+    // Decrypt response if it contains encrypted data
+    if (response.data && response.data.encrypted && response.data.iv) {
+      try {
+        response.data = decryptDataFromServer(response.data);
+      } catch (error) {
+        console.error('Response decryption failed:', error);
+        // Continue with original response if decryption fails
+      }
+    }
+    return response;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 // ── Auth API ──────────────────────────────────────────
 
