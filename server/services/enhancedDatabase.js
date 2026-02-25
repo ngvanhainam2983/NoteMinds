@@ -293,6 +293,7 @@ export function initializeEnhancedTables() {
         language TEXT DEFAULT 'en',
         spaced_repetition_enabled BOOLEAN DEFAULT 1,
         daily_goal_cards INTEGER DEFAULT 20,
+        email_updates BOOLEAN DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(user_id) REFERENCES users(id)
@@ -302,6 +303,17 @@ export function initializeEnhancedTables() {
       ON user_preferences(user_id);
     `);
     console.log('  ✓ User preferences table created');
+
+    // Migration: add email_updates column if missing
+    try {
+      const prefCols = db.prepare('PRAGMA table_info(user_preferences)').all().map(c => c.name);
+      if (!prefCols.includes('email_updates')) {
+        db.exec('ALTER TABLE user_preferences ADD COLUMN email_updates BOOLEAN DEFAULT 0');
+        console.log('  ✓ Added email_updates column to user_preferences');
+      }
+    } catch (e) {
+      // column already exists
+    }
 
     // ── Sync Queue (for offline sync) ────────────────────────
     db.exec(`

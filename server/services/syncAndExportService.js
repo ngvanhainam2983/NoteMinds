@@ -77,6 +77,7 @@ const PREFERENCE_KEY_MAP = {
   'notifications': 'notification_enabled',
   'notification_enabled': 'notification_enabled',
   'offlineSync': 'offline_sync_enabled',
+  'offlineModeEnabled': 'offline_sync_enabled',
   'offline_sync_enabled': 'offline_sync_enabled',
   'autoSave': 'auto_save_enabled',
   'auto_save_enabled': 'auto_save_enabled',
@@ -86,6 +87,7 @@ const PREFERENCE_KEY_MAP = {
   'spaced_repetition_enabled': 'spaced_repetition_enabled',
   'dailyGoalCards': 'daily_goal_cards',
   'daily_goal_cards': 'daily_goal_cards',
+  'emailUpdates': 'email_updates',
 };
 
 const VALID_PREFERENCE_COLUMNS = new Set(Object.values(PREFERENCE_KEY_MAP));
@@ -144,6 +146,17 @@ export function getUserPreferences(userId) {
     }
 
     db.close();
+
+    // Map DB column names to frontend-friendly keys
+    if (prefs) {
+      prefs.offlineModeEnabled = !!prefs.offline_sync_enabled;
+      prefs.notifications = !!prefs.notification_enabled;
+      prefs.emailUpdates = !!prefs.email_updates;
+      prefs.autoSave = !!prefs.auto_save_enabled;
+      prefs.spacedRepetition = !!prefs.spaced_repetition_enabled;
+      prefs.dailyGoalCards = prefs.daily_goal_cards;
+    }
+
     return prefs;
   } catch (error) {
     console.error('[Preferences] Error getting:', error.message);
@@ -178,7 +191,7 @@ export function exportFlashcardsAsCSV(documentId, userId) {
 
     const filename = `flashcards-${documentId}-${Date.now()}.csv`;
     const filepath = path.join(EXPORTS_DIR, filename);
-    
+
     fs.writeFileSync(filepath, csv);
 
     return {
@@ -215,7 +228,7 @@ export function exportConversationAsPDF(conversationId) {
     const stream = fs.createWriteStream(filepath);
 
     doc.pipe(stream);
-    
+
     doc.fontSize(20).text(conversation.title || 'Conversation', { align: 'center' });
     doc.fontSize(10).text(`Created: ${conversation.created_at}`, { align: 'center' });
     doc.moveDown();
