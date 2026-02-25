@@ -149,6 +149,23 @@ export function logFile(operation, fileName, size, success = true) {
 }
 
 /**
+ * Log user analytics events
+ * @param {string} userId - User ID
+ * @param {string} action - Action performed (e.g., 'chat', 'flashcard_review', 'upload')
+ * @param {string} entityId - Document or entity ID
+ * @param {object} metadata - Additional data
+ */
+export function logAnalytic(userId, action, entityId = null, metadata = {}) {
+  logger.info(`User Action: ${action}`, {
+    userId,
+    action,
+    entityId,
+    ...metadata,
+    timestamp: new Date().toISOString()
+  });
+}
+
+/**
  * Initialize Sentry for error tracking (optional)
  * Uncomment and configure when ready for production
  */
@@ -178,5 +195,6 @@ export default {
   logDatabase,
   logAuth,
   logFile,
+  logAnalytic,
   initSentry
 };
