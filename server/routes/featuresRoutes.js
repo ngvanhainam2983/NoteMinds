@@ -26,7 +26,7 @@ router.get('/conversations/:documentId', requireAuth, (req, res) => {
 router.get('/conversations/:documentId/history', requireAuth, (req, res) => {
   try {
     const conversations = featureService.getConversations(req.user.id, req.params.documentId);
-    
+
     const conversationsWithMessages = conversations.map(conv => ({
       ...conv,
       messageCount: featureService.getConversationMessages(conv.id).length
@@ -54,7 +54,7 @@ router.post('/conversation/save', requireAuth, (req, res) => {
   try {
     const { documentId, messages, title } = req.body;
     const result = featureService.saveConversation(req.user.id, documentId, messages, title);
-    
+
     if (result.success) {
       logAnalytic(req.user.id, 'save_conversation', documentId, { messageCount: messages.length });
       res.json({ conversationId: result.conversationId });
@@ -71,7 +71,7 @@ router.post('/conversation/:conversationId/message', requireAuth, (req, res) => 
   try {
     const { role, message } = req.body;
     const result = featureService.addMessageToConversation(req.params.conversationId, role, message);
-    
+
     if (result.success) {
       res.json({ success: true });
     } else {
@@ -198,7 +198,7 @@ router.post('/search', requireAuth, (req, res) => {
     const { query, limit = 20 } = req.body;
     const results = advancedFeatureService.searchDocuments(req.user.id, query, limit);
     const conversations = advancedFeatureService.searchConversations(req.user.id, query, limit);
-    
+
     logAnalytic(req.user.id, 'search', null, { query });
     res.json({ documents: results, conversations });
   } catch (error) {
@@ -233,7 +233,7 @@ router.post('/share/:documentId', requireAuth, (req, res) => {
       shareType,
       expiresIn
     );
-    
+
     if (result.success) {
       logAnalytic(req.user.id, 'create_share', req.params.documentId);
     }
@@ -312,7 +312,7 @@ router.post('/flashcards/:flashcardId/review', requireAuth, (req, res) => {
       qualityGrade,
       timeMs
     );
-    
+
     if (result.success) {
       logAnalytic(req.user.id, 'flashcard_review', documentId, { quality: qualityGrade });
     }
@@ -449,6 +449,41 @@ router.post('/learning-paths/:pathId/complete', requireAuth, (req, res) => {
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: 'Failed to complete path' });
+  }
+});
+
+router.get('/learning-paths/:pathId', requireAuth, (req, res) => {
+  try {
+    const details = syncExportService.getLearningPathDetails(req.params.pathId);
+    if (!details) {
+      return res.status(404).json({ error: 'Path not found' });
+    }
+    res.json(details);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get path details' });
+  }
+});
+
+router.post('/learning-paths/:pathId/documents/:docId/toggle', requireAuth, (req, res) => {
+  try {
+    const result = syncExportService.togglePathDocumentCompletion(
+      req.params.pathId,
+      req.params.docId
+    );
+    logAnalytic(req.user.id, 'toggle_learning_path_doc');
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to toggle document' });
+  }
+});
+
+router.delete('/learning-paths/:pathId', requireAuth, (req, res) => {
+  try {
+    const result = syncExportService.deleteLearningPath(req.params.pathId);
+    logAnalytic(req.user.id, 'delete_learning_path');
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete path' });
   }
 });
 

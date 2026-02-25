@@ -354,6 +354,23 @@ export function initializeEnhancedTables() {
     `);
     console.log('  ✓ Learning paths table created');
 
+    // ── Learning Path Progress (per-document completion) ─────
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS learning_path_progress (
+        id TEXT PRIMARY KEY,
+        path_id TEXT NOT NULL,
+        document_id TEXT NOT NULL,
+        completed_at DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(path_id) REFERENCES learning_paths(id) ON DELETE CASCADE,
+        UNIQUE(path_id, document_id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_lp_progress_path
+      ON learning_path_progress(path_id);
+    `);
+    console.log('  ✓ Learning path progress table created');
+
     // ── Document Sessions (persist mindmap/flashcard/chat data per doc) ──
     db.exec(`
       CREATE TABLE IF NOT EXISTS document_sessions (

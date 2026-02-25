@@ -439,8 +439,23 @@ export async function getLearningPaths() {
   return response.data.paths;
 }
 
+export async function getLearningPathDetails(pathId) {
+  const response = await api.get(`/learning-paths/${pathId}`);
+  return response.data;
+}
+
 export async function completeLearningPath(pathId) {
   const response = await api.post(`/learning-paths/${pathId}/complete`);
+  return response.data;
+}
+
+export async function toggleLearningPathDocument(pathId, docId) {
+  const response = await api.post(`/learning-paths/${pathId}/documents/${docId}/toggle`);
+  return response.data;
+}
+
+export async function deleteLearningPath(pathId) {
+  const response = await api.delete(`/learning-paths/${pathId}`);
   return response.data;
 }
 

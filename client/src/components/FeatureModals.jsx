@@ -8,6 +8,7 @@ import {
   searchDocuments, getAnalytics, createShareLink, getSharedDocuments, deleteShareLink,
   getUserTags, createTag, addTagToDocument, removeTagFromDocument, getDocumentTags,
   getLearningPaths, generateLearningPath, completeLearningPath, getSuggestedDocuments,
+  getLearningPathDetails, toggleLearningPathDocument, deleteLearningPath,
   getPreferences, setPreference, exportFlashcardsCSV, addFavorite, removeFavorite,
   checkFavorite, getFlashcardStats
 } from '../api';
@@ -147,9 +148,8 @@ export function AnalyticsModal({ isOpen, onClose }) {
           <button
             key={d}
             onClick={() => setDays(d)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              days === d ? 'bg-primary-600 text-white' : 'bg-[#0f1117] border border-[#2e3144] text-[#9496a1] hover:text-white'
-            }`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${days === d ? 'bg-primary-600 text-white' : 'bg-[#0f1117] border border-[#2e3144] text-[#9496a1] hover:text-white'
+              }`}
           >
             {d} ngày
           </button>
@@ -239,7 +239,7 @@ export function ShareModal({ isOpen, onClose, documentId }) {
     setLoading(true);
     getSharedDocuments(documentId || null)
       .then(s => setShares(s || []))
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, [isOpen, documentId]);
 
@@ -287,11 +287,10 @@ export function ShareModal({ isOpen, onClose, documentId }) {
               <button
                 key={perm.value}
                 onClick={() => setShareType(perm.value)}
-                className={`flex flex-col items-center gap-1 px-2 py-2.5 rounded-lg border text-xs font-medium transition-all ${
-                  shareType === perm.value
-                    ? 'border-primary-500/50 bg-primary-600/10 text-primary-400'
-                    : 'border-[#2e3144] text-[#9496a1] hover:border-[#3e4154] hover:text-white'
-                }`}
+                className={`flex flex-col items-center gap-1 px-2 py-2.5 rounded-lg border text-xs font-medium transition-all ${shareType === perm.value
+                  ? 'border-primary-500/50 bg-primary-600/10 text-primary-400'
+                  : 'border-[#2e3144] text-[#9496a1] hover:border-[#3e4154] hover:text-white'
+                  }`}
               >
                 <span className="text-base">{perm.icon}</span>
                 <span>{perm.label}</span>
@@ -451,9 +450,8 @@ export function TagsModal({ isOpen, onClose, documentId }) {
             <button
               key={c.value}
               onClick={() => setNewTagColor(c.value)}
-              className={`w-7 h-7 rounded-full border-2 transition-all ${
-                newTagColor === c.value ? 'border-white scale-110' : 'border-transparent'
-              }`}
+              className={`w-7 h-7 rounded-full border-2 transition-all ${newTagColor === c.value ? 'border-white scale-110' : 'border-transparent'
+                }`}
               style={{ backgroundColor: c.value }}
               title={c.name}
             />
@@ -475,9 +473,8 @@ export function TagsModal({ isOpen, onClose, documentId }) {
                 <button
                   key={tag.id}
                   onClick={() => handleToggleTag(tag)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all border ${
-                    isAttached ? 'border-white/40 ring-2 ring-white/20' : 'border-transparent opacity-60 hover:opacity-100'
-                  }`}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all border ${isAttached ? 'border-white/40 ring-2 ring-white/20' : 'border-transparent opacity-60 hover:opacity-100'
+                    }`}
                   style={{ backgroundColor: `${tag.color}20`, color: tag.color, borderColor: isAttached ? tag.color : 'transparent' }}
                 >
                   <span className="w-2 h-2 rounded-full" style={{ backgroundColor: tag.color }} />
@@ -501,9 +498,14 @@ export function LearningPathsModal({ isOpen, onClose }) {
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [selectedPath, setSelectedPath] = useState(null);
+  const [pathDetails, setPathDetails] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
+    setSelectedPath(null);
+    setPathDetails(null);
     setLoading(true);
     Promise.all([
       getLearningPaths().catch(() => []),
@@ -527,15 +529,170 @@ export function LearningPathsModal({ isOpen, onClose }) {
     }
   };
 
-  const handleComplete = async (pathId) => {
+  const handleSelectPath = async (pathId) => {
+    setSelectedPath(pathId);
+    setDetailLoading(true);
     try {
-      await completeLearningPath(pathId);
-      setPaths(prev => prev.map(p => p.id === pathId ? { ...p, completed: true } : p));
+      const details = await getLearningPathDetails(pathId);
+      setPathDetails(details);
     } catch (err) {
-      console.error('Complete path failed:', err);
+      console.error('Load path details failed:', err);
+    } finally {
+      setDetailLoading(false);
     }
   };
 
+  const handleToggleDoc = async (docId) => {
+    if (!selectedPath) return;
+    try {
+      const result = await toggleLearningPathDocument(selectedPath, docId);
+      if (result.success) {
+        // Update local details
+        setPathDetails(prev => {
+          if (!prev) return prev;
+          const docs = prev.documents.map(d =>
+            d.id === docId ? { ...d, completed: result.completed } : d
+          );
+          return { ...prev, documents: docs, completedCount: result.completedCount, totalCount: result.totalCount };
+        });
+        // Update path list progress
+        setPaths(prev => prev.map(p =>
+          p.id === selectedPath
+            ? { ...p, completedCount: result.completedCount, totalCount: result.totalCount, completed: result.completedCount >= result.totalCount }
+            : p
+        ));
+      }
+    } catch (err) {
+      console.error('Toggle document failed:', err);
+    }
+  };
+
+  const handleDeletePath = async (pathId, e) => {
+    e?.stopPropagation();
+    try {
+      await deleteLearningPath(pathId);
+      setPaths(prev => prev.filter(p => p.id !== pathId));
+      if (selectedPath === pathId) {
+        setSelectedPath(null);
+        setPathDetails(null);
+      }
+    } catch (err) {
+      console.error('Delete path failed:', err);
+    }
+  };
+
+  const handleBack = () => {
+    setSelectedPath(null);
+    setPathDetails(null);
+  };
+
+  const navigateToDoc = (docId) => {
+    window.open(`/session/${docId}`, '_blank');
+  };
+
+  // ── Detail View ──
+  if (selectedPath) {
+    return (
+      <Modal isOpen={isOpen} onClose={onClose} title="Lộ trình học tập AI" icon={BookOpen} wide>
+        <button
+          onClick={handleBack}
+          className="flex items-center gap-1.5 text-xs text-[#9496a1] hover:text-white mb-4 transition-colors"
+        >
+          ← Quay lại danh sách
+        </button>
+
+        {detailLoading ? (
+          <div className="flex justify-center py-12"><Loader2 size={32} className="text-primary-400 animate-spin" /></div>
+        ) : pathDetails ? (
+          <div className="space-y-4">
+            {/* Path header */}
+            <div className="bg-[#0f1117] border border-[#2e3144] rounded-xl p-4">
+              <h4 className="font-medium text-base mb-1">{pathDetails.title}</h4>
+              {pathDetails.description && <p className="text-xs text-[#9496a1] mb-3">{pathDetails.description}</p>}
+
+              {/* Progress bar */}
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-2 bg-[#2e3144] rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-primary-600 to-emerald-500 rounded-full transition-all duration-500"
+                    style={{ width: `${pathDetails.totalCount > 0 ? (pathDetails.completedCount / pathDetails.totalCount * 100) : 0}%` }}
+                  />
+                </div>
+                <span className="text-xs font-medium text-primary-400 shrink-0">
+                  {pathDetails.completedCount}/{pathDetails.totalCount}
+                </span>
+              </div>
+              {pathDetails.estimatedDays && (
+                <p className="text-xs text-[#666] mt-2 flex items-center gap-1">
+                  <Clock size={11} /> ~{pathDetails.estimatedDays} ngày
+                </p>
+              )}
+            </div>
+
+            {/* Document list */}
+            {pathDetails.documents.length > 0 ? (
+              <div className="space-y-1.5">
+                <p className="text-xs text-[#9496a1] mb-2">Tài liệu trong lộ trình</p>
+                {pathDetails.documents.map((doc, idx) => (
+                  <div
+                    key={doc.id}
+                    className={`flex items-center gap-3 bg-[#0f1117] border rounded-lg px-4 py-3 transition-all ${doc.completed ? 'border-emerald-500/20' : 'border-[#2e3144] hover:border-primary-500/30'
+                      } ${doc.isDeleted ? 'opacity-50' : ''}`}
+                  >
+                    {/* Checkbox */}
+                    <button
+                      onClick={() => handleToggleDoc(doc.id)}
+                      disabled={doc.isDeleted}
+                      className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${doc.completed
+                        ? 'bg-emerald-500 border-emerald-500'
+                        : 'border-[#3e4154] hover:border-primary-500'
+                        }`}
+                    >
+                      {doc.completed && <Check size={12} className="text-white" />}
+                    </button>
+
+                    {/* Number */}
+                    <span className="text-xs text-[#555] font-mono w-5 shrink-0">{idx + 1}.</span>
+
+                    {/* Doc info */}
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-medium truncate ${doc.completed ? 'line-through text-[#666]' : ''}`}>
+                        {doc.name}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {doc.textLength > 0 && (
+                          <span className="text-[10px] text-[#555]">{(doc.textLength / 1000).toFixed(1)}k ký tự</span>
+                        )}
+                        {doc.isDeleted && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 border border-red-500/20 text-red-400">Đã xoá</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Open link */}
+                    {!doc.isDeleted && (
+                      <button
+                        onClick={() => navigateToDoc(doc.id)}
+                        className="px-2 py-1 text-[10px] text-primary-400 hover:bg-primary-600/10 rounded-md transition-colors shrink-0 font-medium"
+                      >
+                        Mở →
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-[#9496a1] text-sm py-6">Không có tài liệu trong lộ trình này</p>
+            )}
+          </div>
+        ) : (
+          <p className="text-center text-[#9496a1] text-sm py-8">Không thể tải lộ trình</p>
+        )}
+      </Modal>
+    );
+  }
+
+  // ── List View ──
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Lộ trình học tập AI" icon={BookOpen} wide>
       <div className="flex items-center justify-between mb-6">
@@ -556,28 +713,50 @@ export function LearningPathsModal({ isOpen, onClose }) {
           {paths.length > 0 ? (
             <div className="space-y-3">
               {paths.map(path => (
-                <div key={path.id} className={`bg-[#0f1117] border rounded-xl p-4 ${path.completed ? 'border-green-500/30' : 'border-[#2e3144]'}`}>
+                <div
+                  key={path.id}
+                  onClick={() => handleSelectPath(path.id)}
+                  className={`bg-[#0f1117] border rounded-xl p-4 cursor-pointer transition-all hover:border-primary-500/30 hover:shadow-lg hover:shadow-primary-600/5 ${path.completed ? 'border-green-500/30' : 'border-[#2e3144]'
+                    }`}
+                >
                   <div className="flex items-start justify-between">
-                    <div>
-                      <h4 className="font-medium flex items-center gap-2">
-                        {path.title}
-                        {path.completed && <Check size={14} className="text-green-400" />}
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium flex items-center gap-2 truncate">
+                        {path.title || path.name}
+                        {path.completed && <Check size={14} className="text-green-400 shrink-0" />}
                       </h4>
-                      {path.description && <p className="text-xs text-[#9496a1] mt-1">{path.description}</p>}
-                      {path.estimatedDays && (
-                        <p className="text-xs text-primary-400 mt-1 flex items-center gap-1">
-                          <Clock size={12} /> ~{path.estimatedDays} ngày
-                        </p>
-                      )}
+                      {path.description && <p className="text-xs text-[#9496a1] mt-1 line-clamp-1">{path.description}</p>}
+
+                      {/* Progress bar */}
+                      <div className="flex items-center gap-3 mt-2.5">
+                        <div className="flex-1 h-1.5 bg-[#2e3144] rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-primary-600 to-emerald-500 rounded-full transition-all duration-500"
+                            style={{ width: `${path.totalCount > 0 ? (path.completedCount / path.totalCount * 100) : 0}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] font-medium text-[#9496a1] shrink-0">
+                          {path.completedCount || 0}/{path.totalCount || 0} tài liệu
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-3 mt-1.5">
+                        {path.estimatedDays && (
+                          <p className="text-xs text-primary-400 flex items-center gap-1">
+                            <Clock size={11} /> ~{path.estimatedDays} ngày
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    {!path.completed && (
+                    <div className="flex items-center gap-1 shrink-0 ml-3">
                       <button
-                        onClick={() => handleComplete(path.id)}
-                        className="px-3 py-1.5 bg-green-600/20 border border-green-500/30 rounded-lg text-xs text-green-400 hover:bg-green-600/30 transition-colors"
+                        onClick={(e) => handleDeletePath(path.id, e)}
+                        className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors"
+                        title="Xoá lộ trình"
                       >
-                        Hoàn thành
+                        <Trash2 size={14} className="text-red-400" />
                       </button>
-                    )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -616,7 +795,7 @@ export function PreferencesModal({ isOpen, onClose }) {
     setLoading(true);
     getPreferences()
       .then(data => setPrefs(data || {}))
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, [isOpen]);
 
@@ -649,13 +828,11 @@ export function PreferencesModal({ isOpen, onClose }) {
               </div>
               <button
                 onClick={() => handleChange(item.key, !prefs[item.key])}
-                className={`w-11 h-6 rounded-full transition-colors relative ${
-                  prefs[item.key] ? 'bg-primary-600' : 'bg-[#2e3144]'
-                }`}
+                className={`w-11 h-6 rounded-full transition-colors relative ${prefs[item.key] ? 'bg-primary-600' : 'bg-[#2e3144]'
+                  }`}
               >
-                <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                  prefs[item.key] ? 'translate-x-5' : 'translate-x-0.5'
-                }`} />
+                <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${prefs[item.key] ? 'translate-x-5' : 'translate-x-0.5'
+                  }`} />
               </button>
             </div>
           ))}
@@ -672,7 +849,7 @@ export function FavoriteButton({ documentId }) {
 
   useEffect(() => {
     if (!documentId) return;
-    checkFavorite(documentId).then(setIsFav).catch(() => {});
+    checkFavorite(documentId).then(setIsFav).catch(() => { });
   }, [documentId]);
 
   const toggle = async () => {
@@ -697,9 +874,8 @@ export function FavoriteButton({ documentId }) {
     <button
       onClick={toggle}
       disabled={loading}
-      className={`p-2 rounded-lg transition-all ${
-        isFav ? 'text-amber-400 bg-amber-400/10' : 'text-[#9496a1] hover:text-amber-400 hover:bg-amber-400/10'
-      }`}
+      className={`p-2 rounded-lg transition-all ${isFav ? 'text-amber-400 bg-amber-400/10' : 'text-[#9496a1] hover:text-amber-400 hover:bg-amber-400/10'
+        }`}
       title={isFav ? 'Bỏ yêu thích' : 'Yêu thích'}
     >
       <Star size={16} fill={isFav ? 'currentColor' : 'none'} />

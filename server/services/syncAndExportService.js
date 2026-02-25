@@ -408,15 +408,27 @@ export function getLearningPaths(userId) {
       ORDER BY updated_at DESC
     `).all(userId);
 
-    db.close();
+    const result = paths.map(p => {
+      const docIds = JSON.parse(p.document_ids || '[]');
+      const totalCount = docIds.length;
+      const completedCount = db.prepare(`
+        SELECT COUNT(*) as cnt FROM learning_path_progress
+        WHERE path_id = ? AND completed_at IS NOT NULL
+      `).get(p.id)?.cnt || 0;
 
-    return paths.map(p => ({
-      ...p,
-      title: p.name,
-      completed: !!p.completed_at,
-      estimatedDays: p.estimated_hours ? Math.max(1, Math.ceil(p.estimated_hours / 2)) : null,
-      documentIds: JSON.parse(p.document_ids || '[]')
-    }));
+      return {
+        ...p,
+        title: p.name,
+        completed: !!p.completed_at,
+        estimatedDays: p.estimated_hours ? Math.max(1, Math.ceil(p.estimated_hours / 2)) : null,
+        documentIds: docIds,
+        totalCount,
+        completedCount
+      };
+    });
+
+    db.close();
+    return result;
   } catch (error) {
     console.error('[AI] Error getting paths:', error.message);
     return [];
@@ -477,6 +489,152 @@ export function getSuggestedDocuments(userId, limit = 5) {
   }
 }
 
+export function getLearningPathDetails(pathId) {
+  try {
+    const db = new Database(DB_PATH);
+
+    const path = db.prepare(`
+      SELECT id, name, description, document_ids, estimated_hours,
+             completed_at, created_at, updated_at
+      FROM learning_paths WHERE id = ?
+    `).get(pathId);
+
+    if (!path) {
+      db.close();
+      return null;
+    }
+
+    const docIds = JSON.parse(path.document_ids || '[]');
+
+    // Get document details
+    let documents = [];
+    if (docIds.length > 0) {
+      const placeholders = docIds.map(() => '?').join(',');
+      const docs = db.prepare(`
+        SELECT id, original_name, file_path, status, text_length, deleted_at
+        FROM documents WHERE id IN (${placeholders})
+      `).all(...docIds);
+
+      // Get completion status for each doc
+      const progress = db.prepare(`
+        SELECT document_id, completed_at FROM learning_path_progress
+        WHERE path_id = ?
+      `).all(pathId);
+      const progressMap = {};
+      progress.forEach(p => { progressMap[p.document_id] = p.completed_at; });
+
+      // Maintain order from document_ids array
+      const docMap = {};
+      docs.forEach(d => { docMap[d.id] = d; });
+      documents = docIds.map(id => {
+        const doc = docMap[id];
+        if (!doc) return null;
+        return {
+          id: doc.id,
+          name: doc.original_name || doc.file_path || 'Tài liệu không tên',
+          status: doc.status,
+          textLength: doc.text_length,
+          isDeleted: !!doc.deleted_at,
+          completed: !!progressMap[doc.id]
+        };
+      }).filter(Boolean);
+    }
+
+    const completedCount = documents.filter(d => d.completed).length;
+
+    db.close();
+    return {
+      id: path.id,
+      title: path.name,
+      description: path.description,
+      estimatedDays: path.estimated_hours ? Math.max(1, Math.ceil(path.estimated_hours / 2)) : null,
+      completed: !!path.completed_at,
+      documents,
+      totalCount: documents.length,
+      completedCount
+    };
+  } catch (error) {
+    console.error('[AI] Error getting path details:', error.message);
+    return null;
+  }
+}
+
+export function togglePathDocumentCompletion(pathId, documentId) {
+  try {
+    const db = new Database(DB_PATH);
+
+    const existing = db.prepare(`
+      SELECT id, completed_at FROM learning_path_progress
+      WHERE path_id = ? AND document_id = ?
+    `).get(pathId, documentId);
+
+    let completed;
+    if (existing) {
+      if (existing.completed_at) {
+        // Unmark as completed
+        db.prepare(`
+          UPDATE learning_path_progress SET completed_at = NULL WHERE id = ?
+        `).run(existing.id);
+        completed = false;
+      } else {
+        // Mark as completed
+        db.prepare(`
+          UPDATE learning_path_progress SET completed_at = CURRENT_TIMESTAMP WHERE id = ?
+        `).run(existing.id);
+        completed = true;
+      }
+    } else {
+      // Create new progress entry as completed
+      db.prepare(`
+        INSERT INTO learning_path_progress (id, path_id, document_id, completed_at)
+        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+      `).run(uuidv4(), pathId, documentId);
+      completed = true;
+    }
+
+    // Check if all documents are completed
+    const path = db.prepare('SELECT document_ids FROM learning_paths WHERE id = ?').get(pathId);
+    const docIds = JSON.parse(path?.document_ids || '[]');
+    const completedCount = db.prepare(`
+      SELECT COUNT(*) as cnt FROM learning_path_progress
+      WHERE path_id = ? AND completed_at IS NOT NULL
+    `).get(pathId)?.cnt || 0;
+
+    // Auto-mark path as completed if all docs done
+    if (completedCount >= docIds.length && docIds.length > 0) {
+      db.prepare(`
+        UPDATE learning_paths SET completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ? AND completed_at IS NULL
+      `).run(pathId);
+    } else {
+      db.prepare(`
+        UPDATE learning_paths SET completed_at = NULL, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `).run(pathId);
+    }
+
+    db.close();
+    return { success: true, completed, completedCount, totalCount: docIds.length };
+  } catch (error) {
+    console.error('[AI] Error toggling document:', error.message);
+    return { success: false };
+  }
+}
+
+export function deleteLearningPath(pathId) {
+  try {
+    const db = new Database(DB_PATH);
+    // Progress entries cascade-delete via FK
+    db.prepare('DELETE FROM learning_path_progress WHERE path_id = ?').run(pathId);
+    db.prepare('DELETE FROM learning_paths WHERE id = ?').run(pathId);
+    db.close();
+    return { success: true };
+  } catch (error) {
+    console.error('[AI] Error deleting path:', error.message);
+    return { success: false };
+  }
+}
+
 export default {
   // Offline Sync
   queueSyncAction,
@@ -491,6 +649,9 @@ export default {
   // AI Recommendations
   generateLearningPath,
   getLearningPaths,
+  getLearningPathDetails,
   markPathCompleted,
+  togglePathDocumentCompletion,
+  deleteLearningPath,
   getSuggestedDocuments
 };
