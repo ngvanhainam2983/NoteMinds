@@ -2,7 +2,22 @@ import crypto from 'crypto';
 
 // Encryption configuration
 const ALGORITHM = 'aes-256-cbc';
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || crypto.randomBytes(32);
+
+// Get encryption key from environment or generate/use default
+let ENCRYPTION_KEY;
+if (process.env.ENCRYPTION_KEY) {
+  // If env var is set, convert hex string to buffer
+  if (process.env.ENCRYPTION_KEY.length === 64) {
+    ENCRYPTION_KEY = Buffer.from(process.env.ENCRYPTION_KEY, 'hex');
+  } else {
+    // If it's a plain string, hash it to get exactly 32 bytes
+    ENCRYPTION_KEY = crypto.createHash('sha256').update(process.env.ENCRYPTION_KEY).digest();
+  }
+} else {
+  // Default development key (32 bytes / 256 bits)
+  ENCRYPTION_KEY = Buffer.from('0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef', 'hex');
+  console.warn('⚠️  Using default encryption key. Set ENCRYPTION_KEY env var for production!');
+}
 
 /**
  * Encrypt data
