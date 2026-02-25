@@ -508,17 +508,22 @@ app.get('/health', (req, res) => {
     status: 'ok',
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
-    database: stats
+    database: stats || { users: 0, documents: 0, uploads: 0, totalSize: 0 }
   });
 });
 
 // Seed default admin account
 ensureAdmin();
 
-// Initialize database indexes for performance
-initializeIndexes();
+// Initialize database indexes for performance (after tables are created)
+setTimeout(() => {
+  initializeIndexes();
+}, 100);
 
 app.listen(PORT, () => {
   logger.info(`🚀 NoteMinds server running on http://localhost:${PORT} [${NODE_ENV}]`);
-  logger.info(`Database stats: ${JSON.stringify(getDatabaseStats())}`);
+  const stats = getDatabaseStats();
+  if (stats) {
+    logger.info(`Database stats: Users=${stats.users}, Documents=${stats.documents}, Uploads=${stats.uploads}`);
+  }
 });
