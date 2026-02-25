@@ -1,0 +1,133 @@
+version: '3.8'
+
+services:
+  # Main NoteMind Application
+  notemind:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: notemind-app
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3001}:${PORT:-3001}"
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: ${PORT:-3001}
+      QWEN_API_BASE_URL: ${QWEN_API_BASE_URL}
+      QWEN_API_KEY: ${QWEN_API_KEY}
+      QWEN_MODEL: ${QWEN_MODEL}
+      JWT_SECRET: ${JWT_SECRET}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    volumes:
+      # Persist uploads
+      - ./server/uploads:/app/server/uploads
+      # Persist database
+      - ./server/data:/app/server/data
+      # Persist logs
+      - ./logs:/app/logs
+    depends_on:
+      - postgres  # Optional: if using PostgreSQL in future
+    networks:
+      - notemind-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT:-3001}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Optional: PostgreSQL for future database migration
+  postgres:
+    image: postgres:16-alpine
+    container_name: notemind-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-notemind}
+      POSTGRES_USER: ${DB_USER:-notemind}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - notemind-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-notemind}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - postgres  # Only run when explicitly enabled: docker-compose --profile postgres up
+
+  # Optional: Redis for caching
+  redis:
+    image: redis:7-alpine
+    container_name: notemind-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD:-changeme}
+    volumes:
+      - redis_data:/data
+    networks:
+      - notemind-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - redis  # Only run when explicitly enabled: docker-compose --profile redis up
+
+  # Optional: Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    container_name: notemind-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./server/public:/usr/share/nginx/html:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      - notemind
+    networks:
+      - notemind-network
+    profile:
+      - nginx  # Only run when explicitly enabled
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  notemind-network:
+    driver: bridge
+
+# Usage:
+# Production (minimal):
+#   docker-compose up -d
+#
+# With database:
+#   docker-compose --profile postgres up -d
+#
+# With caching:
+#   docker-compose --profile redis up -d
+#
+# Full stack:
+#   docker-compose --profile postgres --profile redis --profile nginx up -d
+#
+# Development:
+#   docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# View logs:
+#   docker-compose logs -f notemind
+#
+# Stop all:
+#   docker-compose down

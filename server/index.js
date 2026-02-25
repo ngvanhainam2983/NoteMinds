@@ -20,6 +20,8 @@ import {
   GUEST_DAILY_LIMIT, PLANS,
 } from './services/authService.js';
 import { decryptMiddleware } from './middleware/encryptionMiddleware.js';
+import { initializeIndexes, getDatabaseStats } from './services/databaseIndexes.js';
+import { logger, requestLoggerMiddleware } from './services/logger.js';
 
 dotenv.config();
 
@@ -36,6 +38,9 @@ app.set('trust proxy', true);
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
+
+// Request logging middleware
+app.use(requestLoggerMiddleware);
 
 // Decryption middleware for encrypted requests
 app.use(decryptMiddleware);
@@ -496,9 +501,24 @@ if (fs.existsSync(publicDir)) {
   });
 }
 
+// Health check endpoint (required by Docker)
+app.get('/health', (req, res) => {
+  const stats = getDatabaseStats();
+  res.json({
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+    database: stats
+  });
+});
+
 // Seed default admin account
 ensureAdmin();
 
+// Initialize database indexes for performance
+initializeIndexes();
+
 app.listen(PORT, () => {
-  console.log(`🚀 NoteMinds server running on http://localhost:${PORT} [${NODE_ENV}]`);
+  logger.info(`🚀 NoteMinds server running on http://localhost:${PORT} [${NODE_ENV}]`);
+  logger.info(`Database stats: ${JSON.stringify(getDatabaseStats())}`);
 });
