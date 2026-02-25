@@ -20,12 +20,12 @@ export default function App() {
   const [authModalTab, setAuthModalTab] = useState('login');
   const [shareToken, setShareToken] = useState(null);
 
-  // Detect /share/:token, /history, /history/:docId, or /dashboard/:docId URL on mount
+  // Detect /share/:token, /history, /history/:docId, /session/:docId, or /price URL on mount
   useEffect(() => {
     const path = window.location.pathname;
     const shareMatch = path.match(/^\/share\/([a-f0-9]+)$/i);
     const historyDocMatch = path.match(/^\/history\/([a-f0-9-]+)$/i);
-    const dashboardMatch = path.match(/^\/dashboard\/([a-f0-9-]+)$/i);
+    const sessionMatch = path.match(/^\/session\/([a-f0-9-]+)$/i);
     if (shareMatch) {
       setShareToken(shareMatch[1]);
       setView('shared');
@@ -34,10 +34,11 @@ export default function App() {
       setView('history');
     } else if (path === '/history') {
       setView('history-list');
-    } else if (dashboardMatch) {
-      // Restore dashboard session from URL
-      setCurrentDoc({ docId: dashboardMatch[1], fileName: '', textLength: 0 });
+    } else if (sessionMatch) {
+      setCurrentDoc({ docId: sessionMatch[1], fileName: '', textLength: 0 });
       setView('dashboard');
+    } else if (path === '/price') {
+      setView('pricing');
     }
   }, []);
 
@@ -56,7 +57,7 @@ export default function App() {
   const handleUploadComplete = (docInfo) => {
     setCurrentDoc(docInfo);
     setView('dashboard');
-    window.history.pushState({}, '', `/dashboard/${docInfo.docId}`);
+    window.history.pushState({}, '', `/session/${docInfo.docId}`);
   };
 
   const handleBackHome = () => {
@@ -106,7 +107,7 @@ export default function App() {
               onLoginClick={() => openAuthModal('login')}
               onLogout={handleLogout}
               onOpenAdmin={() => setView('admin')}
-              onOpenPricing={() => setView('pricing')}
+              onOpenPricing={() => { setView('pricing'); window.history.pushState({}, '', '/price'); }}
               onUserUpdate={(updated) => setUser(updated)}
               onOpenDocument={handleOpenDocument}
               onOpenHistory={() => { setView('history-list'); window.history.pushState({}, '', '/history'); }}
