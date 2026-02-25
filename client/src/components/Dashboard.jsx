@@ -10,7 +10,7 @@ import {
   SearchModal, AnalyticsModal, ShareModal, TagsModal,
   LearningPathsModal, PreferencesModal, FavoriteButton
 } from './FeatureModals';
-import { generateMindmap, generateFlashcards, getRateLimit } from '../api';
+import { generateMindmap, generateFlashcards, getRateLimit, getDocumentSessions } from '../api';
 
 const TABS = [
   { id: 'mindmap', label: 'Sơ đồ tư duy', icon: Map },
@@ -29,6 +29,7 @@ export default function Dashboard({ doc, user }) {
   const [flashcardData, setFlashcardData] = useState(null);
   const [chatMessages, setChatMessages] = useState([WELCOME_MESSAGE]);
   const [loading, setLoading] = useState({ mindmap: false, flashcard: false });
+  const [sessionLoading, setSessionLoading] = useState(true);
   const [errors, setErrors] = useState({});
   const [rateLimit, setRateLimit] = useState({ uploadLimit: 10, uploadsRemaining: 10, resetIn: 0, chatLimit: 10 });
 
@@ -52,6 +53,20 @@ export default function Dashboard({ doc, user }) {
     const interval = setInterval(fetchRateLimit, 30000);
     return () => clearInterval(interval);
   }, [fetchRateLimit]);
+
+  // Load saved sessions on mount
+  useEffect(() => {
+    if (!doc?.docId) { setSessionLoading(false); return; }
+    setSessionLoading(true);
+    getDocumentSessions(doc.docId)
+      .then(({ sessions }) => {
+        if (sessions?.mindmap) setMindmapData(sessions.mindmap);
+        if (sessions?.flashcards) setFlashcardData(sessions.flashcards);
+        if (sessions?.chat && sessions.chat.length > 0) setChatMessages(sessions.chat);
+      })
+      .catch(() => { /* no saved sessions, start fresh */ })
+      .finally(() => setSessionLoading(false));
+  }, [doc?.docId]);
 
   const handleRateLimitError = (err) => {
     if (err.response?.status === 429) {
@@ -104,6 +119,12 @@ export default function Dashboard({ doc, user }) {
             {doc.textLength ? `${(doc.textLength / 1000).toFixed(1)}k ký tự` : 'Đã xử lý'}
           </p>
         </div>
+        {sessionLoading && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-primary-600/10 border border-primary-500/20 rounded-lg">
+            <Loader2 size={12} className="text-primary-400 animate-spin" />
+            <span className="text-[10px] text-primary-400 font-medium">Đang tải dữ liệu...</span>
+          </div>
+        )}
         <FavoriteButton documentId={doc.docId} />
       </div>
 
