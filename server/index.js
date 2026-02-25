@@ -87,6 +87,32 @@ const upload = multer({
 // In-memory document store
 const documents = new Map();
 
+// ── SSE: live-update listeners per document ──
+// Map<documentId, Set<Response>>
+const docListeners = new Map();
+
+function addDocListener(docId, res) {
+  if (!docListeners.has(docId)) docListeners.set(docId, new Set());
+  docListeners.get(docId).add(res);
+}
+
+function removeDocListener(docId, res) {
+  const set = docListeners.get(docId);
+  if (set) {
+    set.delete(res);
+    if (set.size === 0) docListeners.delete(docId);
+  }
+}
+
+function broadcastDocEvent(docId, eventType, data) {
+  const set = docListeners.get(docId);
+  if (!set || set.size === 0) return;
+  const payload = `event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`;
+  for (const res of set) {
+    try { res.write(payload); } catch { /* client gone */ }
+  }
+}
+
 // Database path for document persistence
 const DB_PATH = path.join(__dirname, 'data', 'notemind.db');
 
@@ -490,6 +516,7 @@ app.post('/api/documents/:docId/mindmap', async (req, res) => {
 
     const mindmap = await generateMindmap(doc.text, doc.fileName);
     saveDocumentSession(req.params.docId, 'mindmap', mindmap);
+    broadcastDocEvent(req.params.docId, 'mindmap', mindmap);
     res.json(mindmap);
   } catch (error) {
     console.error('Mindmap generation error:', error);
@@ -510,6 +537,7 @@ app.post('/api/documents/:docId/flashcards', async (req, res) => {
 
     const flashcards = await generateFlashcards(doc.text, doc.fileName);
     saveDocumentSession(req.params.docId, 'flashcards', flashcards);
+    broadcastDocEvent(req.params.docId, 'flashcards', flashcards);
     res.json(flashcards);
   } catch (error) {
     console.error('Flashcard generation error:', error);
@@ -553,6 +581,7 @@ app.post('/api/documents/:docId/chat', optionalAuth, async (req, res) => {
     // Save chat session (last 50 messages)
     const chatHistory = [...(history || []), { role: 'user', content: message }, { role: 'assistant', content: reply }].slice(-50);
     saveDocumentSession(req.params.docId, 'chat', chatHistory);
+    broadcastDocEvent(req.params.docId, 'chat', chatHistory);
 
     res.json({ reply, chatCount: doc.chatCount, chatLimit });
   } catch (error) {
@@ -625,6 +654,46 @@ async function resolveSharedDocument(shareToken) {
   return { share, doc: rebuilt };
 }
 
+// ── SSE endpoint: live updates for shared document viewers ──
+app.get('/api/shared/:shareToken/events', async (req, res) => {
+  try {
+    const share = validateShareToken(req.params.shareToken);
+    if (!share) {
+      return res.status(403).json({ error: 'Link chia sẻ không hợp lệ hoặc đã hết hạn' });
+    }
+
+    const docId = share.document_id;
+
+    // Set SSE headers
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no', // disable nginx buffering
+    });
+
+    // Send initial heartbeat
+    res.write(`event: connected\ndata: {"documentId":"${docId}"}\n\n`);
+
+    // Register listener
+    addDocListener(docId, res);
+
+    // Heartbeat every 30s to keep connection alive
+    const heartbeat = setInterval(() => {
+      try { res.write(': heartbeat\n\n'); } catch { clearInterval(heartbeat); }
+    }, 30000);
+
+    // Cleanup on disconnect
+    req.on('close', () => {
+      clearInterval(heartbeat);
+      removeDocListener(docId, res);
+    });
+  } catch (error) {
+    console.error('[SSE] Error:', error.message);
+    if (!res.headersSent) res.status(500).json({ error: 'SSE connection failed' });
+  }
+});
+
 // Shared document content endpoint (public — token validated)
 app.get('/api/shared/:shareToken/content', async (req, res) => {
   try {
@@ -666,6 +735,7 @@ app.post('/api/shared/:shareToken/mindmap', async (req, res) => {
     const { share, doc } = result;
     const mindmap = await generateMindmap(doc.text, doc.fileName);
     saveDocumentSession(share.document_id, 'mindmap', mindmap);
+    broadcastDocEvent(share.document_id, 'mindmap', mindmap);
     res.json(mindmap);
   } catch (error) {
     console.error('[Share] Mindmap generation error:', error.message);
@@ -685,6 +755,7 @@ app.post('/api/shared/:shareToken/flashcards', async (req, res) => {
     const { share, doc } = result;
     const flashcards = await generateFlashcards(doc.text, doc.fileName);
     saveDocumentSession(share.document_id, 'flashcards', flashcards);
+    broadcastDocEvent(share.document_id, 'flashcards', flashcards);
     res.json(flashcards);
   } catch (error) {
     console.error('[Share] Flashcard generation error:', error.message);
@@ -700,7 +771,7 @@ app.post('/api/shared/:shareToken/chat', async (req, res) => {
     if (result.share.share_type === 'view') {
       return res.status(403).json({ error: 'Quyền chỉ xem không cho phép chat' });
     }
-    const { doc } = result;
+    const { share, doc } = result;
     const { message, history } = req.body;
     if (!message) {
       return res.status(400).json({ error: 'Message is required' });
@@ -722,6 +793,12 @@ app.post('/api/shared/:shareToken/chat', async (req, res) => {
 
     const reply = await chatWithDocument(doc.text, message, history || []);
     doc.chatCount++;
+
+    // Broadcast chat update to other viewers
+    const shareChatHistory = [...(history || []), { role: 'user', content: message }, { role: 'assistant', content: reply }].slice(-50);
+    saveDocumentSession(share.document_id, 'chat', shareChatHistory);
+    broadcastDocEvent(share.document_id, 'chat', shareChatHistory);
+
     res.json({ reply, chatCount: doc.chatCount, chatLimit: shareLimit });
   } catch (error) {
     console.error('[Share] Chat error:', error.message);

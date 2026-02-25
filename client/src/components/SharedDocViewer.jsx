@@ -45,6 +45,42 @@ export default function SharedDocViewer({ shareToken, onBack }) {
 
   const isViewOnly = (shareInfo?.shareType || 'view') === 'view';
 
+  // ── SSE: live-update from owner/other editors ──
+  useEffect(() => {
+    if (!shareToken || !content) return;
+
+    const evtSource = new EventSource(`/api/shared/${shareToken}/events`);
+
+    evtSource.addEventListener('mindmap', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        setMindmapData(data);
+      } catch {}
+    });
+
+    evtSource.addEventListener('flashcards', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        setFlashcardData(data);
+      } catch {}
+    });
+
+    evtSource.addEventListener('chat', (e) => {
+      try {
+        const msgs = JSON.parse(e.data);
+        if (Array.isArray(msgs) && msgs.length > 0) {
+          setChatMessages([WELCOME_MESSAGE, ...msgs.map(m => ({ role: m.role, content: m.content }))]);
+        }
+      } catch {}
+    });
+
+    evtSource.onerror = () => {
+      // Browser will auto-reconnect for SSE
+    };
+
+    return () => evtSource.close();
+  }, [shareToken, content]);
+
   useEffect(() => {
     if (!shareToken) return;
     setLoading(true);
