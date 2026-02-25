@@ -237,11 +237,11 @@ export function ShareModal({ isOpen, onClose, documentId }) {
   useEffect(() => {
     if (!isOpen) return;
     setLoading(true);
-    getSharedDocuments()
+    getSharedDocuments(documentId || null)
       .then(s => setShares(s || []))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [isOpen]);
+  }, [isOpen, documentId]);
 
   const handleCreate = async () => {
     if (!documentId) return;
@@ -330,22 +330,32 @@ export function ShareModal({ isOpen, onClose, documentId }) {
           <p className="text-sm text-[#9496a1] mb-3">Các link đã tạo</p>
           {shares.map(s => {
             const badge = PERMISSION_BADGE[s.share_type] || PERMISSION_BADGE.view;
+            const shareUrl = `${window.location.origin}/share/${s.share_token}`;
             return (
-              <div key={s.id} className="flex items-center gap-2 bg-[#0f1117] border border-[#2e3144] rounded-lg px-3 py-2.5">
-                <ExternalLink size={14} className="text-primary-400 shrink-0" />
-                <span className="text-xs truncate flex-1 text-[#9496a1]">{s.share_token?.slice(0, 16)}...</span>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${badge.color}`}>
-                  {badge.label}
-                </span>
-                <span className="text-[10px] text-[#9496a1]">
-                  {s.expires_at ? new Date(s.expires_at).toLocaleDateString('vi') : '∞'}
-                </span>
-                <button onClick={() => copyLink(s.share_token)} className="p-1 hover:bg-[#2e3144] rounded transition-colors">
-                  {copied === s.share_token ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
-                </button>
-                <button onClick={() => handleDelete(s.id)} className="p-1 hover:bg-red-500/20 rounded transition-colors">
-                  <Trash2 size={14} className="text-red-400" />
-                </button>
+              <div key={s.id} className="bg-[#0f1117] border border-[#2e3144] rounded-lg px-3 py-2.5">
+                <div className="flex items-center gap-2">
+                  <ExternalLink size={14} className="text-primary-400 shrink-0" />
+                  <span className="text-xs truncate flex-1 text-[#c8c9cf]" title={shareUrl}>
+                    {shareUrl.length > 50 ? shareUrl.slice(0, 50) + '...' : shareUrl}
+                  </span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${badge.color}`}>
+                    {badge.label}
+                  </span>
+                  <span className="text-[10px] text-[#9496a1]">
+                    {s.expires_at ? new Date(s.expires_at).toLocaleDateString('vi') : '∞'}
+                  </span>
+                  <button onClick={() => copyLink(s.share_token)} className="p-1 hover:bg-[#2e3144] rounded transition-colors">
+                    {copied === s.share_token ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
+                  </button>
+                  <button onClick={() => handleDelete(s.id)} className="p-1 hover:bg-red-500/20 rounded transition-colors">
+                    <Trash2 size={14} className="text-red-400" />
+                  </button>
+                </div>
+                {s.original_name && (
+                  <p className="text-[10px] text-[#666] mt-1 pl-6 truncate">
+                    {s.original_name} • {s.access_count || 0} lượt xem
+                  </p>
+                )}
               </div>
             );
           })}

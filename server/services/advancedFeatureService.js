@@ -155,22 +155,30 @@ export function validateShareToken(shareToken) {
   }
 }
 
-export function getSharedDocuments(ownerId) {
+export function getSharedDocuments(ownerId, documentId = null) {
   try {
     const db = new Database(DB_PATH);
 
-    const shares = db.prepare(`
+    let query = `
       SELECT sd.id, sd.document_id, sd.share_token, sd.share_type, 
              sd.expires_at, sd.created_at,
              COUNT(sal.id) as access_count,
-             d.file_path
+             d.file_path, d.original_name
       FROM shared_documents sd
       LEFT JOIN shared_access_logs sal ON sd.id = sal.shared_document_id
       LEFT JOIN documents d ON sd.document_id = d.id
       WHERE sd.owner_id = ?
-      GROUP BY sd.id
-      ORDER BY sd.created_at DESC
-    `).all(ownerId);
+    `;
+    const params = [ownerId];
+
+    if (documentId) {
+      query += ' AND sd.document_id = ?';
+      params.push(documentId);
+    }
+
+    query += ' GROUP BY sd.id ORDER BY sd.created_at DESC';
+
+    const shares = db.prepare(query).all(...params);
 
     db.close();
     return shares;

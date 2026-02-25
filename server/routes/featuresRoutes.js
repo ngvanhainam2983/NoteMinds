@@ -266,7 +266,8 @@ router.get('/shared/:shareToken', (req, res) => {
 
 router.get('/shares', requireAuth, (req, res) => {
   try {
-    const shares = advancedFeatureService.getSharedDocuments(req.user.id);
+    const { documentId } = req.query;
+    const shares = advancedFeatureService.getSharedDocuments(req.user.id, documentId || null);
     res.json({ shares });
   } catch (error) {
     res.status(500).json({ error: 'Failed to get shares' });

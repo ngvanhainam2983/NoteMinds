@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   FileText, Loader2, AlertCircle, Eye, MessageSquare, Pencil,
-  BrainCircuit, Clock, ArrowLeft, Map, CreditCard, MessageCircle
+  BrainCircuit, Clock, ArrowLeft, Map, CreditCard, MessageCircle,
+  Lock, Link2
 } from 'lucide-react';
 import {
   validateShareToken, getSharedDocumentContent,
@@ -42,6 +43,8 @@ export default function SharedDocViewer({ shareToken, onBack }) {
   const [tabLoading, setTabLoading] = useState({ mindmap: false, flashcard: false });
   const [tabErrors, setTabErrors] = useState({});
 
+  const isViewOnly = (shareInfo?.shareType || 'view') === 'view';
+
   useEffect(() => {
     if (!shareToken) return;
     setLoading(true);
@@ -57,7 +60,17 @@ export default function SharedDocViewer({ shareToken, onBack }) {
         }
       })
       .then(data => {
-        if (data) setContent(data);
+        if (data) {
+          setContent(data);
+          // Load pre-existing session data from the owner
+          if (data.sessions) {
+            if (data.sessions.mindmap) setMindmapData(data.sessions.mindmap);
+            if (data.sessions.flashcards) setFlashcardData(data.sessions.flashcards);
+            if (data.sessions.chat && data.sessions.chat.length > 0) {
+              setChatMessages([WELCOME_MESSAGE, ...data.sessions.chat.map(m => ({ role: m.role, content: m.content }))]);
+            }
+          }
+        }
       })
       .catch(err => {
         setError(err.response?.data?.error || err.message || 'Link chia sẻ không hợp lệ hoặc đã hết hạn');
@@ -68,7 +81,7 @@ export default function SharedDocViewer({ shareToken, onBack }) {
   }, [shareToken]);
 
   const handleGenerateMindmap = useCallback(async () => {
-    if (mindmapData) return;
+    if (mindmapData || isViewOnly) return;
     setTabLoading(prev => ({ ...prev, mindmap: true }));
     setTabErrors(prev => ({ ...prev, mindmap: null }));
     try {
@@ -79,10 +92,10 @@ export default function SharedDocViewer({ shareToken, onBack }) {
     } finally {
       setTabLoading(prev => ({ ...prev, mindmap: false }));
     }
-  }, [shareToken, mindmapData]);
+  }, [shareToken, mindmapData, isViewOnly]);
 
   const handleGenerateFlashcards = useCallback(async () => {
-    if (flashcardData) return;
+    if (flashcardData || isViewOnly) return;
     setTabLoading(prev => ({ ...prev, flashcard: true }));
     setTabErrors(prev => ({ ...prev, flashcard: null }));
     try {
@@ -93,7 +106,7 @@ export default function SharedDocViewer({ shareToken, onBack }) {
     } finally {
       setTabLoading(prev => ({ ...prev, flashcard: false }));
     }
-  }, [shareToken, flashcardData]);
+  }, [shareToken, flashcardData, isViewOnly]);
 
   const shareChatFn = useCallback(async (message, history) => {
     return await shareChatWithDocument(shareToken, message, history);
@@ -133,6 +146,22 @@ export default function SharedDocViewer({ shareToken, onBack }) {
 
   const permInfo = PERMISSION_INFO[shareInfo?.shareType] || PERMISSION_INFO.view;
   const PermIcon = permInfo.icon;
+
+  // View-only empty state component
+  const ViewOnlyEmpty = ({ icon: Icon, label }) => (
+    <div className="flex flex-col items-center justify-center h-[500px] gap-4">
+      <div className="relative">
+        <Icon size={48} className="text-[#2e3144]" />
+        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#1a1d27] border border-[#2e3144] rounded-full flex items-center justify-center">
+          <Lock size={12} className="text-[#9496a1]" />
+        </div>
+      </div>
+      <p className="text-[#9496a1]">{label}</p>
+      <p className="text-xs text-[#9496a1]/60 max-w-xs text-center">
+        Người chia sẻ chưa tạo nội dung này. Bạn đang ở chế độ chỉ xem.
+      </p>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[#0f1117]">
@@ -182,19 +211,40 @@ export default function SharedDocViewer({ shareToken, onBack }) {
               {shareInfo?.shareType && ` • ${permInfo.label}`}
             </p>
           </div>
+          {/* Share link display */}
+          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-[#242736] border border-[#2e3144] rounded-lg">
+            <Link2 size={12} className="text-[#9496a1]" />
+            <span className="text-[10px] text-[#9496a1] truncate max-w-[200px]">
+              {window.location.origin}/share/{shareToken.slice(0, 12)}...
+            </span>
+          </div>
         </div>
+
+        {/* View-only notice */}
+        {isViewOnly && (
+          <div className="flex items-center gap-2 mb-4 px-4 py-2.5 bg-blue-500/5 border border-blue-500/20 rounded-xl">
+            <Lock size={14} className="text-blue-400 shrink-0" />
+            <p className="text-xs text-blue-300">
+              Chế độ chỉ xem — bạn chỉ có thể xem nội dung đã được tạo bởi người chia sẻ.
+            </p>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 bg-[#1a1d27] border border-[#2e3144] rounded-xl p-1.5">
           {TABS.map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
+            // Show indicator if data exists for this tab
+            const hasData = (tab.id === 'mindmap' && mindmapData) ||
+                           (tab.id === 'flashcard' && flashcardData) ||
+                           (tab.id === 'chat' && chatMessages.length > 1);
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`
-                  flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+                  flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 relative
                   ${isActive
                     ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/25'
                     : 'text-[#9496a1] hover:text-white hover:bg-[#242736]'
@@ -203,6 +253,9 @@ export default function SharedDocViewer({ shareToken, onBack }) {
               >
                 <Icon size={16} />
                 <span className="hidden sm:inline">{tab.label}</span>
+                {hasData && !isActive && (
+                  <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full absolute top-2 right-2" />
+                )}
               </button>
             );
           })}
@@ -211,31 +264,55 @@ export default function SharedDocViewer({ shareToken, onBack }) {
         {/* Tab content */}
         <div className="bg-[#1a1d27] border border-[#2e3144] rounded-2xl min-h-[500px] overflow-hidden">
           {activeTab === 'mindmap' && (
-            <MindmapView
-              data={mindmapData}
-              loading={tabLoading.mindmap}
-              error={tabErrors.mindmap}
-              onGenerate={handleGenerateMindmap}
-            />
+            isViewOnly && !mindmapData ? (
+              <ViewOnlyEmpty icon={Map} label="Chưa có sơ đồ tư duy" />
+            ) : (
+              <MindmapView
+                data={mindmapData}
+                loading={tabLoading.mindmap}
+                error={tabErrors.mindmap}
+                onGenerate={isViewOnly ? undefined : handleGenerateMindmap}
+              />
+            )
           )}
           {activeTab === 'flashcard' && (
-            <FlashcardView
-              data={flashcardData}
-              loading={tabLoading.flashcard}
-              error={tabErrors.flashcard}
-              onGenerate={handleGenerateFlashcards}
-              docId={null}
-            />
+            isViewOnly && !flashcardData ? (
+              <ViewOnlyEmpty icon={CreditCard} label="Chưa có Flashcard" />
+            ) : (
+              <FlashcardView
+                data={flashcardData}
+                loading={tabLoading.flashcard}
+                error={tabErrors.flashcard}
+                onGenerate={isViewOnly ? undefined : handleGenerateFlashcards}
+                docId={null}
+              />
+            )
           )}
           {activeTab === 'chat' && (
-            <ChatView
-              docId={null}
-              messages={chatMessages}
-              setMessages={setChatMessages}
-              chatLimit={20}
-              chatFn={shareChatFn}
-              shareMode
-            />
+            isViewOnly ? (
+              chatMessages.length > 1 ? (
+                <ChatView
+                  docId={null}
+                  messages={chatMessages}
+                  setMessages={setChatMessages}
+                  chatLimit={0}
+                  chatFn={shareChatFn}
+                  shareMode
+                  readOnly
+                />
+              ) : (
+                <ViewOnlyEmpty icon={MessageCircle} label="Chưa có hội thoại AI" />
+              )
+            ) : (
+              <ChatView
+                docId={null}
+                messages={chatMessages}
+                setMessages={setChatMessages}
+                chatLimit={20}
+                chatFn={shareChatFn}
+                shareMode
+              />
+            )
           )}
         </div>
       </div>

@@ -342,6 +342,24 @@ export function initializeEnhancedTables() {
     `);
     console.log('  ✓ Learning paths table created');
 
+    // ── Document Sessions (persist mindmap/flashcard/chat data per doc) ──
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS document_sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        document_id TEXT NOT NULL,
+        session_type TEXT NOT NULL,
+        data TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE,
+        UNIQUE(document_id, session_type)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_doc_sessions_document 
+      ON document_sessions(document_id);
+    `);
+    console.log('  ✓ Document sessions table created');
+
     console.log('[Database] ✓ All enhanced tables initialized');
     db.close();
     return true;

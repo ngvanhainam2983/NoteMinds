@@ -351,8 +351,9 @@ export async function shareChatWithDocument(token, message, history) {
   return response.data;
 }
 
-export async function getSharedDocuments() {
-  const response = await api.get('/shares');
+export async function getSharedDocuments(documentId = null) {
+  const params = documentId ? `?documentId=${documentId}` : '';
+  const response = await api.get(`/shares${params}`);
   return response.data.shares;
 }
 

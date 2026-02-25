@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader2, MessageSquare, Sparkles, History, Trash2, Save, X } from 'lucide-react';
+import { Send, Bot, User, Loader2, MessageSquare, Sparkles, History, Trash2, Save, X, Lock } from 'lucide-react';
 import { chatWithDocument, getConversationHistory, getConversationMessages, saveConversation, deleteConversation } from '../api';
 import MarkdownRenderer from './MarkdownRenderer';
 
-export default function ChatView({ docId, messages, setMessages, chatLimit: initialLimit, chatFn, shareMode }) {
+export default function ChatView({ docId, messages, setMessages, chatLimit: initialLimit, chatFn, shareMode, readOnly }) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [chatCount, setChatCount] = useState(0);
@@ -263,6 +263,12 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
       </div>
 
       {/* Input area */}
+      {readOnly ? (
+        <div className="border-t border-[#2e3144] px-4 py-3 flex items-center gap-2">
+          <Lock size={14} className="text-[#9496a1]" />
+          <span className="text-xs text-[#9496a1]">Chế độ chỉ xem — không thể gửi tin nhắn</span>
+        </div>
+      ) : (
       <div className="border-t border-[#2e3144] p-4">
         <div className="flex gap-3 items-end">
           <textarea
@@ -289,6 +295,7 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
           </button>
         </div>
       </div>
+      )}
     </div>
   );
 }

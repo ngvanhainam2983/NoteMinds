@@ -434,6 +434,49 @@ app.delete('/api/documents/:docId', (req, res) => {
   res.json({ success: true });
 });
 
+// ── Session persistence helpers ──
+function saveDocumentSession(docId, sessionType, data) {
+  try {
+    const db = new Database(DB_PATH);
+    db.prepare(`
+      INSERT INTO document_sessions (document_id, session_type, data, updated_at)
+      VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(document_id, session_type) DO UPDATE SET data = excluded.data, updated_at = CURRENT_TIMESTAMP
+    `).run(docId, sessionType, JSON.stringify(data));
+    db.close();
+  } catch (err) {
+    console.error(`[Session] Error saving ${sessionType} for ${docId}:`, err.message);
+  }
+}
+
+function getDocumentSession(docId, sessionType) {
+  try {
+    const db = new Database(DB_PATH);
+    const row = db.prepare('SELECT data FROM document_sessions WHERE document_id = ? AND session_type = ?').get(docId, sessionType);
+    db.close();
+    return row ? JSON.parse(row.data) : null;
+  } catch (err) {
+    console.error(`[Session] Error loading ${sessionType} for ${docId}:`, err.message);
+    return null;
+  }
+}
+
+function getAllDocumentSessions(docId) {
+  try {
+    const db = new Database(DB_PATH);
+    const rows = db.prepare('SELECT session_type, data FROM document_sessions WHERE document_id = ?').all(docId);
+    db.close();
+    const sessions = {};
+    for (const row of rows) {
+      sessions[row.session_type] = JSON.parse(row.data);
+    }
+    return sessions;
+  } catch (err) {
+    console.error(`[Session] Error loading sessions for ${docId}:`, err.message);
+    return {};
+  }
+}
+
 // Generate mindmap
 app.post('/api/documents/:docId/mindmap', async (req, res) => {
   try {
@@ -446,6 +489,7 @@ app.post('/api/documents/:docId/mindmap', async (req, res) => {
     }
 
     const mindmap = await generateMindmap(doc.text, doc.fileName);
+    saveDocumentSession(req.params.docId, 'mindmap', mindmap);
     res.json(mindmap);
   } catch (error) {
     console.error('Mindmap generation error:', error);
@@ -465,6 +509,7 @@ app.post('/api/documents/:docId/flashcards', async (req, res) => {
     }
 
     const flashcards = await generateFlashcards(doc.text, doc.fileName);
+    saveDocumentSession(req.params.docId, 'flashcards', flashcards);
     res.json(flashcards);
   } catch (error) {
     console.error('Flashcard generation error:', error);
@@ -504,6 +549,11 @@ app.post('/api/documents/:docId/chat', optionalAuth, async (req, res) => {
 
     const reply = await chatWithDocument(doc.text, message, history || []);
     doc.chatCount++;
+
+    // Save chat session (last 50 messages)
+    const chatHistory = [...(history || []), { role: 'user', content: message }, { role: 'assistant', content: reply }].slice(-50);
+    saveDocumentSession(req.params.docId, 'chat', chatHistory);
+
     res.json({ reply, chatCount: doc.chatCount, chatLimit });
   } catch (error) {
     console.error('Chat error:', error);
@@ -582,12 +632,21 @@ app.get('/api/shared/:shareToken/content', async (req, res) => {
     if (result.error) return res.status(result.status).json({ error: result.error });
 
     const { share, doc } = result;
+
+    // Load pre-existing session data (mindmap, flashcards, chat)
+    const sessions = getAllDocumentSessions(share.document_id);
+
     res.json({
       documentId: doc.id,
       fileName: doc.fileName || share.original_name,
       text: doc.text,
       shareType: share.share_type,
-      status: doc.status
+      status: doc.status,
+      sessions: {
+        mindmap: sessions.mindmap || null,
+        flashcards: sessions.flashcards || null,
+        chat: sessions.chat || null,
+      }
     });
   } catch (error) {
     console.error('[Share] Error getting content:', error.message);
@@ -595,14 +654,18 @@ app.get('/api/shared/:shareToken/content', async (req, res) => {
   }
 });
 
-// Shared document — generate mindmap (public — token validated)
+// Shared document — generate mindmap (public — token validated, not for view-only)
 app.post('/api/shared/:shareToken/mindmap', async (req, res) => {
   try {
     const result = await resolveSharedDocument(req.params.shareToken);
     if (result.error) return res.status(result.status).json({ error: result.error });
+    if (result.share.share_type === 'view') {
+      return res.status(403).json({ error: 'Quyền chỉ xem không cho phép tạo nội dung mới' });
+    }
 
-    const { doc } = result;
+    const { share, doc } = result;
     const mindmap = await generateMindmap(doc.text, doc.fileName);
+    saveDocumentSession(share.document_id, 'mindmap', mindmap);
     res.json(mindmap);
   } catch (error) {
     console.error('[Share] Mindmap generation error:', error.message);
@@ -610,14 +673,18 @@ app.post('/api/shared/:shareToken/mindmap', async (req, res) => {
   }
 });
 
-// Shared document — generate flashcards (public — token validated)
+// Shared document — generate flashcards (public — token validated, not for view-only)
 app.post('/api/shared/:shareToken/flashcards', async (req, res) => {
   try {
     const result = await resolveSharedDocument(req.params.shareToken);
     if (result.error) return res.status(result.status).json({ error: result.error });
+    if (result.share.share_type === 'view') {
+      return res.status(403).json({ error: 'Quyền chỉ xem không cho phép tạo nội dung mới' });
+    }
 
-    const { doc } = result;
+    const { share, doc } = result;
     const flashcards = await generateFlashcards(doc.text, doc.fileName);
+    saveDocumentSession(share.document_id, 'flashcards', flashcards);
     res.json(flashcards);
   } catch (error) {
     console.error('[Share] Flashcard generation error:', error.message);
@@ -625,12 +692,14 @@ app.post('/api/shared/:shareToken/flashcards', async (req, res) => {
   }
 });
 
-// Shared document — chat (public — token validated)
+// Shared document — chat (public — token validated, not for view-only)
 app.post('/api/shared/:shareToken/chat', async (req, res) => {
   try {
     const result = await resolveSharedDocument(req.params.shareToken);
     if (result.error) return res.status(result.status).json({ error: result.error });
-
+    if (result.share.share_type === 'view') {
+      return res.status(403).json({ error: 'Quyền chỉ xem không cho phép chat' });
+    }
     const { doc } = result;
     const { message, history } = req.body;
     if (!message) {
