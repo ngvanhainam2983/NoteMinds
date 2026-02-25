@@ -1,8 +1,21 @@
 import CryptoJS from 'crypto-js';
 
-// This key should match ENCRYPTION_KEY on server
-// In production, this should be derived from the user's token or a secure key exchange
-const ENCRYPTION_KEY = process.env.REACT_APP_ENCRYPTION_KEY || 'notemind-default-encryption-key-2024-secure';
+// Must match server ENCRYPTION_KEY exactly.
+// Priority: Vite env -> legacy React env -> development default.
+const RAW_ENCRYPTION_KEY =
+  import.meta.env.VITE_ENCRYPTION_KEY ||
+  import.meta.env.REACT_APP_ENCRYPTION_KEY ||
+  'notemind-default-encryption-key-2024-secure';
+
+function getCryptoKey(rawKey) {
+  if (typeof rawKey === 'string' && rawKey.length === 64 && /^[0-9a-fA-F]+$/.test(rawKey)) {
+    return CryptoJS.enc.Hex.parse(rawKey);
+  }
+
+  return CryptoJS.SHA256(rawKey);
+}
+
+const ENCRYPTION_KEY = getCryptoKey(RAW_ENCRYPTION_KEY);
 
 /**
  * Encrypt data for sending to server
@@ -15,7 +28,7 @@ export function encryptDataForServer(data) {
   const jsonData = JSON.stringify(data);
   
   // Encrypt using AES-256-CBC
-  const encrypted = CryptoJS.AES.encrypt(jsonData, CryptoJS.enc.Utf8.parse(ENCRYPTION_KEY), {
+  const encrypted = CryptoJS.AES.encrypt(jsonData, ENCRYPTION_KEY, {
     iv: iv,
     mode: CryptoJS.mode.CBC,
     padding: CryptoJS.pad.Pkcs7
@@ -40,8 +53,10 @@ export function encryptDataForServer(data) {
 export function decryptDataFromServer(encryptedData) {
   try {
     const iv = CryptoJS.enc.Hex.parse(encryptedData.iv);
+    const ciphertext = CryptoJS.enc.Hex.parse(encryptedData.encrypted);
+    const cipherParams = CryptoJS.lib.CipherParams.create({ ciphertext });
     
-    const decrypted = CryptoJS.AES.decrypt(encryptedData.encrypted, CryptoJS.enc.Utf8.parse(ENCRYPTION_KEY), {
+    const decrypted = CryptoJS.AES.decrypt(cipherParams, ENCRYPTION_KEY, {
       iv: iv,
       mode: CryptoJS.mode.CBC,
       padding: CryptoJS.pad.Pkcs7

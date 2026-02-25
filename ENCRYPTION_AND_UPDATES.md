@@ -53,9 +53,9 @@ a7f8c2d9e4b1f6a3c8d2e9f4a7b1c8d5e2f9a4b7c1d8e5f2a9b3c6d9e2f5a8
    ENCRYPTION_KEY=a7f8c2d9e4b1f6a3c8d2e9f4a7b1c8d5e2f9a4b7c1d8e5f2a9b3c6d9e2f5a8
    ```
 
-3. Update `client/src/encryptionService.js` with the same key (if running locally):
-   ```javascript
-   const ENCRYPTION_KEY = process.env.REACT_APP_ENCRYPTION_KEY || 'your-generated-key-here';
+3. Add the same key to `client/.env` (for Vite):
+   ```env
+   VITE_ENCRYPTION_KEY=a7f8c2d9e4b1f6a3c8d2e9f4a7b1c8d5e2f9a4b7c1d8e5f2a9b3c6d9e2f5a8
    ```
 
 ### 3. Install Dependencies
