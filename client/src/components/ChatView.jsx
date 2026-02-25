@@ -3,7 +3,7 @@ import { Send, Bot, User, Loader2, MessageSquare, Sparkles, History, Trash2, Sav
 import { chatWithDocument, getConversationHistory, getConversationMessages, saveConversation, deleteConversation } from '../api';
 import MarkdownRenderer from './MarkdownRenderer';
 
-export default function ChatView({ docId, messages, setMessages, chatLimit: initialLimit }) {
+export default function ChatView({ docId, messages, setMessages, chatLimit: initialLimit, chatFn, shareMode }) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [chatCount, setChatCount] = useState(0);
@@ -94,7 +94,9 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
         .filter((m, i) => i > 0)
         .map(m => ({ role: m.role, content: m.content }));
 
-      const response = await chatWithDocument(docId, msg, history);
+      const response = chatFn
+        ? await chatFn(msg, history)
+        : await chatWithDocument(docId, msg, history);
       setMessages(prev => [...prev, { role: 'assistant', content: response.reply }]);
       if (response.chatCount !== undefined) setChatCount(response.chatCount);
       if (response.chatLimit !== undefined) setChatLimit(response.chatLimit);
@@ -167,6 +169,7 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
       )}
 
       {/* Chat toolbar */}
+      {!shareMode && (
       <div className="flex items-center gap-2 px-4 py-2 border-b border-[#2e3144]">
         <button
           onClick={() => { setShowHistory(true); loadHistory(); }}
@@ -182,6 +185,7 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
           {savingChat ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Lưu chat
         </button>
       </div>
+      )}
 
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">

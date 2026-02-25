@@ -336,6 +336,21 @@ export async function getSharedDocumentContent(token) {
   return response.data;
 }
 
+export async function shareGenerateMindmap(token) {
+  const response = await api.post(`/shared/${token}/mindmap`);
+  return response.data;
+}
+
+export async function shareGenerateFlashcards(token) {
+  const response = await api.post(`/shared/${token}/flashcards`);
+  return response.data;
+}
+
+export async function shareChatWithDocument(token, message, history) {
+  const response = await api.post(`/shared/${token}/chat`, { message, history });
+  return response.data;
+}
+
 export async function getSharedDocuments() {
   const response = await api.get('/shares');
   return response.data.shares;

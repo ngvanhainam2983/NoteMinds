@@ -1,10 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   FileText, Loader2, AlertCircle, Eye, MessageSquare, Pencil,
-  BrainCircuit, Clock, ArrowLeft, Copy, Check
+  BrainCircuit, Clock, ArrowLeft, Map, CreditCard, MessageCircle
 } from 'lucide-react';
-import { validateShareToken, getSharedDocumentContent } from '../api';
-import MarkdownRenderer from './MarkdownRenderer';
+import {
+  validateShareToken, getSharedDocumentContent,
+  shareGenerateMindmap, shareGenerateFlashcards, shareChatWithDocument
+} from '../api';
+import MindmapView from './MindmapView';
+import FlashcardView from './FlashcardView';
+import ChatView from './ChatView';
 
 const PERMISSION_INFO = {
   view: { label: 'Chỉ xem', icon: Eye, color: 'text-blue-400 bg-blue-500/10 border-blue-500/30' },
@@ -12,13 +17,30 @@ const PERMISSION_INFO = {
   edit: { label: 'Chỉnh sửa', icon: Pencil, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30' },
 };
 
+const TABS = [
+  { id: 'mindmap', label: 'Sơ đồ tư duy', icon: Map },
+  { id: 'flashcard', label: 'Flashcard', icon: CreditCard },
+  { id: 'chat', label: 'Hỏi đáp AI', icon: MessageCircle },
+];
+
+const WELCOME_MESSAGE = {
+  role: 'assistant',
+  content: 'Xin chào! Mình là trợ lý học tập NoteMinds 🧠\n\nĐây là tài liệu được chia sẻ. Hãy hỏi mình bất kỳ điều gì về nội dung nhé! Ví dụ:\n- "Tóm tắt nội dung chính"\n- "Giải thích khái niệm X"\n- "So sánh A và B"'
+};
+
 export default function SharedDocViewer({ shareToken, onBack }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [shareInfo, setShareInfo] = useState(null);
   const [content, setContent] = useState(null);
-  const [loadingContent, setLoadingContent] = useState(false);
-  const [copied, setCopied] = useState(false);
+
+  // Dashboard-like state
+  const [activeTab, setActiveTab] = useState('mindmap');
+  const [mindmapData, setMindmapData] = useState(null);
+  const [flashcardData, setFlashcardData] = useState(null);
+  const [chatMessages, setChatMessages] = useState([WELCOME_MESSAGE]);
+  const [tabLoading, setTabLoading] = useState({ mindmap: false, flashcard: false });
+  const [tabErrors, setTabErrors] = useState({});
 
   useEffect(() => {
     if (!shareToken) return;
@@ -29,8 +51,6 @@ export default function SharedDocViewer({ shareToken, onBack }) {
       .then(data => {
         if (data.valid) {
           setShareInfo(data);
-          // Auto-load content
-          setLoadingContent(true);
           return getSharedDocumentContent(shareToken);
         } else {
           throw new Error(data.error || 'Link không hợp lệ');
@@ -44,17 +64,40 @@ export default function SharedDocViewer({ shareToken, onBack }) {
       })
       .finally(() => {
         setLoading(false);
-        setLoadingContent(false);
       });
   }, [shareToken]);
 
-  const handleCopyText = () => {
-    if (content?.text) {
-      navigator.clipboard.writeText(content.text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+  const handleGenerateMindmap = useCallback(async () => {
+    if (mindmapData) return;
+    setTabLoading(prev => ({ ...prev, mindmap: true }));
+    setTabErrors(prev => ({ ...prev, mindmap: null }));
+    try {
+      const data = await shareGenerateMindmap(shareToken);
+      setMindmapData(data);
+    } catch (err) {
+      setTabErrors(prev => ({ ...prev, mindmap: err.response?.data?.error || err.message }));
+    } finally {
+      setTabLoading(prev => ({ ...prev, mindmap: false }));
     }
-  };
+  }, [shareToken, mindmapData]);
+
+  const handleGenerateFlashcards = useCallback(async () => {
+    if (flashcardData) return;
+    setTabLoading(prev => ({ ...prev, flashcard: true }));
+    setTabErrors(prev => ({ ...prev, flashcard: null }));
+    try {
+      const data = await shareGenerateFlashcards(shareToken);
+      setFlashcardData(data);
+    } catch (err) {
+      setTabErrors(prev => ({ ...prev, flashcard: err.response?.data?.error || err.message }));
+    } finally {
+      setTabLoading(prev => ({ ...prev, flashcard: false }));
+    }
+  }, [shareToken, flashcardData]);
+
+  const shareChatFn = useCallback(async (message, history) => {
+    return await shareChatWithDocument(shareToken, message, history);
+  }, [shareToken]);
 
   if (loading) {
     return (
@@ -124,48 +167,77 @@ export default function SharedDocViewer({ shareToken, onBack }) {
         </div>
       </header>
 
-      {/* Document */}
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        {/* Doc info bar */}
-        <div className="flex items-center gap-3 mb-6 bg-[#1a1d27] border border-[#2e3144] rounded-xl px-5 py-4">
-          <FileText size={20} className="text-primary-400 shrink-0" />
-          <div className="flex-1 min-w-0">
-            <h1 className="text-base font-semibold truncate">
+      {/* Main content — Dashboard-like layout */}
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        {/* Document info bar */}
+        <div className="flex items-center gap-3 mb-4 bg-[#1a1d27] border border-[#2e3144] rounded-xl px-5 py-3">
+          <FileText size={18} className="text-primary-400 shrink-0" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium truncate">
               {content?.fileName || shareInfo?.documentName || 'Tài liệu được chia sẻ'}
-            </h1>
-            <p className="text-xs text-[#9496a1] mt-0.5">
-              {content?.text ? `${(content.text.length / 1000).toFixed(1)}k ký tự` : ''}
-              {shareInfo?.shareType && ` • Quyền: ${permInfo.label}`}
+            </p>
+            <p className="text-xs text-[#9496a1]">
+              {content?.text ? `${(content.text.length / 1000).toFixed(1)}k ký tự` : 'Đã xử lý'}
+              {' • '}Tài liệu được chia sẻ
+              {shareInfo?.shareType && ` • ${permInfo.label}`}
             </p>
           </div>
-          {content?.text && shareInfo?.shareType !== 'view' && (
-            <button
-              onClick={handleCopyText}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#242736] border border-[#2e3144] rounded-lg hover:border-primary-500/40 transition-colors"
-            >
-              {copied ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
-              {copied ? 'Đã sao chép' : 'Sao chép'}
-            </button>
-          )}
         </div>
 
-        {/* Content */}
-        {loadingContent ? (
-          <div className="flex justify-center py-20">
-            <Loader2 size={28} className="text-primary-400 animate-spin" />
-          </div>
-        ) : content?.text ? (
-          <div className="bg-[#1a1d27] border border-[#2e3144] rounded-2xl px-6 py-5">
-            <div className="prose prose-invert max-w-none text-sm leading-relaxed text-[#c8c9cf] whitespace-pre-wrap">
-              {content.text}
-            </div>
-          </div>
-        ) : (
-          <div className="text-center py-20">
-            <FileText size={48} className="text-[#2e3144] mx-auto mb-3" />
-            <p className="text-[#9496a1] text-sm">Không có nội dung để hiển thị</p>
-          </div>
-        )}
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6 bg-[#1a1d27] border border-[#2e3144] rounded-xl p-1.5">
+          {TABS.map(tab => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`
+                  flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+                  ${isActive
+                    ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/25'
+                    : 'text-[#9496a1] hover:text-white hover:bg-[#242736]'
+                  }
+                `}
+              >
+                <Icon size={16} />
+                <span className="hidden sm:inline">{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Tab content */}
+        <div className="bg-[#1a1d27] border border-[#2e3144] rounded-2xl min-h-[500px] overflow-hidden">
+          {activeTab === 'mindmap' && (
+            <MindmapView
+              data={mindmapData}
+              loading={tabLoading.mindmap}
+              error={tabErrors.mindmap}
+              onGenerate={handleGenerateMindmap}
+            />
+          )}
+          {activeTab === 'flashcard' && (
+            <FlashcardView
+              data={flashcardData}
+              loading={tabLoading.flashcard}
+              error={tabErrors.flashcard}
+              onGenerate={handleGenerateFlashcards}
+              docId={null}
+            />
+          )}
+          {activeTab === 'chat' && (
+            <ChatView
+              docId={null}
+              messages={chatMessages}
+              setMessages={setChatMessages}
+              chatLimit={20}
+              chatFn={shareChatFn}
+              shareMode
+            />
+          )}
+        </div>
       </div>
     </div>
   );

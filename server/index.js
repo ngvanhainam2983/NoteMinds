@@ -539,62 +539,124 @@ app.get('/api/rate-limit', optionalAuth, (req, res) => {
 // Feature routes - all advanced features (chat history, favorites, tags, search, analytics, sharing, spaced repetition, exports, sync, preferences)
 app.use('/api', featureRoutes);
 
+// ── Share helper: validate token & ensure doc is in memory ──
+async function resolveSharedDocument(shareToken) {
+  const share = validateShareToken(shareToken);
+  if (!share) return { error: 'Link chia sẻ không hợp lệ hoặc đã hết hạn', status: 403 };
+
+  const docId = share.document_id;
+
+  // Try in-memory first
+  const memDoc = documents.get(docId);
+  if (memDoc && memDoc.text && memDoc.status === 'ready') {
+    return { share, doc: memDoc };
+  }
+
+  // Fall back to DB file_path + re-process
+  const db = new Database(DB_PATH);
+  const dbDoc = db.prepare('SELECT file_path, original_name, status FROM documents WHERE id = ?').get(docId);
+  db.close();
+
+  if (!dbDoc || !dbDoc.file_path || !fs.existsSync(dbDoc.file_path)) {
+    return { error: 'Tài liệu không còn tồn tại hoặc đã hết hạn', status: 404 };
+  }
+
+  // Re-process the document to get text
+  const text = await processDocument(dbDoc.file_path);
+  const rebuilt = {
+    id: docId,
+    fileName: dbDoc.original_name,
+    filePath: dbDoc.file_path,
+    text,
+    status: 'ready',
+    createdAt: new Date().toISOString()
+  };
+  documents.set(docId, rebuilt);
+  return { share, doc: rebuilt };
+}
+
 // Shared document content endpoint (public — token validated)
-app.get('/api/shared/:shareToken/content', (req, res) => {
+app.get('/api/shared/:shareToken/content', async (req, res) => {
   try {
-    const share = validateShareToken(req.params.shareToken);
-    if (!share) {
-      return res.status(403).json({ error: 'Link chia sẻ không hợp lệ hoặc đã hết hạn' });
-    }
+    const result = await resolveSharedDocument(req.params.shareToken);
+    if (result.error) return res.status(result.status).json({ error: result.error });
 
-    const docId = share.document_id;
-
-    // Try in-memory first
-    const memDoc = documents.get(docId);
-    if (memDoc && memDoc.text) {
-      return res.json({
-        documentId: docId,
-        fileName: memDoc.fileName || share.original_name,
-        text: memDoc.text,
-        shareType: share.share_type,
-        status: memDoc.status
-      });
-    }
-
-    // Fall back to DB file_path + re-process
-    const db = new Database(DB_PATH);
-    const dbDoc = db.prepare('SELECT file_path, original_name, status FROM documents WHERE id = ?').get(docId);
-    db.close();
-
-    if (!dbDoc || !dbDoc.file_path || !fs.existsSync(dbDoc.file_path)) {
-      return res.status(404).json({ error: 'Tài liệu không còn tồn tại hoặc đã hết hạn' });
-    }
-
-    // Re-process the document to get text
-    processDocument(dbDoc.file_path).then(text => {
-      // Cache back into memory
-      documents.set(docId, {
-        id: docId,
-        fileName: dbDoc.original_name,
-        filePath: dbDoc.file_path,
-        text,
-        status: 'ready',
-        createdAt: new Date().toISOString()
-      });
-      res.json({
-        documentId: docId,
-        fileName: dbDoc.original_name,
-        text,
-        shareType: share.share_type,
-        status: 'ready'
-      });
-    }).catch(err => {
-      console.error('[Share] Error re-processing document:', err.message);
-      res.status(500).json({ error: 'Không thể đọc tài liệu' });
+    const { share, doc } = result;
+    res.json({
+      documentId: doc.id,
+      fileName: doc.fileName || share.original_name,
+      text: doc.text,
+      shareType: share.share_type,
+      status: doc.status
     });
   } catch (error) {
     console.error('[Share] Error getting content:', error.message);
     res.status(500).json({ error: 'Lỗi khi tải tài liệu chia sẻ' });
+  }
+});
+
+// Shared document — generate mindmap (public — token validated)
+app.post('/api/shared/:shareToken/mindmap', async (req, res) => {
+  try {
+    const result = await resolveSharedDocument(req.params.shareToken);
+    if (result.error) return res.status(result.status).json({ error: result.error });
+
+    const { doc } = result;
+    const mindmap = await generateMindmap(doc.text, doc.fileName);
+    res.json(mindmap);
+  } catch (error) {
+    console.error('[Share] Mindmap generation error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Shared document — generate flashcards (public — token validated)
+app.post('/api/shared/:shareToken/flashcards', async (req, res) => {
+  try {
+    const result = await resolveSharedDocument(req.params.shareToken);
+    if (result.error) return res.status(result.status).json({ error: result.error });
+
+    const { doc } = result;
+    const flashcards = await generateFlashcards(doc.text, doc.fileName);
+    res.json(flashcards);
+  } catch (error) {
+    console.error('[Share] Flashcard generation error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Shared document — chat (public — token validated)
+app.post('/api/shared/:shareToken/chat', async (req, res) => {
+  try {
+    const result = await resolveSharedDocument(req.params.shareToken);
+    if (result.error) return res.status(result.status).json({ error: result.error });
+
+    const { doc } = result;
+    const { message, history } = req.body;
+    if (!message) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+
+    // Initialise counter on first chat
+    if (doc.chatCount === undefined) doc.chatCount = 0;
+
+    // Shared documents: allow up to 20 messages
+    const shareLimit = 20;
+    if (doc.chatCount >= shareLimit) {
+      return res.status(429).json({
+        error: `Đã đạt giới hạn ${shareLimit} tin nhắn cho tài liệu chia sẻ.`,
+        chatLimitReached: true,
+        chatCount: doc.chatCount,
+        chatLimit: shareLimit,
+      });
+    }
+
+    const reply = await chatWithDocument(doc.text, message, history || []);
+    doc.chatCount++;
+    res.json({ reply, chatCount: doc.chatCount, chatLimit: shareLimit });
+  } catch (error) {
+    console.error('[Share] Chat error:', error.message);
+    res.status(500).json({ error: error.message });
   }
 });
 
