@@ -2,9 +2,10 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
   User, Settings, Shield, LogOut, ChevronDown,
-  Lock, Mail, CheckCircle2, Loader2, X, AlertCircle, Crown, Palette,
+  Lock, Mail, CheckCircle2, Loader2, X, AlertCircle, Crown, Palette, History,
+  FileText, Clock, AlertTriangle,
 } from 'lucide-react';
-import { updateProfile, changePassword } from '../api';
+import { updateProfile, changePassword, getDocumentHistory } from '../api';
 import ConfirmModal from './ConfirmModal';
 import { useTheme, THEMES } from '../ThemeContext';
 
@@ -12,6 +13,7 @@ export default function UserDropdown({ user, onLogout, onOpenAdmin, onOpenPricin
   const [open, setOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const ref = useRef(null);
 
   // Close on click outside
@@ -78,6 +80,11 @@ export default function UserDropdown({ user, onLogout, onOpenAdmin, onOpenPricin
                 onClick={() => { setOpen(false); setShowSettings(true); }}
               />
               <DropdownItem
+                icon={<History size={15} />}
+                label="Lịch sử tài liệu"
+                onClick={() => { setOpen(false); setShowHistory(true); }}
+              />
+              <DropdownItem
                 icon={<Crown size={15} />}
                 label="Nâng cấp gói"
                 onClick={() => { setOpen(false); onOpenPricing?.(); }}
@@ -109,6 +116,12 @@ export default function UserDropdown({ user, onLogout, onOpenAdmin, onOpenPricin
           onClose={() => setShowSettings(false)}
           onUserUpdate={onUserUpdate}
         />,
+        document.body
+      )}
+
+      {/* History modal */}
+      {showHistory && createPortal(
+        <HistoryModal onClose={() => setShowHistory(false)} />,
         document.body
       )}
 
@@ -337,6 +350,96 @@ function SettingsModal({ user, onClose, onUserUpdate }) {
         onConfirm={executeChangePassword}
         onCancel={() => setShowPwConfirm(false)}
       />
+    </div>
+  );
+}
+
+function HistoryModal({ onClose }) {
+  const [docs, setDocs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getDocumentHistory()
+      .then(d => setDocs(d || []))
+      .catch(() => setDocs([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const statusIcon = (status) => {
+    if (status === 'ready') return <CheckCircle2 size={14} className="text-emerald-400" />;
+    if (status === 'error') return <AlertTriangle size={14} className="text-red-400" />;
+    return <Loader2 size={14} className="text-yellow-400 animate-spin" />;
+  };
+
+  const statusLabel = (status) => {
+    if (status === 'ready') return 'Hoàn thành';
+    if (status === 'error') return 'Lỗi';
+    return 'Đang xử lý';
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('vi-VN', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-lg max-h-[80vh] flex flex-col bg-[#1a1d27] border border-[#2e3144] rounded-2xl shadow-2xl animate-fade-in">
+        <div className="flex items-center justify-between px-6 pt-5 pb-3">
+          <div className="flex items-center gap-2">
+            <History size={20} className="text-primary-400" />
+            <h2 className="text-lg font-bold font-display">Lịch sử tài liệu</h2>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[#242736] text-[#9496a1] hover:text-white">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-6 pb-6">
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 size={24} className="text-primary-400 animate-spin" />
+            </div>
+          ) : docs.length > 0 ? (
+            <div className="space-y-2">
+              {docs.map((doc) => (
+                <div key={doc.id} className="flex items-start gap-3 bg-[#0f1117] border border-[#2e3144] rounded-xl px-4 py-3 hover:border-primary-500/30 transition-colors">
+                  <FileText size={18} className="text-primary-400 shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{doc.original_name || 'Tài liệu không tên'}</p>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="flex items-center gap-1 text-xs text-[#9496a1]">
+                        {statusIcon(doc.status)}
+                        {statusLabel(doc.status)}
+                      </span>
+                      {doc.text_length > 0 && (
+                        <span className="text-xs text-[#9496a1]">
+                          {(doc.text_length / 1000).toFixed(1)}k ký tự
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 mt-1">
+                      <Clock size={11} className="text-[#666]" />
+                      <span className="text-[11px] text-[#666]">{formatDate(doc.created_at)}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <FileText size={40} className="text-[#2e3144] mx-auto mb-3" />
+              <p className="text-sm text-[#9496a1]">Chưa có tài liệu nào</p>
+              <p className="text-xs text-[#666] mt-1">Upload tài liệu để bắt đầu</p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

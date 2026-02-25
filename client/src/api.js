@@ -158,6 +158,11 @@ export async function deleteDocument(docId) {
   return response.data;
 }
 
+export async function getDocumentHistory() {
+  const response = await api.get('/documents/history');
+  return response.data.documents;
+}
+
 // ── Profile API ───────────────────────────────────────
 
 export async function updateProfile(displayName, email) {

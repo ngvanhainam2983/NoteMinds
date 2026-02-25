@@ -24,6 +24,7 @@ import { initializeIndexes, getDatabaseStats } from './services/databaseIndexes.
 import { initializeEnhancedTables } from './services/enhancedDatabase.js';
 import { logger, requestLoggerMiddleware } from './services/logger.js';
 import featureRoutes from './routes/featuresRoutes.js';
+import Database from 'better-sqlite3';
 
 dotenv.config();
 
@@ -84,6 +85,29 @@ const upload = multer({
 
 // In-memory document store
 const documents = new Map();
+
+// Database path for document persistence
+const DB_PATH = path.join(__dirname, 'data', 'notemind.db');
+
+function persistDocumentToDB(docId, userId, filePath, originalName, status, textLength = 0) {
+  try {
+    const db = new Database(DB_PATH);
+    const existing = db.prepare('SELECT id FROM documents WHERE id = ?').get(docId);
+    if (existing) {
+      db.prepare(`
+        UPDATE documents SET status = ?, text_length = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+      `).run(status, textLength, docId);
+    } else {
+      db.prepare(`
+        INSERT INTO documents (id, user_id, file_path, original_name, status, text_length)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(docId, userId || null, filePath, originalName, status, textLength);
+    }
+    db.close();
+  } catch (err) {
+    console.error('[DB] Error persisting document:', err.message);
+  }
+}
 
 // Helper to extract real client IP (behind nginx proxy)
 function getClientIp(req) {
@@ -329,6 +353,10 @@ app.post('/api/upload', optionalAuth, uploadRateLimitMiddleware, upload.single('
       message: 'File uploaded. Processing...'
     });
 
+    // Persist to DB immediately (processing state)
+    const userId = req.user?.id || null;
+    persistDocumentToDB(docId, userId, filePath, originalName, 'processing');
+
     // Process in background
     try {
       const extractedText = await processDocument(filePath);
@@ -340,6 +368,7 @@ app.post('/api/upload', optionalAuth, uploadRateLimitMiddleware, upload.single('
         status: 'ready',
         createdAt: new Date().toISOString()
       });
+      persistDocumentToDB(docId, userId, filePath, originalName, 'ready', extractedText.length);
       console.log(`Document ${docId} processed successfully (${extractedText.length} chars)`);
     } catch (err) {
       documents.set(docId, {
@@ -351,10 +380,34 @@ app.post('/api/upload', optionalAuth, uploadRateLimitMiddleware, upload.single('
         error: err.message,
         createdAt: new Date().toISOString()
       });
+      persistDocumentToDB(docId, userId, filePath, originalName, 'error', 0);
       console.error(`Document ${docId} processing failed:`, err.message);
     }
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Get document history (for logged-in users) — must be before :docId routes
+app.get('/api/documents/history', optionalAuth, (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.json({ documents: [] });
+    }
+    const db = new Database(DB_PATH);
+    const docs = db.prepare(`
+      SELECT id, original_name, status, text_length, created_at, updated_at
+      FROM documents
+      WHERE user_id = ?
+      ORDER BY created_at DESC
+      LIMIT 50
+    `).all(userId);
+    db.close();
+    res.json({ documents: docs });
+  } catch (error) {
+    console.error('Error getting document history:', error.message);
+    res.json({ documents: [] });
   }
 });
 

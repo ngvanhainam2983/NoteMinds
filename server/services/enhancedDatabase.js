@@ -22,6 +22,29 @@ export function initializeEnhancedTables() {
 
     console.log('[Database] Creating enhanced feature tables...');
 
+    // ── Documents (must be created BEFORE tables that reference it) ──
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS documents (
+        id TEXT PRIMARY KEY,
+        user_id INTEGER,
+        file_path TEXT,
+        original_name TEXT,
+        file_size INTEGER,
+        status TEXT DEFAULT 'processing',
+        text_length INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_documents_user_id 
+      ON documents(user_id);
+
+      CREATE INDEX IF NOT EXISTS idx_documents_created_at 
+      ON documents(created_at DESC);
+    `);
+    console.log('  ✓ Documents table created');
+
     // ── Conversations (Chat History) ─────────────────────────
     db.exec(`
       CREATE TABLE IF NOT EXISTS conversations (
