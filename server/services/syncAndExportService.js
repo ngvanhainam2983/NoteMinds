@@ -72,8 +72,32 @@ export function markSynced(syncQueueId) {
   }
 }
 
+// Map frontend preference keys to actual DB column names
+const PREFERENCE_KEY_MAP = {
+  'notifications': 'notification_enabled',
+  'notification_enabled': 'notification_enabled',
+  'offlineSync': 'offline_sync_enabled',
+  'offline_sync_enabled': 'offline_sync_enabled',
+  'autoSave': 'auto_save_enabled',
+  'auto_save_enabled': 'auto_save_enabled',
+  'theme': 'theme',
+  'language': 'language',
+  'spacedRepetition': 'spaced_repetition_enabled',
+  'spaced_repetition_enabled': 'spaced_repetition_enabled',
+  'dailyGoalCards': 'daily_goal_cards',
+  'daily_goal_cards': 'daily_goal_cards',
+};
+
+const VALID_PREFERENCE_COLUMNS = new Set(Object.values(PREFERENCE_KEY_MAP));
+
 export function setUserPreference(userId, key, value) {
   try {
+    const column = PREFERENCE_KEY_MAP[key];
+    if (!column) {
+      console.error(`[Preferences] Unknown preference key: "${key}"`);
+      return { success: false, error: `Unknown preference key: ${key}` };
+    }
+
     const db = new Database(DB_PATH);
 
     const exists = db.prepare(`
@@ -82,11 +106,11 @@ export function setUserPreference(userId, key, value) {
 
     if (exists) {
       db.prepare(`
-        UPDATE user_preferences SET ${key} = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?
+        UPDATE user_preferences SET ${column} = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?
       `).run(value, userId);
     } else {
       db.prepare(`
-        INSERT INTO user_preferences (id, user_id, ${key})
+        INSERT INTO user_preferences (id, user_id, ${column})
         VALUES (?, ?, ?)
       `).run(uuidv4(), userId, value);
     }
