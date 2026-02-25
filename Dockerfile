@@ -6,7 +6,7 @@ WORKDIR /app/client
 
 COPY client/package*.json ./
 
-RUN npm ci --only=production
+RUN npm install --omit=dev --legacy-peer-deps
 
 COPY client/ .
 
@@ -19,7 +19,7 @@ WORKDIR /app/server
 
 COPY server/package*.json ./
 
-RUN npm ci --only=production
+RUN npm install --omit=dev --legacy-peer-deps
 
 # Stage 3: Final runtime image
 FROM node:20-alpine
