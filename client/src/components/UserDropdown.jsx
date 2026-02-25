@@ -365,16 +365,32 @@ function HistoryModal({ onClose }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const statusIcon = (status) => {
-    if (status === 'ready') return <CheckCircle2 size={14} className="text-emerald-400" />;
-    if (status === 'error') return <AlertTriangle size={14} className="text-red-400" />;
+  const isExpired = (doc) => !!doc.deleted_at;
+
+  const statusIcon = (doc) => {
+    if (isExpired(doc)) return <Clock size={14} className="text-[#555]" />;
+    if (doc.status === 'ready') return <CheckCircle2 size={14} className="text-emerald-400" />;
+    if (doc.status === 'error') return <AlertTriangle size={14} className="text-red-400" />;
     return <Loader2 size={14} className="text-yellow-400 animate-spin" />;
   };
 
-  const statusLabel = (status) => {
-    if (status === 'ready') return 'Hoàn thành';
-    if (status === 'error') return 'Lỗi';
+  const statusLabel = (doc) => {
+    if (isExpired(doc)) return 'Đã xoá';
+    if (doc.status === 'ready') return 'Hoàn thành';
+    if (doc.status === 'error') return 'Lỗi';
     return 'Đang xử lý';
+  };
+
+  const timeRemaining = (doc) => {
+    if (isExpired(doc)) return null;
+    const created = new Date(doc.created_at).getTime();
+    const expiresAt = created + 24 * 60 * 60 * 1000;
+    const remaining = expiresAt - Date.now();
+    if (remaining <= 0) return 'Sắp xoá';
+    const hours = Math.floor(remaining / (60 * 60 * 1000));
+    const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
+    if (hours > 0) return `Còn ${hours}h${minutes}m`;
+    return `Còn ${minutes} phút`;
   };
 
   const formatDate = (dateStr) => {
@@ -407,29 +423,47 @@ function HistoryModal({ onClose }) {
             </div>
           ) : docs.length > 0 ? (
             <div className="space-y-2">
-              {docs.map((doc) => (
-                <div key={doc.id} className="flex items-start gap-3 bg-[#0f1117] border border-[#2e3144] rounded-xl px-4 py-3 hover:border-primary-500/30 transition-colors">
-                  <FileText size={18} className="text-primary-400 shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{doc.original_name || 'Tài liệu không tên'}</p>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="flex items-center gap-1 text-xs text-[#9496a1]">
-                        {statusIcon(doc.status)}
-                        {statusLabel(doc.status)}
-                      </span>
-                      {doc.text_length > 0 && (
-                        <span className="text-xs text-[#9496a1]">
-                          {(doc.text_length / 1000).toFixed(1)}k ký tự
+              {docs.map((doc) => {
+                const expired = isExpired(doc);
+                const ttl = timeRemaining(doc);
+                return (
+                  <div key={doc.id} className={`flex items-start gap-3 rounded-xl px-4 py-3 transition-colors border ${
+                    expired
+                      ? 'bg-[#0f1117]/50 border-[#1e2030] opacity-50'
+                      : 'bg-[#0f1117] border-[#2e3144] hover:border-primary-500/30'
+                  }`}>
+                    <FileText size={18} className={`shrink-0 mt-0.5 ${expired ? 'text-[#444]' : 'text-primary-400'}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-medium truncate ${expired ? 'text-[#555] line-through' : ''}`}>
+                        {doc.original_name || 'Tài liệu không tên'}
+                      </p>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className={`flex items-center gap-1 text-xs ${expired ? 'text-[#555]' : 'text-[#9496a1]'}`}>
+                          {statusIcon(doc)}
+                          {statusLabel(doc)}
                         </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1 mt-1">
-                      <Clock size={11} className="text-[#666]" />
-                      <span className="text-[11px] text-[#666]">{formatDate(doc.created_at)}</span>
+                        {doc.text_length > 0 && !expired && (
+                          <span className="text-xs text-[#9496a1]">
+                            {(doc.text_length / 1000).toFixed(1)}k ký tự
+                          </span>
+                        )}
+                        {ttl && (
+                          <span className="text-[10px] text-amber-400/70 font-medium">
+                            ⏳ {ttl}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 mt-1">
+                        <Clock size={11} className="text-[#666]" />
+                        <span className="text-[11px] text-[#666]">{formatDate(doc.created_at)}</span>
+                        {expired && (
+                          <span className="text-[10px] text-[#555] ml-2">• Đã xoá {formatDate(doc.deleted_at)}</span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-12">

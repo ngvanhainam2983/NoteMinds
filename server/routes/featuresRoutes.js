@@ -247,9 +247,17 @@ router.get('/shared/:shareToken', (req, res) => {
   try {
     const share = advancedFeatureService.validateShareToken(req.params.shareToken);
     if (share) {
-      res.json({ valid: true, documentId: share.document_id });
+      res.json({
+        valid: true,
+        documentId: share.document_id,
+        shareType: share.share_type,
+        documentName: share.original_name,
+        status: share.status,
+        textLength: share.text_length,
+        expiresAt: share.expires_at
+      });
     } else {
-      res.status(403).json({ valid: false, error: 'Invalid or expired share link' });
+      res.status(403).json({ valid: false, error: 'Link chia sẻ không hợp lệ hoặc đã hết hạn' });
     }
   } catch (error) {
     res.status(500).json({ error: 'Failed to validate share' });

@@ -331,6 +331,11 @@ export async function validateShareToken(token) {
   return response.data;
 }
 
+export async function getSharedDocumentContent(token) {
+  const response = await api.get(`/shared/${token}/content`);
+  return response.data;
+}
+
 export async function getSharedDocuments() {
   const response = await api.get('/shares');
   return response.data.shares;

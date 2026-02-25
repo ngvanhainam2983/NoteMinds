@@ -32,6 +32,7 @@ export function initializeEnhancedTables() {
         file_size INTEGER,
         status TEXT DEFAULT 'processing',
         text_length INTEGER DEFAULT 0,
+        deleted_at DATETIME,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(user_id) REFERENCES users(id)
@@ -44,6 +45,17 @@ export function initializeEnhancedTables() {
       ON documents(created_at DESC);
     `);
     console.log('  ✓ Documents table created');
+
+    // Migration: add deleted_at column if missing
+    try {
+      const docCols = db.prepare('PRAGMA table_info(documents)').all().map(c => c.name);
+      if (!docCols.includes('deleted_at')) {
+        db.exec('ALTER TABLE documents ADD COLUMN deleted_at DATETIME');
+        console.log('  ✓ Added deleted_at column to documents');
+      }
+    } catch (e) {
+      // column already exists
+    }
 
     // ── Conversations (Chat History) ─────────────────────────
     db.exec(`

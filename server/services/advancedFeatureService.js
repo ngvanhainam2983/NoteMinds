@@ -101,11 +101,11 @@ export function searchConversations(userId, query, limit = 20) {
  * Share Service - Share documents with links and manage access
  */
 
-export function createShareLink(documentId, ownerId, shareType = 'view', expiresIn = null) {
+export function createShareLink(documentId, ownerId, shareType = 'view', expiresInDays = null) {
   try {
     const db = new Database(DB_PATH);
     const shareToken = crypto.randomBytes(32).toString('hex');
-    const expiresAt = expiresIn ? new Date(Date.now() + expiresIn * 1000).toISOString() : null;
+    const expiresAt = expiresInDays ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000).toISOString() : null;
 
     const result = db.prepare(`
       INSERT INTO shared_documents (id, document_id, owner_id, share_token, share_type, expires_at)
@@ -131,10 +131,12 @@ export function validateShareToken(shareToken) {
     const db = new Database(DB_PATH);
 
     const share = db.prepare(`
-      SELECT id, document_id, owner_id, share_type, expires_at
-      FROM shared_documents
-      WHERE share_token = ? 
-        AND (expires_at IS NULL OR expires_at > datetime('now'))
+      SELECT sd.id, sd.document_id, sd.owner_id, sd.share_type, sd.expires_at,
+             d.original_name, d.status, d.text_length
+      FROM shared_documents sd
+      LEFT JOIN documents d ON sd.document_id = d.id
+      WHERE sd.share_token = ? 
+        AND (sd.expires_at IS NULL OR sd.expires_at > datetime('now'))
     `).get(shareToken);
 
     if (share) {

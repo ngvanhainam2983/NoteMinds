@@ -214,12 +214,25 @@ export function AnalyticsModal({ isOpen, onClose }) {
 }
 
 // ── Share Modal ──────────────────────────────────────
+const SHARE_PERMISSIONS = [
+  { value: 'view', label: 'Chỉ xem', icon: '👁️', desc: 'Chỉ xem nội dung, không chỉnh sửa' },
+  { value: 'comment', label: 'Bình luận', icon: '💬', desc: 'Xem và bình luận' },
+  { value: 'edit', label: 'Chỉnh sửa', icon: '✏️', desc: 'Xem, bình luận và chỉnh sửa' },
+];
+
+const PERMISSION_BADGE = {
+  view: { label: 'Xem', color: 'text-blue-400 bg-blue-500/10 border-blue-500/30' },
+  comment: { label: 'Bình luận', color: 'text-amber-400 bg-amber-500/10 border-amber-500/30' },
+  edit: { label: 'Sửa', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30' },
+};
+
 export function ShareModal({ isOpen, onClose, documentId }) {
   const [shares, setShares] = useState([]);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [copied, setCopied] = useState(null);
   const [expiresIn, setExpiresIn] = useState(7);
+  const [shareType, setShareType] = useState('view');
 
   useEffect(() => {
     if (!isOpen) return;
@@ -234,7 +247,7 @@ export function ShareModal({ isOpen, onClose, documentId }) {
     if (!documentId) return;
     setCreating(true);
     try {
-      const result = await createShareLink(documentId, 'view', expiresIn);
+      const result = await createShareLink(documentId, shareType, expiresIn);
       if (result.success !== false) {
         const updated = await getSharedDocuments();
         setShares(updated || []);
@@ -267,6 +280,28 @@ export function ShareModal({ isOpen, onClose, documentId }) {
       {documentId && (
         <div className="bg-[#0f1117] border border-[#2e3144] rounded-xl p-4 mb-6">
           <p className="text-sm font-medium mb-3">Tạo link chia sẻ mới</p>
+
+          {/* Permission selector */}
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            {SHARE_PERMISSIONS.map(perm => (
+              <button
+                key={perm.value}
+                onClick={() => setShareType(perm.value)}
+                className={`flex flex-col items-center gap-1 px-2 py-2.5 rounded-lg border text-xs font-medium transition-all ${
+                  shareType === perm.value
+                    ? 'border-primary-500/50 bg-primary-600/10 text-primary-400'
+                    : 'border-[#2e3144] text-[#9496a1] hover:border-[#3e4154] hover:text-white'
+                }`}
+              >
+                <span className="text-base">{perm.icon}</span>
+                <span>{perm.label}</span>
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-[#666] mb-3">
+            {SHARE_PERMISSIONS.find(p => p.value === shareType)?.desc}
+          </p>
+
           <div className="flex items-center gap-3">
             <select
               value={expiresIn}
@@ -293,21 +328,27 @@ export function ShareModal({ isOpen, onClose, documentId }) {
       ) : shares.length > 0 ? (
         <div className="space-y-2">
           <p className="text-sm text-[#9496a1] mb-3">Các link đã tạo</p>
-          {shares.map(s => (
-            <div key={s.id} className="flex items-center gap-2 bg-[#0f1117] border border-[#2e3144] rounded-lg px-3 py-2.5">
-              <ExternalLink size={14} className="text-primary-400 shrink-0" />
-              <span className="text-xs truncate flex-1 text-[#9496a1]">{s.token?.slice(0, 16)}...</span>
-              <span className="text-[10px] text-[#9496a1]">
-                {s.expires_at ? new Date(s.expires_at).toLocaleDateString('vi') : '∞'}
-              </span>
-              <button onClick={() => copyLink(s.token)} className="p-1 hover:bg-[#2e3144] rounded transition-colors">
-                {copied === s.token ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
-              </button>
-              <button onClick={() => handleDelete(s.id)} className="p-1 hover:bg-red-500/20 rounded transition-colors">
-                <Trash2 size={14} className="text-red-400" />
-              </button>
-            </div>
-          ))}
+          {shares.map(s => {
+            const badge = PERMISSION_BADGE[s.share_type] || PERMISSION_BADGE.view;
+            return (
+              <div key={s.id} className="flex items-center gap-2 bg-[#0f1117] border border-[#2e3144] rounded-lg px-3 py-2.5">
+                <ExternalLink size={14} className="text-primary-400 shrink-0" />
+                <span className="text-xs truncate flex-1 text-[#9496a1]">{s.share_token?.slice(0, 16)}...</span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${badge.color}`}>
+                  {badge.label}
+                </span>
+                <span className="text-[10px] text-[#9496a1]">
+                  {s.expires_at ? new Date(s.expires_at).toLocaleDateString('vi') : '∞'}
+                </span>
+                <button onClick={() => copyLink(s.share_token)} className="p-1 hover:bg-[#2e3144] rounded transition-colors">
+                  {copied === s.share_token ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
+                </button>
+                <button onClick={() => handleDelete(s.id)} className="p-1 hover:bg-red-500/20 rounded transition-colors">
+                  <Trash2 size={14} className="text-red-400" />
+                </button>
+              </div>
+            );
+          })}
         </div>
       ) : (
         <p className="text-center text-[#9496a1] text-sm py-8">Chưa có link chia sẻ nào</p>

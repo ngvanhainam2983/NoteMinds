@@ -24,6 +24,7 @@ import { initializeIndexes, getDatabaseStats } from './services/databaseIndexes.
 import { initializeEnhancedTables } from './services/enhancedDatabase.js';
 import { logger, requestLoggerMiddleware } from './services/logger.js';
 import featureRoutes from './routes/featuresRoutes.js';
+import { validateShareToken } from './services/advancedFeatureService.js';
 import Database from 'better-sqlite3';
 
 dotenv.config();
@@ -397,7 +398,7 @@ app.get('/api/documents/history', optionalAuth, (req, res) => {
     }
     const db = new Database(DB_PATH);
     const docs = db.prepare(`
-      SELECT id, original_name, status, text_length, created_at, updated_at
+      SELECT id, original_name, status, text_length, deleted_at, created_at, updated_at
       FROM documents
       WHERE user_id = ?
       ORDER BY created_at DESC
@@ -426,24 +427,10 @@ app.get('/api/documents/:docId/status', (req, res) => {
   });
 });
 
-// Delete document (cleanup on page leave)
+// Delete document — only removes from in-memory cache (DB record kept for history)
 app.delete('/api/documents/:docId', (req, res) => {
-  const doc = documents.get(req.params.docId);
-  if (!doc) {
-    return res.status(404).json({ error: 'Document not found' });
-  }
-
-  // Delete uploaded file from disk
-  if (doc.filePath) {
-    fs.unlink(doc.filePath, (err) => {
-      if (err && err.code !== 'ENOENT') {
-        console.error(`Failed to delete file ${doc.filePath}:`, err.message);
-      }
-    });
-  }
-
   documents.delete(req.params.docId);
-  console.log(`Document ${req.params.docId} deleted (cleanup)`);
+  console.log(`Document ${req.params.docId} removed from memory`);
   res.json({ success: true });
 });
 
@@ -552,6 +539,65 @@ app.get('/api/rate-limit', optionalAuth, (req, res) => {
 // Feature routes - all advanced features (chat history, favorites, tags, search, analytics, sharing, spaced repetition, exports, sync, preferences)
 app.use('/api', featureRoutes);
 
+// Shared document content endpoint (public — token validated)
+app.get('/api/shared/:shareToken/content', (req, res) => {
+  try {
+    const share = validateShareToken(req.params.shareToken);
+    if (!share) {
+      return res.status(403).json({ error: 'Link chia sẻ không hợp lệ hoặc đã hết hạn' });
+    }
+
+    const docId = share.document_id;
+
+    // Try in-memory first
+    const memDoc = documents.get(docId);
+    if (memDoc && memDoc.text) {
+      return res.json({
+        documentId: docId,
+        fileName: memDoc.fileName || share.original_name,
+        text: memDoc.text,
+        shareType: share.share_type,
+        status: memDoc.status
+      });
+    }
+
+    // Fall back to DB file_path + re-process
+    const db = new Database(DB_PATH);
+    const dbDoc = db.prepare('SELECT file_path, original_name, status FROM documents WHERE id = ?').get(docId);
+    db.close();
+
+    if (!dbDoc || !dbDoc.file_path || !fs.existsSync(dbDoc.file_path)) {
+      return res.status(404).json({ error: 'Tài liệu không còn tồn tại hoặc đã hết hạn' });
+    }
+
+    // Re-process the document to get text
+    processDocument(dbDoc.file_path).then(text => {
+      // Cache back into memory
+      documents.set(docId, {
+        id: docId,
+        fileName: dbDoc.original_name,
+        filePath: dbDoc.file_path,
+        text,
+        status: 'ready',
+        createdAt: new Date().toISOString()
+      });
+      res.json({
+        documentId: docId,
+        fileName: dbDoc.original_name,
+        text,
+        shareType: share.share_type,
+        status: 'ready'
+      });
+    }).catch(err => {
+      console.error('[Share] Error re-processing document:', err.message);
+      res.status(500).json({ error: 'Không thể đọc tài liệu' });
+    });
+  } catch (error) {
+    console.error('[Share] Error getting content:', error.message);
+    res.status(500).json({ error: 'Lỗi khi tải tài liệu chia sẻ' });
+  }
+});
+
 // SPA fallback — serve index.html for any non-API route (production)
 if (fs.existsSync(publicDir)) {
   app.get('*', (req, res) => {
@@ -580,6 +626,61 @@ initializeEnhancedTables();
 setTimeout(() => {
   initializeIndexes();
 }, 100);
+
+// ── Auto-cleanup: soft-delete documents older than 24h, purge files for deleted docs ──
+function runDocumentCleanup() {
+  try {
+    const db = new Database(DB_PATH);
+
+    // 1. Soft-delete: mark documents older than 24h that haven't been deleted yet
+    const softDeleted = db.prepare(`
+      UPDATE documents
+      SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      WHERE deleted_at IS NULL
+        AND created_at <= datetime('now', '-24 hours')
+    `).run();
+    if (softDeleted.changes > 0) {
+      logger.info(`[Cleanup] Soft-deleted ${softDeleted.changes} documents older than 24h`);
+    }
+
+    // 2. Purge uploaded files for soft-deleted documents (file_path still set)
+    const toClean = db.prepare(`
+      SELECT id, file_path FROM documents
+      WHERE deleted_at IS NOT NULL AND file_path IS NOT NULL
+    `).all();
+
+    for (const doc of toClean) {
+      if (doc.file_path) {
+        fs.unlink(doc.file_path, (err) => {
+          if (err && err.code !== 'ENOENT') {
+            console.error(`[Cleanup] Failed to delete file ${doc.file_path}:`, err.message);
+          }
+        });
+      }
+      // Clear file_path so we don't try again
+      db.prepare('UPDATE documents SET file_path = NULL WHERE id = ?').run(doc.id);
+    }
+    if (toClean.length > 0) {
+      logger.info(`[Cleanup] Purged files for ${toClean.length} deleted documents`);
+    }
+
+    // 3. Also evict from in-memory map if expired
+    for (const [docId, memDoc] of documents.entries()) {
+      const age = Date.now() - new Date(memDoc.createdAt).getTime();
+      if (age > 24 * 60 * 60 * 1000) {
+        documents.delete(docId);
+      }
+    }
+
+    db.close();
+  } catch (err) {
+    console.error('[Cleanup] Error:', err.message);
+  }
+}
+
+// Run cleanup on startup then every 30 minutes
+setTimeout(runDocumentCleanup, 5000);
+setInterval(runDocumentCleanup, 30 * 60 * 1000);
 
 app.listen(PORT, () => {
   logger.info(`🚀 NoteMinds server running on http://localhost:${PORT} [${NODE_ENV}]`);

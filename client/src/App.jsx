@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import FileUpload from './components/FileUpload';
@@ -6,15 +6,25 @@ import Dashboard from './components/Dashboard';
 import AuthModal from './components/AuthModal';
 import AdminPanel from './components/AdminPanel';
 import PricingPage from './components/PricingPage';
-import { deleteDocument, getStoredUser, logout as apiLogout, getMe } from './api';
+import SharedDocViewer from './components/SharedDocViewer';
+import { getStoredUser, logout as apiLogout, getMe } from './api';
 
 export default function App() {
   const [currentDoc, setCurrentDoc] = useState(null);
-  const [view, setView] = useState('home'); // 'home' | 'dashboard' | 'admin' | 'pricing'
+  const [view, setView] = useState('home'); // 'home' | 'dashboard' | 'admin' | 'pricing' | 'shared'
   const [user, setUser] = useState(getStoredUser);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalTab, setAuthModalTab] = useState('login');
-  const docRef = useRef(null);
+  const [shareToken, setShareToken] = useState(null);
+
+  // Detect /share/:token URL on mount
+  useEffect(() => {
+    const match = window.location.pathname.match(/^\/share\/([a-f0-9]+)$/i);
+    if (match) {
+      setShareToken(match[1]);
+      setView('shared');
+    }
+  }, []);
 
   // Verify stored token on mount
   useEffect(() => {
@@ -26,31 +36,7 @@ export default function App() {
     }
   }, []);
 
-  // Keep ref in sync so cleanup always has latest docId
-  useEffect(() => {
-    docRef.current = currentDoc;
-  }, [currentDoc]);
-
-  const cleanupDoc = useCallback(() => {
-    const doc = docRef.current;
-    if (doc?.docId) {
-      // Use sendBeacon for reliable delivery during page unload
-      const url = `/api/documents/${doc.docId}`;
-      if (navigator.sendBeacon) {
-        // sendBeacon only supports POST; fall back to fetch with keepalive
-        fetch(url, { method: 'DELETE', keepalive: true }).catch(() => {});
-      } else {
-        fetch(url, { method: 'DELETE', keepalive: true }).catch(() => {});
-      }
-    }
-  }, []);
-
-  // Cleanup on page close / refresh / navigate away
-  useEffect(() => {
-    const handleBeforeUnload = () => cleanupDoc();
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [cleanupDoc]);
+  // Documents are auto-deleted after 24h on the server — no instant cleanup needed
 
   const handleUploadComplete = (docInfo) => {
     setCurrentDoc(docInfo);
@@ -58,12 +44,13 @@ export default function App() {
   };
 
   const handleBackHome = () => {
-    // Delete the uploaded doc when going back
-    if (currentDoc?.docId) {
-      deleteDocument(currentDoc.docId).catch(() => {});
-    }
     setView('home');
     setCurrentDoc(null);
+    setShareToken(null);
+    // Clean up URL if on a share page
+    if (window.location.pathname.startsWith('/share/')) {
+      window.history.pushState({}, '', '/');
+    }
   };
 
   const handleLogout = () => {
@@ -82,61 +69,67 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#0f1117]">
-      {view !== 'admin' && view !== 'pricing' && (
-        <Header
-          onBackHome={handleBackHome}
-          showBack={view === 'dashboard'}
-          user={user}
-          onLoginClick={() => openAuthModal('login')}
-          onLogout={handleLogout}
-          onOpenAdmin={() => setView('admin')}
-          onOpenPricing={() => setView('pricing')}
-          onUserUpdate={(updated) => setUser(updated)}
-          currentView={view}
-        />
-      )}
-
-      {view === 'home' && (
-        <main>
-          <Hero />
-          <section id="why">
-            <WhySection />
-          </section>
-          <section id="upload">
-            <FileUpload
-              onUploadComplete={handleUploadComplete}
+      {view === 'shared' && shareToken ? (
+        <SharedDocViewer shareToken={shareToken} onBack={handleBackHome} />
+      ) : (
+        <>
+          {view !== 'admin' && view !== 'pricing' && (
+            <Header
+              onBackHome={handleBackHome}
+              showBack={view === 'dashboard'}
               user={user}
-              onAuthRequired={() => openAuthModal('register')}
+              onLoginClick={() => openAuthModal('login')}
+              onLogout={handleLogout}
+              onOpenAdmin={() => setView('admin')}
+              onOpenPricing={() => setView('pricing')}
+              onUserUpdate={(updated) => setUser(updated)}
+              currentView={view}
             />
-          </section>
-          <section id="features">
-            <Features />
-          </section>
-        </main>
-      )}
+          )}
 
-      {view === 'dashboard' && currentDoc && (
-        <Dashboard doc={currentDoc} user={user} />
-      )}
+          {view === 'home' && (
+            <main>
+              <Hero />
+              <section id="why">
+                <WhySection />
+              </section>
+              <section id="upload">
+                <FileUpload
+                  onUploadComplete={handleUploadComplete}
+                  user={user}
+                  onAuthRequired={() => openAuthModal('register')}
+                />
+              </section>
+              <section id="features">
+                <Features />
+              </section>
+            </main>
+          )}
 
-      {view === 'admin' && (
-        <AdminPanel onBack={handleBackHome} />
-      )}
+          {view === 'dashboard' && currentDoc && (
+            <Dashboard doc={currentDoc} user={user} />
+          )}
 
-      {view === 'pricing' && (
-        <PricingPage
-          onBack={handleBackHome}
-          user={user}
-          onLoginClick={() => openAuthModal('login')}
-        />
-      )}
+          {view === 'admin' && (
+            <AdminPanel onBack={handleBackHome} />
+          )}
 
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        onAuthSuccess={handleAuthSuccess}
-        defaultTab={authModalTab}
-      />
+          {view === 'pricing' && (
+            <PricingPage
+              onBack={handleBackHome}
+              user={user}
+              onLoginClick={() => openAuthModal('login')}
+            />
+          )}
+
+          <AuthModal
+            isOpen={showAuthModal}
+            onClose={() => setShowAuthModal(false)}
+            onAuthSuccess={handleAuthSuccess}
+            defaultTab={authModalTab}
+          />
+        </>
+      )}
     </div>
   );
 }
