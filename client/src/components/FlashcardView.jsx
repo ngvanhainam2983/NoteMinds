@@ -1,14 +1,27 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   Loader2, AlertCircle, CreditCard, RefreshCw,
-  ChevronLeft, ChevronRight, RotateCw, Download, Tag
+  ChevronLeft, ChevronRight, RotateCw, Download, Tag, Star
 } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
+import { reviewFlashcard } from '../api';
 
-export default function FlashcardView({ data, loading, error, onGenerate }) {
+const SR_GRADES = [
+  { grade: 0, label: 'Quên', color: 'bg-red-600', emoji: '😞' },
+  { grade: 1, label: 'Khó', color: 'bg-orange-600', emoji: '😟' },
+  { grade: 2, label: 'Nhớ mờ', color: 'bg-amber-600', emoji: '🤔' },
+  { grade: 3, label: 'Khá', color: 'bg-yellow-600', emoji: '😐' },
+  { grade: 4, label: 'Tốt', color: 'bg-green-600', emoji: '😊' },
+  { grade: 5, label: 'Xuất sắc', color: 'bg-emerald-600', emoji: '🤩' },
+];
+
+export default function FlashcardView({ data, loading, error, onGenerate, docId }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [viewMode, setViewMode] = useState('card'); // 'card' | 'list'
+  const [showGrading, setShowGrading] = useState(false);
+  const [reviewResult, setReviewResult] = useState(null);
+  const cardStartTime = useRef(Date.now());
 
   if (loading) {
     return (
@@ -57,12 +70,32 @@ export default function FlashcardView({ data, loading, error, onGenerate }) {
 
   const goNext = () => {
     setFlipped(false);
+    setShowGrading(false);
+    setReviewResult(null);
+    cardStartTime.current = Date.now();
     setCurrentIndex((prev) => (prev + 1) % total);
   };
 
   const goPrev = () => {
     setFlipped(false);
+    setShowGrading(false);
+    setReviewResult(null);
+    cardStartTime.current = Date.now();
     setCurrentIndex((prev) => (prev - 1 + total) % total);
+  };
+
+  const handleGrade = async (grade) => {
+    if (!currentCard || !docId) return;
+    const timeMs = Date.now() - cardStartTime.current;
+    try {
+      const result = await reviewFlashcard(currentCard.id || `card-${currentIndex}`, docId, grade, timeMs);
+      setReviewResult(result);
+      setTimeout(() => {
+        goNext();
+      }, 1200);
+    } catch (err) {
+      console.error('Review failed:', err);
+    }
   };
 
   const exportAnki = () => {
@@ -151,6 +184,33 @@ export default function FlashcardView({ data, loading, error, onGenerate }) {
               </div>
             </div>
           </div>
+
+          {/* Spaced Repetition Grading */}
+          {flipped && (
+            <div className="w-full max-w-lg mb-4">
+              {reviewResult ? (
+                <div className="text-center py-2">
+                  <p className="text-sm text-green-400">✓ Đã ghi nhận! Ôn lại sau {reviewResult.interval || 1} ngày</p>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-xs text-[#9496a1] text-center mb-2">Bạn nhớ tốt đến đâu?</p>
+                  <div className="grid grid-cols-6 gap-1.5">
+                    {SR_GRADES.map(g => (
+                      <button
+                        key={g.grade}
+                        onClick={() => handleGrade(g.grade)}
+                        className={`${g.color} hover:opacity-80 rounded-lg py-2 text-center transition-all`}
+                      >
+                        <div className="text-lg">{g.emoji}</div>
+                        <div className="text-[10px] font-medium">{g.label}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Controls */}
           <div className="flex items-center gap-4">

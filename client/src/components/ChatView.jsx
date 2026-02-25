@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader2, MessageSquare, Sparkles } from 'lucide-react';
-import { chatWithDocument } from '../api';
+import { Send, Bot, User, Loader2, MessageSquare, Sparkles, History, Trash2, Save, X } from 'lucide-react';
+import { chatWithDocument, getConversationHistory, getConversationMessages, saveConversation, deleteConversation } from '../api';
 import MarkdownRenderer from './MarkdownRenderer';
 
 export default function ChatView({ docId, messages, setMessages, chatLimit: initialLimit }) {
@@ -8,10 +8,57 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
   const [loading, setLoading] = useState(false);
   const [chatCount, setChatCount] = useState(0);
   const [chatLimit, setChatLimit] = useState(initialLimit || 10);
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [savingChat, setSavingChat] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const isUnlimited = chatLimit === '∞' || chatLimit === -1;
   const isChatLimitReached = !isUnlimited && chatCount >= chatLimit;
+
+  const loadHistory = async () => {
+    setHistoryLoading(true);
+    try {
+      const convs = await getConversationHistory(docId);
+      setHistory(convs || []);
+    } catch { setHistory([]); }
+    finally { setHistoryLoading(false); }
+  };
+
+  const handleLoadConversation = async (convId) => {
+    try {
+      const msgs = await getConversationMessages(convId);
+      if (msgs?.length) {
+        setMessages(msgs.map(m => ({ role: m.role, content: m.message || m.content })));
+      }
+      setShowHistory(false);
+    } catch (err) {
+      console.error('Load conversation failed:', err);
+    }
+  };
+
+  const handleSaveChat = async () => {
+    if (messages.length <= 1 || savingChat) return;
+    setSavingChat(true);
+    try {
+      const title = `Chat ${new Date().toLocaleString('vi')}`;
+      await saveConversation(docId, messages.slice(1).map(m => ({ role: m.role, content: m.content })), title);
+    } catch (err) {
+      console.error('Save chat failed:', err);
+    } finally {
+      setSavingChat(false);
+    }
+  };
+
+  const handleDeleteConversation = async (convId) => {
+    try {
+      await deleteConversation(convId);
+      setHistory(prev => prev.filter(c => c.id !== convId));
+    } catch (err) {
+      console.error('Delete conversation failed:', err);
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -80,7 +127,62 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
   ];
 
   return (
-    <div className="flex flex-col h-[600px]">
+    <div className="flex flex-col h-[600px] relative">
+      {/* History sidebar */}
+      {showHistory && (
+        <div className="absolute inset-0 z-20 flex">
+          <div className="w-72 bg-[#1a1d27] border-r border-[#2e3144] flex flex-col h-full">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[#2e3144]">
+              <span className="text-sm font-medium flex items-center gap-2"><History size={14} /> Lịch sử chat</span>
+              <button onClick={() => setShowHistory(false)} className="p-1 hover:bg-[#2e3144] rounded"><X size={14} /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2 space-y-1">
+              {historyLoading ? (
+                <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-primary-400" /></div>
+              ) : history.length > 0 ? (
+                history.map(conv => (
+                  <div key={conv.id} className="flex items-center gap-1 group">
+                    <button
+                      onClick={() => handleLoadConversation(conv.id)}
+                      className="flex-1 text-left px-3 py-2 rounded-lg text-xs hover:bg-[#242736] transition-colors truncate"
+                    >
+                      <p className="truncate">{conv.title || 'Hội thoại'}</p>
+                      <p className="text-[10px] text-[#9496a1]">{conv.messageCount || 0} tin nhắn</p>
+                    </button>
+                    <button
+                      onClick={() => handleDeleteConversation(conv.id)}
+                      className="p-1 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 rounded transition-all"
+                    >
+                      <Trash2 size={12} className="text-red-400" />
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <p className="text-center text-[#9496a1] text-xs py-8">Chưa có lịch sử</p>
+              )}
+            </div>
+          </div>
+          <div className="flex-1 bg-black/40" onClick={() => setShowHistory(false)} />
+        </div>
+      )}
+
+      {/* Chat toolbar */}
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-[#2e3144]">
+        <button
+          onClick={() => { setShowHistory(true); loadHistory(); }}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-[#9496a1] hover:text-white hover:bg-[#242736] rounded-lg transition-colors"
+        >
+          <History size={13} /> Lịch sử
+        </button>
+        <button
+          onClick={handleSaveChat}
+          disabled={messages.length <= 1 || savingChat}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-[#9496a1] hover:text-white hover:bg-[#242736] rounded-lg transition-colors disabled:opacity-40"
+        >
+          {savingChat ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Lưu chat
+        </button>
+      </div>
+
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg, i) => (

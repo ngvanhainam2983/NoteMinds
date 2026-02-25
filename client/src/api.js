@@ -219,4 +219,203 @@ export async function adminGetPlans() {
   return response.data.plans;
 }
 
+// ── Conversations (Chat History) ──────────────────────
+
+export async function getConversations(documentId) {
+  const response = await api.get(`/conversations/${documentId}`);
+  return response.data.conversations;
+}
+
+export async function getConversationHistory(documentId) {
+  const response = await api.get(`/conversations/${documentId}/history`);
+  return response.data.conversations;
+}
+
+export async function getConversationMessages(conversationId) {
+  const response = await api.get(`/conversation/${conversationId}`);
+  return response.data.messages;
+}
+
+export async function saveConversation(documentId, messages, title) {
+  const response = await api.post('/conversation/save', { documentId, messages, title });
+  return response.data;
+}
+
+export async function addMessageToConversation(conversationId, role, message) {
+  const response = await api.post(`/conversation/${conversationId}/message`, { role, message });
+  return response.data;
+}
+
+export async function deleteConversation(conversationId) {
+  const response = await api.delete(`/conversation/${conversationId}`);
+  return response.data;
+}
+
+// ── Favorites ─────────────────────────────────────────
+
+export async function addFavorite(documentId) {
+  const response = await api.post(`/favorites/${documentId}`);
+  return response.data;
+}
+
+export async function removeFavorite(documentId) {
+  const response = await api.delete(`/favorites/${documentId}`);
+  return response.data;
+}
+
+export async function getFavorites() {
+  const response = await api.get('/favorites');
+  return response.data.favorites;
+}
+
+export async function checkFavorite(documentId) {
+  const response = await api.get(`/favorites/${documentId}/check`);
+  return response.data.isFavorite;
+}
+
+// ── Tags ──────────────────────────────────────────────
+
+export async function createTag(name, color) {
+  const response = await api.post('/tags', { name, color });
+  return response.data;
+}
+
+export async function getUserTags() {
+  const response = await api.get('/tags');
+  return response.data.tags;
+}
+
+export async function addTagToDocument(documentId, tagId) {
+  const response = await api.post(`/documents/${documentId}/tags/${tagId}`);
+  return response.data;
+}
+
+export async function removeTagFromDocument(documentId, tagId) {
+  const response = await api.delete(`/documents/${documentId}/tags/${tagId}`);
+  return response.data;
+}
+
+export async function getDocumentTags(documentId) {
+  const response = await api.get(`/documents/${documentId}/tags`);
+  return response.data.tags;
+}
+
+// ── Search ────────────────────────────────────────────
+
+export async function searchDocuments(query, limit = 20) {
+  const response = await api.post('/search', { query, limit });
+  return response.data;
+}
+
+// ── Analytics ─────────────────────────────────────────
+
+export async function getAnalytics(days = 7) {
+  const response = await api.get(`/analytics?days=${days}`);
+  return response.data;
+}
+
+// ── Sharing ───────────────────────────────────────────
+
+export async function createShareLink(documentId, shareType = 'view', expiresIn = 7) {
+  const response = await api.post(`/share/${documentId}`, { shareType, expiresIn });
+  return response.data;
+}
+
+export async function validateShareToken(token) {
+  const response = await api.get(`/shared/${token}`);
+  return response.data;
+}
+
+export async function getSharedDocuments() {
+  const response = await api.get('/shares');
+  return response.data.shares;
+}
+
+export async function deleteShareLink(shareId) {
+  const response = await api.delete(`/shares/${shareId}`);
+  return response.data;
+}
+
+// ── Spaced Repetition ─────────────────────────────────
+
+export async function getDueFlashcards(documentId, limit = 20) {
+  const response = await api.get(`/flashcards/due?documentId=${documentId}&limit=${limit}`);
+  return response.data.dueCards;
+}
+
+export async function reviewFlashcard(flashcardId, documentId, qualityGrade, timeMs) {
+  const response = await api.post(`/flashcards/${flashcardId}/review`, {
+    documentId, qualityGrade, timeMs
+  });
+  return response.data;
+}
+
+export async function getFlashcardStats() {
+  const response = await api.get('/flashcards/stats');
+  return response.data;
+}
+
+// ── Export ─────────────────────────────────────────────
+
+export async function exportFlashcardsCSV(documentId) {
+  const response = await api.post(`/export/flashcards/${documentId}`);
+  return response.data;
+}
+
+export async function exportConversationPDF(conversationId) {
+  const response = await api.post(`/export/conversation/${conversationId}`);
+  return response.data;
+}
+
+// ── User Preferences ──────────────────────────────────
+
+export async function getPreferences() {
+  const response = await api.get('/preferences');
+  return response.data;
+}
+
+export async function setPreference(key, value) {
+  const response = await api.put('/preferences', { key, value });
+  return response.data;
+}
+
+// ── Offline Sync ──────────────────────────────────────
+
+export async function getPendingSyncActions() {
+  const response = await api.get('/sync/pending');
+  return response.data.pending;
+}
+
+export async function queueSyncAction(entityType, entityId, action, data) {
+  const response = await api.post('/sync/action', { entityType, entityId, action, data });
+  return response.data;
+}
+
+export async function markSynced(syncId) {
+  const response = await api.post(`/sync/mark/${syncId}`);
+  return response.data;
+}
+
+// ── Learning Paths (AI Recommendations) ───────────────
+
+export async function generateLearningPath() {
+  const response = await api.post('/learning-paths/generate');
+  return response.data;
+}
+
+export async function getLearningPaths() {
+  const response = await api.get('/learning-paths');
+  return response.data.paths;
+}
+
+export async function completeLearningPath(pathId) {
+  const response = await api.post(`/learning-paths/${pathId}/complete`);
+  return response.data;
+}
+
+export async function getSuggestedDocuments() {
+  const response = await api.get('/suggestions/documents');
+  return response.data.suggestions;
+}
+
 export default api;

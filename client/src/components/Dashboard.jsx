@@ -1,8 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Map, CreditCard, MessageCircle, FileText, Loader2, Upload } from 'lucide-react';
+import {
+  Map, CreditCard, MessageCircle, FileText, Loader2, Upload,
+  Search, BarChart3, Share2, Tag, BookOpen, Settings, Star
+} from 'lucide-react';
 import MindmapView from './MindmapView';
 import FlashcardView from './FlashcardView';
 import ChatView from './ChatView';
+import {
+  SearchModal, AnalyticsModal, ShareModal, TagsModal,
+  LearningPathsModal, PreferencesModal, FavoriteButton
+} from './FeatureModals';
 import { generateMindmap, generateFlashcards, getRateLimit } from '../api';
 
 const TABS = [
@@ -24,6 +31,14 @@ export default function Dashboard({ doc, user }) {
   const [loading, setLoading] = useState({ mindmap: false, flashcard: false });
   const [errors, setErrors] = useState({});
   const [rateLimit, setRateLimit] = useState({ uploadLimit: 10, uploadsRemaining: 10, resetIn: 0, chatLimit: 10 });
+
+  // Feature modals state
+  const [showSearch, setShowSearch] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showShare, setShowShare] = useState(false);
+  const [showTags, setShowTags] = useState(false);
+  const [showLearningPaths, setShowLearningPaths] = useState(false);
+  const [showPreferences, setShowPreferences] = useState(false);
 
   const fetchRateLimit = useCallback(async () => {
     try {
@@ -81,14 +96,36 @@ export default function Dashboard({ doc, user }) {
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       {/* Document info bar */}
-      <div className="flex items-center gap-3 mb-6 bg-[#1a1d27] border border-[#2e3144] rounded-xl px-5 py-3">
+      <div className="flex items-center gap-3 mb-4 bg-[#1a1d27] border border-[#2e3144] rounded-xl px-5 py-3">
         <FileText size={18} className="text-primary-400 shrink-0" />
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="text-sm font-medium truncate">{doc.fileName}</p>
           <p className="text-xs text-[#9496a1]">
             {doc.textLength ? `${(doc.textLength / 1000).toFixed(1)}k ký tự` : 'Đã xử lý'}
           </p>
         </div>
+        <FavoriteButton documentId={doc.docId} />
+      </div>
+
+      {/* Feature toolbar */}
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        {[
+          { icon: Search, label: 'Tìm kiếm', onClick: () => setShowSearch(true) },
+          { icon: BarChart3, label: 'Phân tích', onClick: () => setShowAnalytics(true) },
+          { icon: Share2, label: 'Chia sẻ', onClick: () => setShowShare(true) },
+          { icon: Tag, label: 'Nhãn', onClick: () => setShowTags(true) },
+          { icon: BookOpen, label: 'Lộ trình AI', onClick: () => setShowLearningPaths(true) },
+          { icon: Settings, label: 'Cài đặt', onClick: () => setShowPreferences(true) },
+        ].map((btn, i) => (
+          <button
+            key={i}
+            onClick={btn.onClick}
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-[#1a1d27] border border-[#2e3144] rounded-lg text-[#9496a1] hover:text-white hover:border-primary-500/40 transition-all"
+          >
+            <btn.icon size={14} />
+            <span className="hidden sm:inline">{btn.label}</span>
+          </button>
+        ))}
       </div>
 
       {/* Upload quota badge */}
@@ -150,6 +187,7 @@ export default function Dashboard({ doc, user }) {
             loading={loading.flashcard}
             error={errors.flashcard}
             onGenerate={handleGenerateFlashcards}
+            docId={doc.docId}
           />
         )}
         {activeTab === 'chat' && (
@@ -161,6 +199,14 @@ export default function Dashboard({ doc, user }) {
           />
         )}
       </div>
+
+      {/* Feature Modals */}
+      <SearchModal isOpen={showSearch} onClose={() => setShowSearch(false)} />
+      <AnalyticsModal isOpen={showAnalytics} onClose={() => setShowAnalytics(false)} />
+      <ShareModal isOpen={showShare} onClose={() => setShowShare(false)} documentId={doc.docId} />
+      <TagsModal isOpen={showTags} onClose={() => setShowTags(false)} documentId={doc.docId} />
+      <LearningPathsModal isOpen={showLearningPaths} onClose={() => setShowLearningPaths(false)} />
+      <PreferencesModal isOpen={showPreferences} onClose={() => setShowPreferences(false)} />
     </div>
   );
 }
