@@ -14,8 +14,11 @@ if (process.env.ENCRYPTION_KEY) {
     ENCRYPTION_KEY = crypto.createHash('sha256').update(process.env.ENCRYPTION_KEY).digest();
   }
 } else {
-  // Default development key (32 bytes / 256 bits)
-  ENCRYPTION_KEY = Buffer.from('0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef', 'hex');
+  // Default development key - MUST MATCH client-side default!
+  // Client uses: 'notemind-default-encryption-key-2024-secure'
+  // Hash it to 32 bytes like the server does for plain strings
+  const defaultKeyString = 'notemind-default-encryption-key-2024-secure';
+  ENCRYPTION_KEY = crypto.createHash('sha256').update(defaultKeyString).digest();
   console.warn('⚠️  Using default encryption key. Set ENCRYPTION_KEY env var for production!');
 }
 

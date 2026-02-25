@@ -10,7 +10,7 @@ const ENCRYPTION_KEY = process.env.REACT_APP_ENCRYPTION_KEY || 'notemind-default
  * @returns {object} - { iv, encrypted }
  */
 export function encryptDataForServer(data) {
-  // Generate a random IV
+  // Generate a random IV (16 bytes for AES)
   const iv = CryptoJS.lib.WordArray.random(16);
   const jsonData = JSON.stringify(data);
   
@@ -21,9 +21,14 @@ export function encryptDataForServer(data) {
     padding: CryptoJS.pad.Pkcs7
   });
   
+  // Extract the raw ciphertext as hex (without salt)
+  // CryptoJS produces encrypted.ciphertext which is a WordArray
+  // We need to convert it to hex string for the server
+  const ciphertextHex = encrypted.ciphertext.toString(CryptoJS.enc.Hex);
+  
   return {
     iv: iv.toString(CryptoJS.enc.Hex),
-    encrypted: encrypted.toString()
+    encrypted: ciphertextHex
   };
 }
 
