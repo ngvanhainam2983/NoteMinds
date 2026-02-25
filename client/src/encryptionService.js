@@ -1,11 +1,18 @@
 import CryptoJS from 'crypto-js';
 
 // Must match server ENCRYPTION_KEY exactly.
-// Priority: Vite env -> legacy React env -> development default.
-const RAW_ENCRYPTION_KEY =
+// In production, key is required via VITE_ENCRYPTION_KEY.
+const ENV_ENCRYPTION_KEY =
   import.meta.env.VITE_ENCRYPTION_KEY ||
-  import.meta.env.REACT_APP_ENCRYPTION_KEY ||
-  'notemind-default-encryption-key-2024-secure';
+  import.meta.env.REACT_APP_ENCRYPTION_KEY;
+
+const RAW_ENCRYPTION_KEY =
+  ENV_ENCRYPTION_KEY ||
+  (import.meta.env.DEV ? 'notemind-default-encryption-key-2024-secure' : null);
+
+if (!RAW_ENCRYPTION_KEY) {
+  throw new Error('Missing VITE_ENCRYPTION_KEY. Set client/.env before building production assets.');
+}
 
 function getCryptoKey(rawKey) {
   if (typeof rawKey === 'string' && rawKey.length === 64 && /^[0-9a-fA-F]+$/.test(rawKey)) {
