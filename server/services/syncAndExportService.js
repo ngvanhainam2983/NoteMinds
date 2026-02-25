@@ -305,48 +305,79 @@ export function generateLearningPath(userId) {
     const recentDocuments = db.prepare(`
       SELECT document_id, COUNT(*) as interactions
       FROM analytics_logs
-      WHERE user_id = ? AND created_at >= datetime('now', '-30 days')
+      WHERE user_id = ? AND document_id IS NOT NULL
+        AND created_at >= datetime('now', '-30 days')
       GROUP BY document_id
       ORDER BY interactions DESC
       LIMIT 5
     `).all(userId);
 
-    // Get user's tags for topic clustering
-    const tags = db.prepare(`
-      SELECT name FROM tags WHERE user_id = ?
-    `).all(userId);
-
     // Get documents with same tags
-    const relatedDocs = db.prepare(`
-      SELECT DISTINCT d.id, d.file_path,
-             COUNT(DISTINCT dt.tag_id) as shared_tags
-      FROM documents d
-      JOIN document_tags dt ON d.id = dt.document_id
-      JOIN document_tags user_dt ON user_dt.tag_id = dt.tag_id
-      JOIN tags t ON t.id = user_dt.tag_id AND t.user_id = ?
-      WHERE d.user_id = ? AND d.id NOT IN (
-        SELECT document_id FROM analytics_logs WHERE user_id = ? AND created_at >= datetime('now', '-30 days')
-      )
-      GROUP BY d.id
-      ORDER BY shared_tags DESC
-      LIMIT 5
-    `).all(userId, userId, userId);
+    let relatedDocs = [];
+    try {
+      relatedDocs = db.prepare(`
+        SELECT DISTINCT d.id, d.file_path, d.original_name,
+               COUNT(DISTINCT dt.tag_id) as shared_tags
+        FROM documents d
+        JOIN document_tags dt ON d.id = dt.document_id
+        JOIN document_tags user_dt ON user_dt.tag_id = dt.tag_id
+        JOIN tags t ON t.id = user_dt.tag_id AND t.user_id = ?
+        WHERE d.user_id = ? AND d.deleted_at IS NULL
+        GROUP BY d.id
+        ORDER BY shared_tags DESC
+        LIMIT 5
+      `).all(userId, userId);
+    } catch (e) {
+      // tags/document_tags may be empty
+    }
+
+    let recommendedDocs = recentDocuments
+      .map(d => d.document_id)
+      .filter(Boolean)
+      .concat(relatedDocs.map(d => d.id));
+
+    // Remove duplicates
+    recommendedDocs = [...new Set(recommendedDocs)];
+
+    // Fallback: if no docs found from analytics/tags, include all user documents
+    if (recommendedDocs.length === 0) {
+      const allDocs = db.prepare(`
+        SELECT id, original_name FROM documents
+        WHERE user_id = ? AND deleted_at IS NULL
+        ORDER BY updated_at DESC
+        LIMIT 10
+      `).all(userId);
+      recommendedDocs = allDocs.map(d => d.id);
+    }
+
+    // Get document names for a better path title
+    let pathName = 'Lộ trình học tập';
+    let pathDescription = 'Lộ trình được AI đề xuất dựa trên hoạt động học tập của bạn';
+    if (recommendedDocs.length > 0) {
+      const placeholders = recommendedDocs.slice(0, 3).map(() => '?').join(',');
+      const docNames = db.prepare(`
+        SELECT original_name FROM documents WHERE id IN (${placeholders})
+      `).all(...recommendedDocs.slice(0, 3));
+      const names = docNames.map(d => d.original_name).filter(Boolean);
+      if (names.length > 0) {
+        pathName = `Lộ trình: ${names.slice(0, 2).join(', ')}${names.length > 2 ? '...' : ''}`;
+      }
+      pathDescription = `${recommendedDocs.length} tài liệu được đề xuất dựa trên hoạt động của bạn`;
+    }
+
+    // Estimate: ~1 day per 2 documents
+    const estimatedDays = Math.max(1, Math.ceil(recommendedDocs.length / 2));
+    const estimatedHours = estimatedDays * 2;
 
     const pathId = uuidv4();
-    const recommendedDocs = recentDocuments.map(d => d.document_id).concat(relatedDocs.map(d => d.id));
-
-    // Estimate hours (simple heuristic: 1 hour per 10KB)
-    const totalSize = recommendedDocs.length * 50; // rough estimate
-    const estimatedHours = Math.ceil(totalSize / 100);
-
     db.prepare(`
       INSERT INTO learning_paths (id, user_id, name, description, document_ids, estimated_hours)
       VALUES (?, ?, ?, ?, ?, ?)
     `).run(
       pathId,
       userId,
-      'Recommended Learning Path',
-      'AI-generated path based on your learning activity',
+      pathName,
+      pathDescription,
       JSON.stringify(recommendedDocs),
       estimatedHours
     );
@@ -357,8 +388,7 @@ export function generateLearningPath(userId) {
       success: true,
       pathId,
       documentCount: recommendedDocs.length,
-      estimatedHours,
-      relatedDocuments: relatedDocs
+      estimatedDays
     };
   } catch (error) {
     console.error('[AI] Error generating path:', error.message);
@@ -382,7 +412,10 @@ export function getLearningPaths(userId) {
 
     return paths.map(p => ({
       ...p,
-      documentIds: JSON.parse(p.document_ids)
+      title: p.name,
+      completed: !!p.completed_at,
+      estimatedDays: p.estimated_hours ? Math.max(1, Math.ceil(p.estimated_hours / 2)) : null,
+      documentIds: JSON.parse(p.document_ids || '[]')
     }));
   } catch (error) {
     console.error('[AI] Error getting paths:', error.message);
