@@ -28,6 +28,17 @@ export function decryptMiddleware(req, res, next) {
   try {
     // Check if request has encrypted data in the expected format
     if (req.body && typeof req.body === 'object' && req.body.encrypted && req.body.iv) {
+      logger.warn('[Encryption] Incoming encrypted request payload', {
+        path: req.path,
+        method: req.method,
+        headers: req.headers,
+        body: req.body,
+        encrypted: req.body.encrypted,
+        iv: req.body.iv,
+        encryptedLength: req.body.encrypted?.length,
+        ivLength: req.body.iv?.length
+      });
+
       try {
         const decryptedString = decryptData({
           encrypted: req.body.encrypted,
@@ -35,6 +46,13 @@ export function decryptMiddleware(req, res, next) {
         });
 
         const decryptedData = parseDecrypted(decryptedString);
+
+        logger.warn('[Encryption] Decrypted request payload', {
+          path: req.path,
+          method: req.method,
+          decryptedString,
+          decryptedData
+        });
         
         // Replace body with decrypted data
         req.body = decryptedData;
@@ -43,7 +61,14 @@ export function decryptMiddleware(req, res, next) {
         logger.error(`[Encryption] Failed to decrypt request: ${decryptionError.message}`, {
           path: req.path,
           hasEncrypted: !!req.body.encrypted,
-          hasIv: !!req.body.iv
+          hasIv: !!req.body.iv,
+          body: req.body,
+          encrypted: req.body.encrypted,
+          iv: req.body.iv,
+          encryptedLength: req.body.encrypted?.length,
+          ivLength: req.body.iv?.length,
+          headers: req.headers,
+          stack: decryptionError.stack
         });
         
         return res.status(400).json({ 
@@ -55,7 +80,12 @@ export function decryptMiddleware(req, res, next) {
     // Allow unencrypted requests (for development/testing)
     else if (req.body && typeof req.body === 'object') {
       // Request body exists but is not encrypted - allow it to pass through
-      logger.debug(`[Encryption] Unencrypted request to ${req.path} - allowed for development`);
+      logger.warn('[Encryption] Unencrypted request allowed', {
+        path: req.path,
+        method: req.method,
+        headers: req.headers,
+        body: req.body
+      });
     }
 
     next();
