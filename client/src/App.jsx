@@ -8,11 +8,12 @@ import AdminPanel from './components/AdminPanel';
 import PricingPage from './components/PricingPage';
 import SharedDocViewer from './components/SharedDocViewer';
 import HistoryViewer from './components/HistoryViewer';
+import HistoryPage from './components/HistoryPage';
 import { getStoredUser, logout as apiLogout, getMe } from './api';
 
 export default function App() {
   const [currentDoc, setCurrentDoc] = useState(null);
-  const [view, setView] = useState('home'); // 'home' | 'dashboard' | 'admin' | 'pricing' | 'shared' | 'history'
+  const [view, setView] = useState('home'); // 'home' | 'dashboard' | 'admin' | 'pricing' | 'shared' | 'history' | 'history-list'
   const [historyDoc, setHistoryDoc] = useState(null);
   const [user, setUser] = useState(getStoredUser);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -86,7 +87,7 @@ export default function App() {
           {view !== 'admin' && view !== 'pricing' && (
             <Header
               onBackHome={handleBackHome}
-              showBack={view === 'dashboard'}
+              showBack={view === 'dashboard' || view === 'history-list'}
               user={user}
               onLoginClick={() => openAuthModal('login')}
               onLogout={handleLogout}
@@ -94,6 +95,7 @@ export default function App() {
               onOpenPricing={() => setView('pricing')}
               onUserUpdate={(updated) => setUser(updated)}
               onOpenDocument={handleOpenDocument}
+              onOpenHistory={() => setView('history-list')}
               currentView={view}
             />
           )}
@@ -119,6 +121,10 @@ export default function App() {
 
           {view === 'dashboard' && currentDoc && (
             <Dashboard doc={currentDoc} user={user} />
+          )}
+
+          {view === 'history-list' && (
+            <HistoryPage onOpenDocument={handleOpenDocument} />
           )}
 
           {view === 'admin' && (

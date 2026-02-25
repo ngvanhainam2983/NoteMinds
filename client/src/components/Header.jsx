@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BrainCircuit, ArrowLeft, LogIn, Menu, X, Palette, CheckCircle2 } from 'lucide-react';
+import { BrainCircuit, ArrowLeft, LogIn, Menu, X, Palette, CheckCircle2, History } from 'lucide-react';
 import UserDropdown from './UserDropdown';
 import { useTheme, THEMES } from '../ThemeContext';
 
@@ -7,9 +7,10 @@ const NAV_ITEMS = [
   { label: 'Tại sao NoteMinds?', target: 'why' },
   { label: 'Tính năng', target: 'features' },
   { label: 'Bảng giá', target: 'pricing' },
+  { label: 'Lịch sử', target: 'history', icon: History, requireAuth: true },
 ];
 
-export default function Header({ onBackHome, showBack, user, onLoginClick, onLogout, onOpenAdmin, onOpenPricing, onUserUpdate, onOpenDocument, currentView }) {
+export default function Header({ onBackHome, showBack, user, onLoginClick, onLogout, onOpenAdmin, onOpenPricing, onUserUpdate, onOpenDocument, onOpenHistory, currentView }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [themePicker, setThemePicker] = useState(false);
   const { theme: currentTheme, setTheme } = useTheme();
@@ -18,6 +19,10 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
     setMobileOpen(false);
     if (target === 'pricing') {
       onOpenPricing?.();
+      return;
+    }
+    if (target === 'history') {
+      onOpenHistory?.();
       return;
     }
     // If not on home view, go home first then scroll
@@ -58,19 +63,25 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
         {/* Center: Nav links (desktop) */}
         {!showBack && (
           <nav className="hidden md:flex items-center gap-1">
-            {NAV_ITEMS.map((item) => (
-              <button
-                key={item.target}
-                onClick={() => handleNav(item.target)}
-                className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  item.target === 'pricing' && currentView === 'pricing'
-                    ? 'text-primary-400 bg-primary-600/10'
-                    : 'text-[#9496a1] hover:text-white hover:bg-[#242736]'
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
+            {NAV_ITEMS.filter(item => !item.requireAuth || user).map((item) => {
+              const Icon = item.icon;
+              const isActive = (item.target === 'pricing' && currentView === 'pricing') ||
+                               (item.target === 'history' && currentView === 'history-list');
+              return (
+                <button
+                  key={item.target}
+                  onClick={() => handleNav(item.target)}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'text-primary-400 bg-primary-600/10'
+                      : 'text-[#9496a1] hover:text-white hover:bg-[#242736]'
+                  }`}
+                >
+                  {Icon && <Icon size={15} />}
+                  {item.label}
+                </button>
+              );
+            })}
           </nav>
         )}
 
@@ -150,19 +161,25 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
       {mobileOpen && !showBack && (
         <div className="md:hidden border-t border-[#2e3144] bg-[#1a1d27]/95 backdrop-blur-lg animate-fade-in">
           <nav className="max-w-7xl mx-auto px-4 py-3 flex flex-col gap-1">
-            {NAV_ITEMS.map((item) => (
-              <button
-                key={item.target}
-                onClick={() => handleNav(item.target)}
-                className={`text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  item.target === 'pricing' && currentView === 'pricing'
-                    ? 'text-primary-400 bg-primary-600/10'
-                    : 'text-[#9496a1] hover:text-white hover:bg-[#242736]'
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
+            {NAV_ITEMS.filter(item => !item.requireAuth || user).map((item) => {
+              const Icon = item.icon;
+              const isActive = (item.target === 'pricing' && currentView === 'pricing') ||
+                               (item.target === 'history' && currentView === 'history-list');
+              return (
+                <button
+                  key={item.target}
+                  onClick={() => handleNav(item.target)}
+                  className={`flex items-center gap-1.5 text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'text-primary-400 bg-primary-600/10'
+                      : 'text-[#9496a1] hover:text-white hover:bg-[#242736]'
+                  }`}
+                >
+                  {Icon && <Icon size={15} />}
+                  {item.label}
+                </button>
+              );
+            })}
           </nav>
         </div>
       )}
