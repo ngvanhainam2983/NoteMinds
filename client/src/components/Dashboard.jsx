@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Map, CreditCard, MessageCircle, FileText, Loader2, Upload,
-  Search, BarChart3, Share2, Tag, BookOpen, Settings, Star
+  Search, BarChart3, Share2, Tag, Settings, Star
 } from 'lucide-react';
 import MindmapView from './MindmapView';
 import FlashcardView from './FlashcardView';
 import ChatView from './ChatView';
 import {
   SearchModal, AnalyticsModal, ShareModal, TagsModal,
-  LearningPathsModal, PreferencesModal, FavoriteButton
+  PreferencesModal, FavoriteButton
 } from './FeatureModals';
 import { generateMindmap, generateFlashcards, getRateLimit, getDocumentSessions } from '../api';
 
@@ -38,7 +38,6 @@ export default function Dashboard({ doc, user }) {
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [showTags, setShowTags] = useState(false);
-  const [showLearningPaths, setShowLearningPaths] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
 
   const fetchRateLimit = useCallback(async () => {
@@ -135,7 +134,6 @@ export default function Dashboard({ doc, user }) {
           { icon: BarChart3, label: 'Phân tích', onClick: () => setShowAnalytics(true) },
           { icon: Share2, label: 'Chia sẻ', onClick: () => setShowShare(true) },
           { icon: Tag, label: 'Nhãn', onClick: () => setShowTags(true) },
-          { icon: BookOpen, label: 'Lộ trình AI', onClick: () => setShowLearningPaths(true) },
           { icon: Settings, label: 'Cài đặt', onClick: () => setShowPreferences(true) },
         ].map((btn, i) => (
           <button
@@ -151,11 +149,10 @@ export default function Dashboard({ doc, user }) {
 
       {/* Upload quota badge */}
       <div className="flex items-center gap-2 mb-4">
-        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border ${
-          rateLimit.uploadsRemaining > 0
-            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-            : 'bg-red-500/10 border-red-500/30 text-red-400'
-        }`}>
+        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border ${rateLimit.uploadsRemaining > 0
+          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+          : 'bg-red-500/10 border-red-500/30 text-red-400'
+          }`}>
           <Upload size={13} />
           <span>
             {rateLimit.uploadsRemaining > 0
@@ -226,7 +223,6 @@ export default function Dashboard({ doc, user }) {
       <AnalyticsModal isOpen={showAnalytics} onClose={() => setShowAnalytics(false)} />
       <ShareModal isOpen={showShare} onClose={() => setShowShare(false)} documentId={doc.docId} />
       <TagsModal isOpen={showTags} onClose={() => setShowTags(false)} documentId={doc.docId} />
-      <LearningPathsModal isOpen={showLearningPaths} onClose={() => setShowLearningPaths(false)} />
       <PreferencesModal isOpen={showPreferences} onClose={() => setShowPreferences(false)} />
     </div>
   );

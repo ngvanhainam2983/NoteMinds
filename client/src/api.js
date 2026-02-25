@@ -429,39 +429,4 @@ export async function markSynced(syncId) {
 
 // ── Learning Paths (AI Recommendations) ───────────────
 
-export async function generateLearningPath() {
-  const response = await api.post('/learning-paths/generate');
-  return response.data;
-}
-
-export async function getLearningPaths() {
-  const response = await api.get('/learning-paths');
-  return response.data.paths;
-}
-
-export async function getLearningPathDetails(pathId) {
-  const response = await api.get(`/learning-paths/${pathId}`);
-  return response.data;
-}
-
-export async function completeLearningPath(pathId) {
-  const response = await api.post(`/learning-paths/${pathId}/complete`);
-  return response.data;
-}
-
-export async function toggleLearningPathDocument(pathId, docId) {
-  const response = await api.post(`/learning-paths/${pathId}/documents/${docId}/toggle`);
-  return response.data;
-}
-
-export async function deleteLearningPath(pathId) {
-  const response = await api.delete(`/learning-paths/${pathId}`);
-  return response.data;
-}
-
-export async function getSuggestedDocuments() {
-  const response = await api.get('/suggestions/documents');
-  return response.data.suggestions;
-}
-
 export default api;

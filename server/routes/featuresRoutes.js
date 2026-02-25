@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { requireAuth } from '../services/authService.js';
 import * as featureService from '../services/featureService.js';
@@ -8,9 +8,9 @@ import { logger, logAnalytic } from '../services/logger.js';
 
 const router = express.Router();
 
-// ────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // CONVERSATIONS (Chat History)
-// ────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 router.get('/conversations/:documentId', requireAuth, (req, res) => {
   try {
@@ -94,9 +94,9 @@ router.delete('/conversation/:conversationId', requireAuth, (req, res) => {
   }
 });
 
-// ────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // FAVORITES
-// ────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 router.post('/favorites/:documentId', requireAuth, (req, res) => {
   try {
@@ -137,9 +137,9 @@ router.get('/favorites/:documentId/check', requireAuth, (req, res) => {
   }
 });
 
-// ────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // TAGS
-// ────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 router.post('/tags', requireAuth, (req, res) => {
   try {
@@ -189,9 +189,9 @@ router.get('/tags', requireAuth, (req, res) => {
   }
 });
 
-// ────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // SEARCH
-// ────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 router.post('/search', requireAuth, (req, res) => {
   try {
@@ -206,9 +206,9 @@ router.post('/search', requireAuth, (req, res) => {
   }
 });
 
-// ────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // ANALYTICS
-// ────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 router.get('/analytics', requireAuth, (req, res) => {
   try {
@@ -220,9 +220,9 @@ router.get('/analytics', requireAuth, (req, res) => {
   }
 });
 
-// ────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // SHARING
-// ────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 router.post('/share/:documentId', requireAuth, (req, res) => {
   try {
@@ -257,7 +257,7 @@ router.get('/shared/:shareToken', (req, res) => {
         expiresAt: share.expires_at
       });
     } else {
-      res.status(403).json({ valid: false, error: 'Link chia sẻ không hợp lệ hoặc đã hết hạn' });
+      res.status(403).json({ valid: false, error: 'Link chia sáº» khÃ´ng há»£p lá»‡ hoáº·c Ä‘Ã£ háº¿t háº¡n' });
     }
   } catch (error) {
     res.status(500).json({ error: 'Failed to validate share' });
@@ -284,9 +284,9 @@ router.delete('/shares/:shareId', requireAuth, (req, res) => {
   }
 });
 
-// ────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // SPACED REPETITION
-// ────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 router.get('/flashcards/due', requireAuth, (req, res) => {
   try {
@@ -331,9 +331,9 @@ router.get('/flashcards/stats', requireAuth, (req, res) => {
   }
 });
 
-// ────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // EXPORT
-// ────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 router.post('/export/flashcards/:documentId', requireAuth, (req, res) => {
   try {
@@ -364,9 +364,9 @@ router.post('/export/conversation/:conversationId', requireAuth, (req, res) => {
   }
 });
 
-// ────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // USER PREFERENCES
-// ────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 router.get('/preferences', requireAuth, (req, res) => {
   try {
@@ -387,9 +387,9 @@ router.put('/preferences', requireAuth, (req, res) => {
   }
 });
 
-// ────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // OFFLINE SYNC
-// ────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 router.get('/sync/pending', requireAuth, (req, res) => {
   try {
@@ -419,81 +419,5 @@ router.post('/sync/mark/:syncId', requireAuth, (req, res) => {
   }
 });
 
-// ────────────────────────────────────────────────────────
-// AI RECOMMENDATIONS
-// ────────────────────────────────────────────────────────
-
-router.post('/learning-paths/generate', requireAuth, (req, res) => {
-  try {
-    const result = syncExportService.generateLearningPath(req.user.id);
-    logAnalytic(req.user.id, 'generate_learning_path');
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to generate path' });
-  }
-});
-
-router.get('/learning-paths', requireAuth, (req, res) => {
-  try {
-    const paths = syncExportService.getLearningPaths(req.user.id);
-    res.json({ paths });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to get paths' });
-  }
-});
-
-router.post('/learning-paths/:pathId/complete', requireAuth, (req, res) => {
-  try {
-    const result = syncExportService.markPathCompleted(req.params.pathId);
-    logAnalytic(req.user.id, 'complete_learning_path');
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to complete path' });
-  }
-});
-
-router.get('/learning-paths/:pathId', requireAuth, (req, res) => {
-  try {
-    const details = syncExportService.getLearningPathDetails(req.params.pathId);
-    if (!details) {
-      return res.status(404).json({ error: 'Path not found' });
-    }
-    res.json(details);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to get path details' });
-  }
-});
-
-router.post('/learning-paths/:pathId/documents/:docId/toggle', requireAuth, (req, res) => {
-  try {
-    const result = syncExportService.togglePathDocumentCompletion(
-      req.params.pathId,
-      req.params.docId
-    );
-    logAnalytic(req.user.id, 'toggle_learning_path_doc');
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to toggle document' });
-  }
-});
-
-router.delete('/learning-paths/:pathId', requireAuth, (req, res) => {
-  try {
-    const result = syncExportService.deleteLearningPath(req.params.pathId);
-    logAnalytic(req.user.id, 'delete_learning_path');
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to delete path' });
-  }
-});
-
-router.get('/suggestions/documents', requireAuth, (req, res) => {
-  try {
-    const suggestions = syncExportService.getSuggestedDocuments(req.user.id, 5);
-    res.json({ suggestions });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to get suggestions' });
-  }
-});
-
 export default router;
+
