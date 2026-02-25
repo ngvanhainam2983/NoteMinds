@@ -21,7 +21,9 @@ import {
 } from './services/authService.js';
 import { decryptMiddleware } from './middleware/encryptionMiddleware.js';
 import { initializeIndexes, getDatabaseStats } from './services/databaseIndexes.js';
+import { initializeEnhancedTables } from './services/enhancedDatabase.js';
 import { logger, requestLoggerMiddleware } from './services/logger.js';
+import featureRoutes from './routes/featuresRoutes.js';
 
 dotenv.config();
 
@@ -494,6 +496,9 @@ app.get('/api/rate-limit', optionalAuth, (req, res) => {
   });
 });
 
+// Feature routes - all advanced features (chat history, favorites, tags, search, analytics, sharing, spaced repetition, exports, sync, preferences)
+app.use('/api', featureRoutes);
+
 // SPA fallback — serve index.html for any non-API route (production)
 if (fs.existsSync(publicDir)) {
   app.get('*', (req, res) => {
@@ -514,6 +519,9 @@ app.get('/health', (req, res) => {
 
 // Seed default admin account
 ensureAdmin();
+
+// Initialize enhanced feature tables (chat history, favorites, tags, etc.)
+initializeEnhancedTables();
 
 // Initialize database indexes for performance (after tables are created)
 setTimeout(() => {

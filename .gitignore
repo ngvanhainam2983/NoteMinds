@@ -1,39 +1,94 @@
-# Dependencies
+# ========== Dependencies ==========
 node_modules/
+package-lock.json
+yarn.lock
 
-# Build output
+# ========== Build Output ==========
 dist/
 client/dist/
+server/dist/
+build/
 
-# Environment variables (contains API keys)
+# ========== Environment & Config ==========
 .env
+.env.local
+.env.*.local
 server/.env
+server/.env.local
+client/.env
+client/.env.local
 
-# Uploaded files & runtime data
+# ========== Runtime Data ==========
+# Uploads
 server/uploads/
+server/exports/
 server/public/
-server/data/
 
-# SQLite database
+# Database
 *.db
 *.sqlite
 *.sqlite3
+server/data/
+database.db
 
 # Logs
 *.log
+logs/
+server/logs/
 npm-debug.log*
+yarn-error.log*
 
-# OS files
+# ========== OS & IDE Files ==========
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
 Thumbs.db
 desktop.ini
+*.exe
+*.lnk
+
+# Linux
+.directory
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*.sublime-project
+*.sublime-workspace
+*.iml
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
 
-# Temp files
+# VSCode specific
+.vscode-test/
+.vscode/settings.json
+.vscode/launch.json
+.vscode/extensions.json
+
+# ========== Project Specific ==========
 gen-og.ps1
 *.tmp
+.cache/
+tmp/
+
+# PM2
+ecosystem.config.cjs.bak
+pids/
+*.pid
+*.pid.lock
+
+# Docker build context
+.docker/
+.dockerignore
+

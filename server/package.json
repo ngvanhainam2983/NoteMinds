@@ -10,6 +10,7 @@
     "axios": "^1.13.5",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.6.2",
+    "canvas": "^2.11.2",
     "cors": "^2.8.5",
     "crypto-js": "^4.1.1",
     "dotenv": "^16.4.5",
@@ -22,6 +23,7 @@
     "node-pptx-parser": "^1.0.1",
     "openai": "^4.73.0",
     "pdf-parse": "^1.1.1",
+    "pdfkit": "^0.14.0",
     "uuid": "^10.0.0",
     "winston": "^3.11.0",
     "xlsx": "^0.18.5"
