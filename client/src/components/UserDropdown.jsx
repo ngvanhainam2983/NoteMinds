@@ -9,7 +9,7 @@ import { updateProfile, changePassword, getDocumentHistory } from '../api';
 import ConfirmModal from './ConfirmModal';
 import { useTheme, THEMES } from '../ThemeContext';
 
-export default function UserDropdown({ user, onLogout, onOpenAdmin, onOpenPricing, onUserUpdate }) {
+export default function UserDropdown({ user, onLogout, onOpenAdmin, onOpenPricing, onUserUpdate, onOpenDocument }) {
   const [open, setOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -121,7 +121,7 @@ export default function UserDropdown({ user, onLogout, onOpenAdmin, onOpenPricin
 
       {/* History modal */}
       {showHistory && createPortal(
-        <HistoryModal onClose={() => setShowHistory(false)} />,
+        <HistoryModal onClose={() => setShowHistory(false)} onOpenDocument={(doc) => { setShowHistory(false); onOpenDocument?.(doc); }} />,
         document.body
       )}
 
@@ -354,7 +354,7 @@ function SettingsModal({ user, onClose, onUserUpdate }) {
   );
 }
 
-function HistoryModal({ onClose }) {
+function HistoryModal({ onClose, onOpenDocument }) {
   const [docs, setDocs] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -427,9 +427,11 @@ function HistoryModal({ onClose }) {
                 const expired = isExpired(doc);
                 const ttl = timeRemaining(doc);
                 return (
-                  <div key={doc.id} className={`flex items-start gap-3 rounded-xl px-4 py-3 transition-colors border ${
+                  <div key={doc.id} 
+                    onClick={() => onOpenDocument?.(doc)}
+                    className={`flex items-start gap-3 rounded-xl px-4 py-3 transition-colors border cursor-pointer ${
                     expired
-                      ? 'bg-[#0f1117]/50 border-[#1e2030] opacity-50'
+                      ? 'bg-[#0f1117]/50 border-[#1e2030] opacity-60 hover:opacity-80 hover:border-[#3e4154]'
                       : 'bg-[#0f1117] border-[#2e3144] hover:border-primary-500/30'
                   }`}>
                     <FileText size={18} className={`shrink-0 mt-0.5 ${expired ? 'text-[#444]' : 'text-primary-400'}`} />

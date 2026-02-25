@@ -7,11 +7,13 @@ import AuthModal from './components/AuthModal';
 import AdminPanel from './components/AdminPanel';
 import PricingPage from './components/PricingPage';
 import SharedDocViewer from './components/SharedDocViewer';
+import HistoryViewer from './components/HistoryViewer';
 import { getStoredUser, logout as apiLogout, getMe } from './api';
 
 export default function App() {
   const [currentDoc, setCurrentDoc] = useState(null);
-  const [view, setView] = useState('home'); // 'home' | 'dashboard' | 'admin' | 'pricing' | 'shared'
+  const [view, setView] = useState('home'); // 'home' | 'dashboard' | 'admin' | 'pricing' | 'shared' | 'history'
+  const [historyDoc, setHistoryDoc] = useState(null);
   const [user, setUser] = useState(getStoredUser);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalTab, setAuthModalTab] = useState('login');
@@ -47,10 +49,16 @@ export default function App() {
     setView('home');
     setCurrentDoc(null);
     setShareToken(null);
+    setHistoryDoc(null);
     // Clean up URL if on a share page
     if (window.location.pathname.startsWith('/share/')) {
       window.history.pushState({}, '', '/');
     }
+  };
+
+  const handleOpenDocument = (doc) => {
+    setHistoryDoc({ docId: doc.id, docName: doc.original_name });
+    setView('history');
   };
 
   const handleLogout = () => {
@@ -71,6 +79,8 @@ export default function App() {
     <div className="min-h-screen bg-[#0f1117]">
       {view === 'shared' && shareToken ? (
         <SharedDocViewer shareToken={shareToken} onBack={handleBackHome} />
+      ) : view === 'history' && historyDoc ? (
+        <HistoryViewer docId={historyDoc.docId} docName={historyDoc.docName} onBack={handleBackHome} />
       ) : (
         <>
           {view !== 'admin' && view !== 'pricing' && (
@@ -83,6 +93,7 @@ export default function App() {
               onOpenAdmin={() => setView('admin')}
               onOpenPricing={() => setView('pricing')}
               onUserUpdate={(updated) => setUser(updated)}
+              onOpenDocument={handleOpenDocument}
               currentView={view}
             />
           )}

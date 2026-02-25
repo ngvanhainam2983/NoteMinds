@@ -438,6 +438,45 @@ app.get('/api/documents/history', optionalAuth, (req, res) => {
   }
 });
 
+// Get saved sessions for a document (history viewer)
+app.get('/api/documents/:docId/sessions', optionalAuth, (req, res) => {
+  try {
+    const docId = req.params.docId;
+    const db = new Database(DB_PATH);
+    // Get document info (verify ownership if user is logged in)
+    const doc = db.prepare('SELECT id, user_id, original_name, status, text_length, deleted_at, created_at FROM documents WHERE id = ?').get(docId);
+    if (!doc) {
+      db.close();
+      return res.status(404).json({ error: 'Document not found' });
+    }
+    // Check ownership
+    if (req.user?.id && doc.user_id && doc.user_id !== req.user.id) {
+      db.close();
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    db.close();
+
+    const sessions = getAllDocumentSessions(docId);
+    const isFileDeleted = !!doc.deleted_at || !documents.has(docId);
+
+    res.json({
+      document: {
+        id: doc.id,
+        originalName: doc.original_name,
+        status: doc.status,
+        textLength: doc.text_length,
+        deletedAt: doc.deleted_at,
+        createdAt: doc.created_at,
+        isFileDeleted,
+      },
+      sessions,
+    });
+  } catch (error) {
+    console.error('Error getting document sessions:', error.message);
+    res.status(500).json({ error: 'Failed to load sessions' });
+  }
+});
+
 // Check document status
 app.get('/api/documents/:docId/status', (req, res) => {
   const doc = documents.get(req.params.docId);

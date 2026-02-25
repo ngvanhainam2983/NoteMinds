@@ -163,6 +163,11 @@ export async function getDocumentHistory() {
   return response.data.documents;
 }
 
+export async function getDocumentSessions(docId) {
+  const response = await api.get(`/documents/${docId}/sessions`);
+  return response.data;
+}
+
 // ── Profile API ───────────────────────────────────────
 
 export async function updateProfile(displayName, email) {

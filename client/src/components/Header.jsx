@@ -9,7 +9,7 @@ const NAV_ITEMS = [
   { label: 'Bảng giá', target: 'pricing' },
 ];
 
-export default function Header({ onBackHome, showBack, user, onLoginClick, onLogout, onOpenAdmin, onOpenPricing, onUserUpdate, currentView }) {
+export default function Header({ onBackHome, showBack, user, onLoginClick, onLogout, onOpenAdmin, onOpenPricing, onUserUpdate, onOpenDocument, currentView }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [themePicker, setThemePicker] = useState(false);
   const { theme: currentTheme, setTheme } = useTheme();
@@ -122,6 +122,7 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
               onOpenAdmin={onOpenAdmin}
               onOpenPricing={onOpenPricing}
               onUserUpdate={onUserUpdate}
+              onOpenDocument={onOpenDocument}
             />
           ) : (
             <button
