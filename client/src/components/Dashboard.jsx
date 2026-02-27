@@ -258,16 +258,16 @@ export default function Dashboard({ doc, user }) {
         {activeTab === 'mindmap' && (
           <MindmapView
             data={mindmapData}
-            loading={loading.mindmap}
-            error={errors.mindmap}
+            loading={tabLoading.mindmap}
+            error={tabErrors.mindmap}
             onGenerate={handleGenerateMindmap}
           />
         )}
         {activeTab === 'flashcard' && (
           <FlashcardView
             data={flashcardData}
-            loading={loading.flashcard}
-            error={errors.flashcard}
+            loading={tabLoading.flashcard}
+            error={tabErrors.flashcard}
             onGenerate={handleGenerateFlashcards}
             docId={doc?.docId}
           />
@@ -275,8 +275,8 @@ export default function Dashboard({ doc, user }) {
         {activeTab === 'quiz' && (
           <QuizView
             data={quizData}
-            loading={loading.quiz}
-            error={errors.quiz}
+            loading={tabLoading.quiz}
+            error={tabErrors.quiz}
             onGenerate={handleGenerateQuiz}
           />
         )}
