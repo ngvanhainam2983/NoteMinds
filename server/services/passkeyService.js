@@ -13,14 +13,38 @@ function getRpId() {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     try {
         const url = new URL(frontendUrl);
+        const parts = url.hostname.split('.');
+        // Use the base domain (e.g. loveyuna.today from noteminds.loveyuna.today)
+        // This allows passkeys to work across subdomains
+        if (parts.length > 2) {
+            return parts.slice(-2).join('.');
+        }
         return url.hostname;
     } catch {
         return 'localhost';
     }
 }
 
-function getOrigin() {
-    return process.env.FRONTEND_URL || 'http://localhost:5173';
+function getOrigins() {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const origins = new Set();
+    try {
+        const url = new URL(frontendUrl);
+        origins.add(url.origin);
+        origins.add(`https://${url.hostname}`);
+        origins.add(`http://${url.hostname}`);
+        // Also add base domain origins for subdomain support
+        const parts = url.hostname.split('.');
+        if (parts.length > 2) {
+            const baseDomain = parts.slice(-2).join('.');
+            origins.add(`https://${baseDomain}`);
+            origins.add(`http://${baseDomain}`);
+        }
+    } catch {
+        origins.add('http://localhost:5173');
+        origins.add('http://localhost:3001');
+    }
+    return [...origins];
 }
 
 // ── Challenge storage (DB-backed) ──
@@ -139,7 +163,7 @@ export async function verifyPasskeyRegistration(userId, response, passkeyName) {
         verification = await verifyRegistrationResponse({
             response,
             expectedChallenge,
-            expectedOrigin: getOrigin(),
+            expectedOrigin: getOrigins(),
             expectedRPID: getRpId(),
         });
     } catch (error) {
@@ -201,7 +225,7 @@ export async function verifyPasskeyAuthentication(userId, response) {
         verification = await verifyAuthenticationResponse({
             response,
             expectedChallenge,
-            expectedOrigin: getOrigin(),
+            expectedOrigin: getOrigins(),
             expectedRPID: getRpId(),
             credential: {
                 id: matchingPasskey.id,
