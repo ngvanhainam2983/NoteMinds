@@ -88,7 +88,7 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId 
     if (!currentCard || !docId) return;
     const timeMs = Date.now() - cardStartTime.current;
     try {
-      const result = await reviewFlashcard(currentCard.id || `card-${currentIndex}`, docId, grade, timeMs);
+      const result = await reviewFlashcard(docId, currentIndex, grade, timeMs);
       setReviewResult(result);
       setTimeout(() => {
         goNext();
