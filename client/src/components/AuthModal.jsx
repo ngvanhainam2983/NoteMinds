@@ -16,6 +16,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
     username: '',
     email: '',
     password: '',
+    confirmPassword: '',
     displayName: '',
     forgotEmail: '',
   });
@@ -41,6 +42,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
         onAuthSuccess(result.user);
         onClose();
       } else if (tab === 'register') {
+        if (formData.password !== formData.confirmPassword) {
+          setError('Mật khẩu xác nhận không khớp');
+          setLoading(false);
+          return;
+        }
         result = await register(
           formData.username,
           formData.email,
@@ -78,7 +84,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
     setTab(newTab);
     setError('');
     setSuccess('');
-    setFormData({ login: '', username: '', email: '', password: '', displayName: '', forgotEmail: '' });
+    setFormData({ login: '', username: '', email: '', password: '', confirmPassword: '', displayName: '', forgotEmail: '' });
   };
 
   return (
@@ -215,8 +221,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
               <button
                 onClick={() => switchTab('login')}
                 className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-all ${tab === 'login'
-                    ? 'bg-primary-600 text-white shadow-lg'
-                    : 'text-[#9496a1] hover:text-white'
+                  ? 'bg-primary-600 text-white shadow-lg'
+                  : 'text-[#9496a1] hover:text-white'
                   }`}
               >
                 <LogIn size={15} /> Đăng nhập
@@ -224,8 +230,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
               <button
                 onClick={() => switchTab('register')}
                 className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-all ${tab === 'register'
-                    ? 'bg-primary-600 text-white shadow-lg'
-                    : 'text-[#9496a1] hover:text-white'
+                  ? 'bg-primary-600 text-white shadow-lg'
+                  : 'text-[#9496a1] hover:text-white'
                   }`}
               >
                 <UserPlus size={15} /> Đăng ký
@@ -317,6 +323,14 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     }
+                  />
+                  <InputField
+                    icon={<Lock size={16} />}
+                    name="confirmPassword"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Nhập lại mật khẩu"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
                   />
                 </>
               )}

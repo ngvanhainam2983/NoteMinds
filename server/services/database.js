@@ -57,6 +57,16 @@ db.exec(`
   );
 `);
 
+// Registration rate limiting table
+db.exec(`
+  CREATE TABLE IF NOT EXISTS registration_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ip_address TEXT NOT NULL,
+    user_id INTEGER,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+`);
 // ── Migrations: add columns if missing (for existing DBs) ──
 const cols = db.prepare("PRAGMA table_info(users)").all().map(c => c.name);
 if (!cols.includes('role')) {

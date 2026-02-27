@@ -18,6 +18,7 @@ import {
   updateUserProfile, changePassword, ensureAdmin,
   banUser, unbanUser, banIp, unbanIp, getBannedIps, isIpBanned, updateLastIp,
   setVerificationToken, verifyEmail, getUserByEmail, setResetToken, resetPasswordWithToken,
+  getRegistrationCount, logRegistration,
   GUEST_DAILY_LIMIT, PLANS,
 } from './services/authService.js';
 import { decryptMiddleware } from './middleware/encryptionMiddleware.js';
@@ -178,7 +179,15 @@ app.post('/api/auth/register', async (req, res) => {
       return res.status(400).json({ error: 'Email không hợp lệ' });
     }
 
+    // IP-based registration limit (max 3)
+    const ip = getClientIp(req);
+    const regCount = getRegistrationCount(ip);
+    if (regCount >= 3) {
+      return res.status(429).json({ error: 'Địa chỉ IP của bạn đã đăng ký quá 3 tài khoản. Không thể đăng ký thêm.' });
+    }
+
     const user = createUser(username, email, password, displayName);
+    logRegistration(ip, user.id);
     const token = generateToken(user);
 
     // Send verification email

@@ -68,6 +68,21 @@ export function createUser(username, email, password, displayName) {
   }
 }
 
+// ── Registration rate limiting ─────────────────────────
+
+export function getRegistrationCount(ip) {
+  const row = db.prepare(`
+    SELECT COUNT(*) as count FROM registration_logs WHERE ip_address = ?
+  `).get(ip);
+  return row.count;
+}
+
+export function logRegistration(ip, userId) {
+  db.prepare(`
+    INSERT INTO registration_logs (ip_address, user_id) VALUES (?, ?)
+  `).run(ip, userId);
+}
+
 export function authenticateUser(login, password, ip) {
   const user = db.prepare(`
     SELECT * FROM users WHERE username = ? OR email = ?
