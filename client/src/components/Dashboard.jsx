@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Map, CreditCard, MessageCircle, FileText, Loader2, Upload,
-  Search, BarChart3, Share2, Tag, Settings, Star, Download
+  Search, BarChart3, Share2, Tag, Settings, Star, Download, Focus
 } from 'lucide-react';
 import MindmapView from './MindmapView';
 import FlashcardView from './FlashcardView';
 import ChatView from './ChatView';
 import QuizView from './QuizView';
+import PomodoroTimer from './PomodoroTimer';
 import {
   SearchModal, AnalyticsModal, ShareModal, TagsModal,
   PreferencesModal, FavoriteButton
@@ -31,9 +32,11 @@ export default function Dashboard({ doc, user }) {
   const [flashcardData, setFlashcardData] = useState(null);
   const [quizData, setQuizData] = useState(null);
   const [chatMessages, setChatMessages] = useState([WELCOME_MESSAGE]);
-  const [loading, setLoading] = useState({ mindmap: false, flashcard: false, quiz: false });
+  const [tabLoading, setTabLoading] = useState({ mindmap: false, flashcard: false, quiz: false });
   const [sessionLoading, setSessionLoading] = useState(true);
-  const [errors, setErrors] = useState({});
+  const [tabErrors, setTabErrors] = useState({});
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [showPomodoro, setShowPomodoro] = useState(false);
   const [rateLimit, setRateLimit] = useState({ uploadLimit: 10, uploadsRemaining: 10, resetIn: 0, chatLimit: 10 });
 
   // Feature modals state
@@ -42,7 +45,6 @@ export default function Dashboard({ doc, user }) {
   const [showShare, setShowShare] = useState(false);
   const [showTags, setShowTags] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
 
   const fetchRateLimit = useCallback(async () => {
     try {
@@ -82,43 +84,43 @@ export default function Dashboard({ doc, user }) {
 
   const handleGenerateMindmap = async () => {
     if (mindmapData) return;
-    setLoading(prev => ({ ...prev, mindmap: true }));
-    setErrors(prev => ({ ...prev, mindmap: null }));
+    setTabLoading(prev => ({ ...prev, mindmap: true }));
+    setTabErrors(prev => ({ ...prev, mindmap: null }));
     try {
       const data = await generateMindmap(doc.docId);
       setMindmapData(data);
     } catch (err) {
-      setErrors(prev => ({ ...prev, mindmap: handleRateLimitError(err) }));
+      setTabErrors(prev => ({ ...prev, mindmap: handleRateLimitError(err) }));
     } finally {
-      setLoading(prev => ({ ...prev, mindmap: false }));
+      setTabLoading(prev => ({ ...prev, mindmap: false }));
     }
   };
 
   const handleGenerateFlashcards = async () => {
     if (flashcardData) return;
-    setLoading(prev => ({ ...prev, flashcard: true }));
-    setErrors(prev => ({ ...prev, flashcard: null }));
+    setTabLoading(prev => ({ ...prev, flashcard: true }));
+    setTabErrors(prev => ({ ...prev, flashcard: null }));
     try {
       const data = await generateFlashcards(doc.docId);
       setFlashcardData(data);
     } catch (err) {
-      setErrors(prev => ({ ...prev, flashcard: handleRateLimitError(err) }));
+      setTabErrors(prev => ({ ...prev, flashcard: handleRateLimitError(err) }));
     } finally {
-      setLoading(prev => ({ ...prev, flashcard: false }));
+      setTabLoading(prev => ({ ...prev, flashcard: false }));
     }
   };
 
   const handleGenerateQuiz = async () => {
     if (quizData) return;
-    setLoading(prev => ({ ...prev, quiz: true }));
-    setErrors(prev => ({ ...prev, quiz: null }));
+    setTabLoading(prev => ({ ...prev, quiz: true }));
+    setTabErrors(prev => ({ ...prev, quiz: null }));
     try {
       const data = await generateQuiz(doc.docId);
       setQuizData(data);
     } catch (err) {
-      setErrors(prev => ({ ...prev, quiz: handleRateLimitError(err) }));
+      setTabErrors(prev => ({ ...prev, quiz: handleRateLimitError(err) }));
     } finally {
-      setLoading(prev => ({ ...prev, quiz: false }));
+      setTabLoading(prev => ({ ...prev, quiz: false }));
     }
   };
 
@@ -162,6 +164,17 @@ export default function Dashboard({ doc, user }) {
           </div>
         )}
         <FavoriteButton documentId={doc.docId} />
+        <button
+          onClick={() => setShowPomodoro(!showPomodoro)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs border rounded-lg transition-colors ${showPomodoro
+              ? 'bg-primary-500/10 border-primary-500/30 text-primary-400'
+              : 'bg-[#242736] border-[#2e3144] hover:bg-[#2e3144]'
+            }`}
+          title="Focus Mode (Pomodoro)"
+        >
+          <Focus size={14} />
+          <span className="hidden sm:inline">Tập trung</span>
+        </button>
       </div>
 
       {/* Feature toolbar */}
@@ -212,6 +225,9 @@ export default function Dashboard({ doc, user }) {
           </span>
         </div>
       </div>
+
+      {/* Pomodoro Overlay */}
+      {showPomodoro && <PomodoroTimer onClose={() => setShowPomodoro(false)} />}
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 bg-[#1a1d27] border border-[#2e3144] rounded-xl p-1.5">

@@ -1024,6 +1024,39 @@ app.post('/api/documents/:docId/flashcards', async (req, res) => {
   }
 });
 
+// Export flashcards as CSV
+app.get('/api/documents/:docId/flashcards/export', async (req, res) => {
+  try {
+    const doc = documents.get(req.params.docId);
+    if (!doc) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    // We get flashcards from the session storage
+    const session = getDocumentSession(req.params.docId, 'flashcards');
+    if (!session || !session.data) {
+      return res.status(404).json({ error: 'No flashcards generated yet' });
+    }
+
+    const flashcards = session.data;
+
+    // Convert to CSV string
+    // Format: "Front","Back"
+    let csv = '"Front","Back"\n';
+    flashcards.forEach(card => {
+      // Escape quotes by doubling them
+      const front = card.front.replace(/"/g, '""');
+      const back = card.back.replace(/"/g, '""');
+      csv += `"${front}","${back}"\n`;
+    });
+
+    res.json({ csv });
+  } catch (error) {
+    console.error('Export flashcards error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get due flashcards for SRS
 app.get('/api/documents/:docId/flashcards/due', requireAuth, (req, res) => {
   try {
@@ -1369,6 +1402,59 @@ app.post('/api/shared/:shareToken/chat', async (req, res) => {
     res.json({ reply, chatCount: doc.chatCount, chatLimit: shareLimit });
   } catch (error) {
     console.error('[Share] Chat error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ ANALYTICS ============
+
+// Get user analytics and metrics
+app.get('/api/analytics', requireAuth, (req, res) => {
+  try {
+    const db = new Database(DB_PATH);
+    const days = parseInt(req.query.days) || 7;
+
+    // Total documents viewed / created
+    const docs = db.prepare('SELECT COUNT(*) as count FROM documents WHERE user_id = ? AND status = ?').get(req.user.id, 'ready');
+
+    // For interactions, we can use the activity_logs table if it exists, otherwise we'll estimate from chat history and flashcard reviews.
+    // Let's create an aggregated view based on existing tables
+
+    const chats = db.prepare('SELECT COUNT(*) as count FROM chat_history WHERE user_id = ? AND timestamp >= datetime("now", ?)').get(req.user.id, `-${days} days`);
+    const flashcards = db.prepare('SELECT COUNT(*) as count FROM flashcard_reviews WHERE user_id = ? AND review_date >= datetime("now", ?)').get(req.user.id, `-${days} days`);
+
+    // Top documents by chat interactions
+    const topDocuments = db.prepare(`
+      SELECT d.original_name as title, COUNT(c.id) as interactions
+      FROM documents d
+      LEFT JOIN chat_history c ON d.id = c.document_id
+      WHERE d.user_id = ? AND c.timestamp >= datetime('now', ?)
+      GROUP BY d.id
+      ORDER BY interactions DESC
+      LIMIT 5
+    `).all(req.user.id, `-${days} days`);
+
+    // Weekly activity (last 7 days by default)
+    const weeklyActivity = db.prepare(`
+      SELECT date(timestamp) as day, COUNT(*) as interactions
+      FROM chat_history
+      WHERE user_id = ? AND timestamp >= datetime('now', ?)
+      GROUP BY date(timestamp)
+      ORDER BY date(timestamp) ASC
+    `).all(req.user.id, `-${days} days`);
+
+    db.close();
+
+    res.json({
+      documentsViewed: docs.count || 0,
+      chatInteractions: chats.count || 0,
+      flashcardsReviewed: flashcards.count || 0,
+      totalActions: (chats.count || 0) + (flashcards.count || 0),
+      topDocuments: topDocuments || [],
+      weeklyActivity: weeklyActivity || []
+    });
+  } catch (error) {
+    console.error('[Analytics] Error:', error.message);
     res.status(500).json({ error: error.message });
   }
 });

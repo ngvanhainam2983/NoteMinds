@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import {
   X, Search, BarChart3, Share2, Tag, BookOpen, Settings,
   Star, Loader2, Copy, Check, Trash2, Plus, Clock, TrendingUp,
-  MessageSquare, FileText, CreditCard, ExternalLink, Download
+  MessageSquare, FileText, CreditCard, ExternalLink, Download, Image as ImageIcon
 } from 'lucide-react';
+import html2canvas from 'html2canvas';
 import {
   searchDocuments, getAnalytics, createShareLink, getSharedDocuments, deleteShareLink,
   getUserTags, createTag, addTagToDocument, removeTagFromDocument, getDocumentTags,
@@ -596,32 +597,57 @@ export function ExportButton({ documentId, type = 'flashcards' }) {
     if (loading) return;
     setLoading(true);
     try {
-      const result = await exportFlashcardsCSV(documentId);
-      if (result.csv) {
-        const blob = new Blob([result.csv], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `flashcards_${documentId}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
+      if (type === 'flashcards') {
+        const result = await exportFlashcardsCSV(documentId);
+        if (result.csv) {
+          const blob = new Blob([result.csv], { type: 'text/csv' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `flashcards_${documentId}.csv`;
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+      } else if (type === 'mindmap') {
+        const mindmapElement = document.querySelector('.react-flow');
+        if (mindmapElement) {
+          const canvas = await html2canvas(mindmapElement, {
+            backgroundColor: '#0f1117', // Match dark theme
+            scale: 2 // Higher resolution
+          });
+          const url = canvas.toDataURL('image/png');
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `mindmap_${documentId}.png`;
+          a.click();
+        } else {
+          throw new Error('Không tìm thấy sơ đồ tư duy để xuất ảnh.');
+        }
+      } else {
+        throw new Error('Loại xuất file không được hỗ trợ.');
       }
     } catch (err) {
       console.error('Export failed:', err);
+      alert(err.message || 'Lỗi xuất file');
     } finally {
       setLoading(false);
     }
   };
 
+  // Only show export button for supported types
+  if (type !== 'flashcards' && type !== 'mindmap') return null;
+
+  const isMindmap = type === 'mindmap';
+
   return (
     <button
       onClick={handleExport}
       disabled={loading}
-      className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[#242736] border border-[#2e3144] rounded-lg hover:bg-[#2e3144] transition-colors disabled:opacity-50"
-      title="Xuất CSV"
+      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[#242736] border border-[#2e3144] rounded-lg hover:bg-[#2e3144] transition-colors disabled:opacity-50 ${isMindmap ? 'text-indigo-400' : ''}`}
+      title={isMindmap ? "Xuất PNG" : "Xuất CSV"}
     >
-      {loading ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
-      Xuất CSV
+      {loading ? <Loader2 size={12} className="animate-spin" /> : isMindmap ? <ImageIcon size={12} /> : <Download size={12} />}
+      {isMindmap ? "Xuất PNG" : "Xuất CSV"}
     </button>
   );
 }

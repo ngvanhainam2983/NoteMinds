@@ -468,7 +468,7 @@ export async function getDocumentTags(documentId) {
 // ── Search ────────────────────────────────────────────
 
 export async function searchDocuments(query, limit = 20) {
-  const response = await api.post('/search', { query, limit });
+  const response = await api.get(`/search?q=${encodeURIComponent(query)}&limit=${limit}`);
   return response.data;
 }
 
@@ -476,6 +476,33 @@ export async function searchDocuments(query, limit = 20) {
 
 export async function getAnalytics(days = 7) {
   const response = await api.get(`/analytics?days=${days}`);
+  return response.data;
+}
+
+// ── Folders (Workspaces) ─────────────────────────────────────────
+
+export async function getFolders() {
+  const response = await api.get('/folders');
+  return response.data;
+}
+
+export async function createFolder(name, color) {
+  const response = await api.post('/folders', { name, color });
+  return response.data;
+}
+
+export async function updateFolder(id, name, color) {
+  const response = await api.put(`/folders/${id}`, { name, color });
+  return response.data;
+}
+
+export async function deleteFolder(id) {
+  const response = await api.delete(`/folders/${id}`);
+  return response.data;
+}
+
+export async function assignDocumentToFolder(documentId, folderId) {
+  const response = await api.put(`/documents/${documentId}/folder`, { folder_id: folderId });
   return response.data;
 }
 
@@ -522,32 +549,6 @@ export async function deleteShareLink(shareId) {
   return response.data;
 }
 
-// ── Folders ───────────────────────────────────────────
-
-export async function getFolders() {
-  const response = await api.get('/folders');
-  return response.data.folders;
-}
-
-export async function createFolder(name, color) {
-  const response = await api.post('/folders', { name, color });
-  return response.data;
-}
-
-export async function updateFolder(id, name, color) {
-  const response = await api.put(`/folders/${id}`, { name, color });
-  return response.data;
-}
-
-export async function deleteFolder(id) {
-  const response = await api.delete(`/folders/${id}`);
-  return response.data;
-}
-
-export async function assignDocumentToFolder(documentId, folderId) {
-  const response = await api.put(`/documents/${documentId}/folder`, { folder_id: folderId });
-  return response.data;
-}
 
 // ── Spaced Repetition ─────────────────────────────────
 
