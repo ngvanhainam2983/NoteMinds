@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
   User, Settings, Shield, LogOut, ChevronDown, Crown, History,
-  FileText, Clock, AlertTriangle
+  FileText, Clock, AlertTriangle, X
 } from 'lucide-react';
 import { getDocumentHistory } from '../api';
 import ConfirmModal from './ConfirmModal';
