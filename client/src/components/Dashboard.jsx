@@ -256,6 +256,14 @@ export default function Dashboard({ doc, user }) {
             docId={doc?.docId}
           />
         )}
+        {activeTab === 'quiz' && (
+          <QuizView
+            data={quizData}
+            loading={loading.quiz}
+            error={errors.quiz}
+            onGenerate={handleGenerateQuiz}
+          />
+        )}
         {activeTab === 'chat' && (
           <ChatView
             docId={doc.docId}
