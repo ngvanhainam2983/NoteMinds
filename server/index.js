@@ -19,8 +19,16 @@ import {
   banUser, unbanUser, banIp, unbanIp, getBannedIps, isIpBanned, updateLastIp,
   setVerificationToken, verifyEmail, getUserByEmail, setResetToken, resetPasswordWithToken,
   getRegistrationCount, logRegistration,
+  generate2FATempToken, verify2FATempToken,
+  setupTotp, enableTotp, verifyTotpToken, verifyRecoveryCode,
+  disableTotp, getTotpStatus, regenerateRecoveryCodes,
   GUEST_DAILY_LIMIT, PLANS,
 } from './services/authService.js';
+import {
+  generatePasskeyRegistrationOptions, verifyPasskeyRegistration,
+  generatePasskeyAuthenticationOptions, verifyPasskeyAuthentication,
+  getPasskeyList, removePasskey, renamePasskey,
+} from './services/passkeyService.js';
 import { decryptMiddleware } from './middleware/encryptionMiddleware.js';
 import { initializeIndexes, getDatabaseStats } from './services/databaseIndexes.js';
 import { initializeEnhancedTables } from './services/enhancedDatabase.js';
@@ -279,11 +287,208 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ error: 'Vui lòng nhập tên đăng nhập/email và mật khẩu' });
     }
     const ip = getClientIp(req);
-    const user = authenticateUser(login, password, ip);
+    const result = authenticateUser(login, password, ip);
+
+    // If 2FA is required, return a temp token instead of the real JWT
+    if (result.requires2FA) {
+      const tempToken = generate2FATempToken(result.userId);
+      return res.json({
+        requires2FA: true,
+        tempToken,
+        totpEnabled: result.totpEnabled,
+        passkeyEnabled: result.passkeyEnabled,
+      });
+    }
+
+    const token = generateToken(result);
+    res.json({ user: result, token });
+  } catch (err) {
+    res.status(401).json({ error: err.message });
+  }
+});
+
+// ── 2FA Routes ──
+
+app.post('/api/auth/2fa/verify', async (req, res) => {
+  try {
+    const { tempToken, totpCode } = req.body;
+    if (!tempToken || !totpCode) {
+      return res.status(400).json({ error: 'Vui lòng nhập mã xác thực' });
+    }
+    const decoded = verify2FATempToken(tempToken);
+    if (!decoded) {
+      return res.status(401).json({ error: 'Phiên xác thực đã hết hạn. Vui lòng đăng nhập lại.' });
+    }
+    const user = verifyTotpToken(decoded.id, totpCode);
     const token = generateToken(user);
     res.json({ user, token });
   } catch (err) {
     res.status(401).json({ error: err.message });
+  }
+});
+
+app.post('/api/auth/2fa/recovery', async (req, res) => {
+  try {
+    const { tempToken, recoveryCode } = req.body;
+    if (!tempToken || !recoveryCode) {
+      return res.status(400).json({ error: 'Vui lòng nhập mã khôi phục' });
+    }
+    const decoded = verify2FATempToken(tempToken);
+    if (!decoded) {
+      return res.status(401).json({ error: 'Phiên xác thực đã hết hạn. Vui lòng đăng nhập lại.' });
+    }
+    const user = verifyRecoveryCode(decoded.id, recoveryCode);
+    const token = generateToken(user);
+    res.json({ user, token });
+  } catch (err) {
+    res.status(401).json({ error: err.message });
+  }
+});
+
+app.post('/api/auth/2fa/setup', requireAuth, async (req, res) => {
+  try {
+    const result = await setupTotp(req.user.id);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/auth/2fa/enable', requireAuth, (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({ error: 'Vui lòng nhập mã xác thực từ ứng dụng' });
+    }
+    const result = enableTotp(req.user.id, token);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/auth/2fa/disable', requireAuth, (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password) {
+      return res.status(400).json({ error: 'Vui lòng nhập mật khẩu' });
+    }
+    const user = disableTotp(req.user.id, password);
+    res.json({ user, message: '2FA đã được tắt thành công' });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.get('/api/auth/2fa/status', requireAuth, (req, res) => {
+  try {
+    const status = getTotpStatus(req.user.id);
+    res.json(status);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/auth/2fa/recovery-codes', requireAuth, (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password) {
+      return res.status(400).json({ error: 'Vui lòng nhập mật khẩu' });
+    }
+    const result = regenerateRecoveryCodes(req.user.id, password);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// ── Passkey Routes ──
+
+// Registration: generate options
+app.post('/api/auth/passkey/register-options', requireAuth, async (req, res) => {
+  try {
+    const options = await generatePasskeyRegistrationOptions(req.user.id);
+    res.json(options);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Registration: verify response
+app.post('/api/auth/passkey/register-verify', requireAuth, async (req, res) => {
+  try {
+    const { response, name } = req.body;
+    if (!response) return res.status(400).json({ error: 'Missing passkey response' });
+    const result = await verifyPasskeyRegistration(req.user.id, response, name);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Authentication during 2FA: generate options
+app.post('/api/auth/passkey/auth-options', async (req, res) => {
+  try {
+    const { tempToken } = req.body;
+    if (!tempToken) return res.status(400).json({ error: 'Missing temp token' });
+    const decoded = verify2FATempToken(tempToken);
+    if (!decoded) return res.status(401).json({ error: 'Phiên xác thực đã hết hạn.' });
+    const options = await generatePasskeyAuthenticationOptions(decoded.id);
+    res.json(options);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Authentication during 2FA: verify response
+app.post('/api/auth/passkey/auth-verify', async (req, res) => {
+  try {
+    const { tempToken, response } = req.body;
+    if (!tempToken || !response) return res.status(400).json({ error: 'Missing data' });
+    const decoded = verify2FATempToken(tempToken);
+    if (!decoded) return res.status(401).json({ error: 'Phiên xác thực đã hết hạn. Vui lòng đăng nhập lại.' });
+    const result = await verifyPasskeyAuthentication(decoded.id, response);
+    if (result.verified) {
+      const user = getUserById(decoded.id);
+      const token = generateToken(user);
+      res.json({ user, token });
+    } else {
+      res.status(401).json({ error: 'Xác thực passkey thất bại' });
+    }
+  } catch (err) {
+    res.status(401).json({ error: err.message });
+  }
+});
+
+// Management: list passkeys
+app.get('/api/auth/passkey/list', requireAuth, (req, res) => {
+  try {
+    const passkeys = getPasskeyList(req.user.id);
+    res.json({ passkeys });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Management: remove passkey
+app.delete('/api/auth/passkey/:id', requireAuth, (req, res) => {
+  try {
+    const result = removePasskey(req.user.id, req.params.id);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Management: rename passkey
+app.put('/api/auth/passkey/:id', requireAuth, (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name) return res.status(400).json({ error: 'Tên không được để trống' });
+    const result = renamePasskey(req.user.id, req.params.id, name);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
   }
 });
 

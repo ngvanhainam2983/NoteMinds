@@ -125,4 +125,46 @@ if (!cols.includes('reset_token_expires')) {
   db.exec("ALTER TABLE users ADD COLUMN reset_token_expires TEXT");
 }
 
+// ── 2FA (TOTP) migrations ──
+if (!cols.includes('totp_secret')) {
+  db.exec("ALTER TABLE users ADD COLUMN totp_secret TEXT");
+}
+if (!cols.includes('totp_enabled')) {
+  db.exec("ALTER TABLE users ADD COLUMN totp_enabled INTEGER DEFAULT 0");
+}
+if (!cols.includes('totp_recovery_codes')) {
+  db.exec("ALTER TABLE users ADD COLUMN totp_recovery_codes TEXT");
+}
+
+// ── WebAuthn Passkeys ──
+db.exec(`
+  CREATE TABLE IF NOT EXISTS passkeys (
+    id TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    public_key BLOB NOT NULL,
+    counter INTEGER DEFAULT 0,
+    transports TEXT,
+    device_type TEXT,
+    backed_up INTEGER DEFAULT 0,
+    name TEXT DEFAULT 'Passkey',
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+`);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS webauthn_challenges (
+    user_id INTEGER NOT NULL,
+    challenge TEXT NOT NULL,
+    type TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now')),
+    PRIMARY KEY (user_id, type)
+  );
+`);
+
+// Add passkey_enabled column to users
+if (!cols.includes('passkey_enabled')) {
+  db.exec("ALTER TABLE users ADD COLUMN passkey_enabled INTEGER DEFAULT 0");
+}
+
 export default db;

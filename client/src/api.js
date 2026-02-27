@@ -88,9 +88,21 @@ export async function register(username, email, password, displayName) {
   return { token, user };
 }
 
-export async function login(login, password) {
-  const response = await api.post('/auth/login', { login, password });
-  const { token, user } = response.data;
+export async function login(loginVal, password) {
+  const response = await api.post('/auth/login', { login: loginVal, password });
+  const data = response.data;
+
+  // If 2FA is required, return the flag + temp token without storing auth
+  if (data.requires2FA) {
+    return {
+      requires2FA: true,
+      tempToken: data.tempToken,
+      totpEnabled: data.totpEnabled,
+      passkeyEnabled: data.passkeyEnabled,
+    };
+  }
+
+  const { token, user } = data;
   storeAuth(token, user);
   return { token, user };
 }
@@ -123,6 +135,86 @@ export async function forgotPassword(email) {
 
 export async function resetPassword(token, newPassword) {
   const response = await api.post('/auth/reset-password', { token, newPassword });
+  return response.data;
+}
+
+// ── 2FA API ────────────────────────────────────────
+
+export async function verify2FA(tempToken, totpCode) {
+  const response = await api.post('/auth/2fa/verify', { tempToken, totpCode });
+  const { token, user } = response.data;
+  storeAuth(token, user);
+  return { token, user };
+}
+
+export async function verify2FARecovery(tempToken, recoveryCode) {
+  const response = await api.post('/auth/2fa/recovery', { tempToken, recoveryCode });
+  const { token, user } = response.data;
+  storeAuth(token, user);
+  return { token, user };
+}
+
+export async function setup2FA() {
+  const response = await api.post('/auth/2fa/setup');
+  return response.data;
+}
+
+export async function enable2FA(token) {
+  const response = await api.post('/auth/2fa/enable', { token });
+  return response.data;
+}
+
+export async function disable2FA(password) {
+  const response = await api.post('/auth/2fa/disable', { password });
+  return response.data;
+}
+
+export async function get2FAStatus() {
+  const response = await api.get('/auth/2fa/status');
+  return response.data;
+}
+
+export async function regenerateRecoveryCodes(password) {
+  const response = await api.post('/auth/2fa/recovery-codes', { password });
+  return response.data;
+}
+
+// ── Passkey API ───────────────────────────────────────
+
+export async function getPasskeyRegisterOptions() {
+  const response = await api.post('/auth/passkey/register-options');
+  return response.data;
+}
+
+export async function verifyPasskeyRegistration(passkeyResponse, name) {
+  const response = await api.post('/auth/passkey/register-verify', { response: passkeyResponse, name });
+  return response.data;
+}
+
+export async function getPasskeyAuthOptions(tempToken) {
+  const response = await api.post('/auth/passkey/auth-options', { tempToken });
+  return response.data;
+}
+
+export async function verifyPasskeyAuth(tempToken, passkeyResponse) {
+  const response = await api.post('/auth/passkey/auth-verify', { tempToken, response: passkeyResponse });
+  const { token, user } = response.data;
+  storeAuth(token, user);
+  return { token, user };
+}
+
+export async function getPasskeyList() {
+  const response = await api.get('/auth/passkey/list');
+  return response.data;
+}
+
+export async function deletePasskey(id) {
+  const response = await api.delete(`/auth/passkey/${id}`);
+  return response.data;
+}
+
+export async function renamePasskey(id, name) {
+  const response = await api.put(`/auth/passkey/${id}`, { name });
   return response.data;
 }
 
