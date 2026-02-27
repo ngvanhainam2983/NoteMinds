@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { Buffer } from 'buffer';
+import { extractTextFromImage } from './ocrService.js';
 
 /**
  * Process uploaded document and extract text content
@@ -20,6 +21,10 @@ export async function processDocument(filePath) {
       return await extractXlsxText(filePath);
     case '.csv':
       return await extractCsvText(filePath);
+    case '.png':
+    case '.jpg':
+    case '.jpeg':
+      return await extractTextFromImage(filePath);
     case '.txt':
     case '.md':
       return fs.readFileSync(filePath, 'utf-8');
@@ -42,16 +47,16 @@ async function extractPdfText(filePath) {
     // Dynamic import for pdf-parse (CommonJS module)
     const pdfParse = (await import('pdf-parse')).default;
     const dataBuffer = fs.readFileSync(filePath);
-    
+
     // Custom page renderer for better Vietnamese text extraction
     const options = {
       // Normalize Unicode for Vietnamese diacritics (NFC form)
-      pagerender: async function(pageData) {
+      pagerender: async function (pageData) {
         const textContent = await pageData.getTextContent({
           normalizeWhitespace: true,
           disableCombineTextItems: false,
         });
-        
+
         // Join text items, preserving Vietnamese characters
         let lastY = null;
         let text = '';
@@ -67,16 +72,16 @@ async function extractPdfText(filePath) {
         return text;
       }
     };
-    
+
     const data = await pdfParse(dataBuffer, options);
-    
+
     if (!data.text || data.text.trim().length === 0) {
       throw new Error('PDF contains no extractable text. It may be an image-based PDF.');
     }
-    
+
     // Normalize Unicode NFC for Vietnamese diacritics
     let cleanText = data.text.normalize('NFC');
-    
+
     // Clean up common PDF artifacts
     cleanText = cleanText
       .replace(/\r\n/g, '\n')        // Normalize line endings
@@ -84,7 +89,7 @@ async function extractPdfText(filePath) {
       .replace(/[ \t]+/g, ' ')       // Collapse whitespace
       .replace(/\n{3,}/g, '\n\n')    // Max 2 newlines in a row
       .trim();
-    
+
     return cleanText;
   } catch (error) {
     if (error.message.includes('no extractable text')) throw error;
@@ -201,7 +206,7 @@ async function transcribeAudio(filePath) {
             try {
               const subRes = await axios.get(result.subtitle_url, { timeout: 15000 });
               if (typeof subRes.data === 'string') fullText += subRes.data;
-            } catch {}
+            } catch { }
           }
         }
 
@@ -232,12 +237,12 @@ async function extractDocxText(filePath) {
   try {
     const mammoth = (await import('mammoth')).default;
     const result = await mammoth.extractRawText({ path: filePath });
-    
+
     let text = result.value;
     if (!text || text.trim().length === 0) {
       throw new Error('DOCX file contains no extractable text.');
     }
-    
+
     // Normalize Vietnamese diacritics
     text = text.normalize('NFC').trim();
     return text;
@@ -255,7 +260,7 @@ async function extractPptxText(filePath) {
     const JSZip = (await import('jszip')).default || (await import('jszip'));
     const dataBuffer = fs.readFileSync(filePath);
     const zip = await JSZip.loadAsync(dataBuffer);
-    
+
     const slides = [];
     // PPTX slides are stored as ppt/slides/slide1.xml, slide2.xml, etc.
     const slideFiles = Object.keys(zip.files)
@@ -265,7 +270,7 @@ async function extractPptxText(filePath) {
         const numB = parseInt(b.match(/slide(\d+)/)[1]);
         return numA - numB;
       });
-    
+
     for (const slideFile of slideFiles) {
       const xmlContent = await zip.files[slideFile].async('string');
       // Extract text from XML tags <a:t>...</a:t>
@@ -280,11 +285,11 @@ async function extractPptxText(filePath) {
         }
       }
     }
-    
+
     if (slides.length === 0) {
       throw new Error('PPTX file contains no extractable text.');
     }
-    
+
     return slides.join('\n\n').normalize('NFC').trim();
   } catch (error) {
     if (error.message.includes('no extractable text')) throw error;
@@ -299,7 +304,7 @@ async function extractXlsxText(filePath) {
   try {
     const XLSX = await import('xlsx');
     const workbook = XLSX.readFile(filePath);
-    
+
     const sheets = [];
     for (const sheetName of workbook.SheetNames) {
       const worksheet = workbook.Sheets[sheetName];
@@ -308,11 +313,11 @@ async function extractXlsxText(filePath) {
         sheets.push(`=== Sheet: ${sheetName} ===\n${csv}`);
       }
     }
-    
+
     if (sheets.length === 0) {
       throw new Error('XLSX file contains no data.');
     }
-    
+
     return sheets.join('\n\n').normalize('NFC').trim();
   } catch (error) {
     if (error.message.includes('no data')) throw error;

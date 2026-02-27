@@ -53,9 +53,30 @@ export function initializeEnhancedTables() {
         db.exec('ALTER TABLE documents ADD COLUMN deleted_at DATETIME');
         console.log('  ✓ Added deleted_at column to documents');
       }
+      if (!docCols.includes('folder_id')) {
+        db.exec('ALTER TABLE documents ADD COLUMN folder_id TEXT REFERENCES folders(id) ON DELETE SET NULL');
+        console.log('  ✓ Added folder_id column to documents');
+      }
     } catch (e) {
       // column already exists
     }
+
+    // ── Folders (Workspaces) ─────────────────────────────────
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS folders (
+        id TEXT PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        color TEXT DEFAULT '#3b82f6',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_folders_user 
+      ON folders(user_id);
+    `);
+    console.log('  ✓ Folders table created');
 
     // ── Conversations (Chat History) ─────────────────────────
     db.exec(`

@@ -11,7 +11,8 @@ import { generateMindmap } from './services/mindmapGenerator.js';
 import { generateFlashcards } from './services/flashcardGenerator.js';
 import { generateQuiz } from './services/quizGenerator.js';
 import { reviewFlashcard, getDueFlashcards } from './services/srsService.js';
-import { chatWithDocument } from './services/chatService.js';
+import { chatWithDocument, chatWithMultipleDocuments } from './services/chatService.js';
+import { callQwen } from './services/qwenClient.js';
 import {
   createUser, authenticateUser, generateToken, getUserById,
   optionalAuth, requireAuth, requireAdmin,
@@ -91,7 +92,7 @@ const upload = multer({
   storage,
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
   fileFilter: (req, file, cb) => {
-    const allowed = ['.pdf', '.txt', '.md', '.docx', '.doc', '.pptx', '.xlsx', '.csv', '.mp3', '.wav', '.m4a', '.ogg', '.webm'];
+    const allowed = ['.pdf', '.txt', '.md', '.docx', '.doc', '.pptx', '.xlsx', '.csv', '.mp3', '.wav', '.m4a', '.ogg', '.webm', '.jpg', '.jpeg', '.png'];
     const ext = path.extname(file.originalname).toLowerCase();
     if (allowed.includes(ext)) {
       cb(null, true);
@@ -714,6 +715,108 @@ app.post('/api/upload', optionalAuth, uploadRateLimitMiddleware, upload.single('
   }
 });
 
+// ============ FOLDERS (WORKSPACES) ============
+
+// Get all folders for user
+app.get('/api/folders', requireAuth, (req, res) => {
+  try {
+    const db = new Database(DB_PATH);
+    const folders = db.prepare('SELECT * FROM folders WHERE user_id = ? ORDER BY created_at DESC').all(req.user.id);
+    db.close();
+    res.json({ folders });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Create folder
+app.post('/api/folders', requireAuth, (req, res) => {
+  try {
+    const { name, color } = req.body;
+    if (!name) return res.status(400).json({ error: 'Folder name is required' });
+    const id = uuidv4();
+    const db = new Database(DB_PATH);
+    db.prepare('INSERT INTO folders (id, user_id, name, color) VALUES (?, ?, ?, ?)')
+      .run(id, req.user.id, name, color || '#3b82f6');
+    const folder = db.prepare('SELECT * FROM folders WHERE id = ?').get(id);
+    db.close();
+    res.json(folder);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update folder
+app.put('/api/folders/:id', requireAuth, (req, res) => {
+  try {
+    const { name, color } = req.body;
+    const db = new Database(DB_PATH);
+    // Check ownership
+    const existing = db.prepare('SELECT * FROM folders WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+    if (!existing) {
+      db.close();
+      return res.status(404).json({ error: 'Folder not found' });
+    }
+    db.prepare('UPDATE folders SET name = COALESCE(?, name), color = COALESCE(?, color), updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+      .run(name, color, req.params.id);
+    const updated = db.prepare('SELECT * FROM folders WHERE id = ?').get(req.params.id);
+    db.close();
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete folder (cascade handled partially by foreign keys, but documents will just lose folder_id due to ON DELETE SET NULL)
+app.delete('/api/folders/:id', requireAuth, (req, res) => {
+  try {
+    const db = new Database(DB_PATH);
+    const existing = db.prepare('SELECT * FROM folders WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+    if (!existing) {
+      db.close();
+      return res.status(404).json({ error: 'Folder not found' });
+    }
+    db.prepare('DELETE FROM folders WHERE id = ? AND user_id = ?').run(req.params.id, req.user.id);
+    db.close();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Assign document to folder
+app.put('/api/documents/:id/folder', requireAuth, (req, res) => {
+  try {
+    const { folder_id } = req.body; // Can be null to remove from folder
+    const db = new Database(DB_PATH);
+
+    // Check document ownership
+    const doc = db.prepare('SELECT * FROM documents WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+    if (!doc) {
+      db.close();
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    // If folder_id provided, check folder ownership
+    if (folder_id) {
+      const folder = db.prepare('SELECT * FROM folders WHERE id = ? AND user_id = ?').get(folder_id, req.user.id);
+      if (!folder) {
+        db.close();
+        return res.status(404).json({ error: 'Folder not found' });
+      }
+    }
+
+    db.prepare('UPDATE documents SET folder_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+      .run(folder_id || null, req.params.id);
+    db.close();
+    res.json({ success: true, folder_id: folder_id || null });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============ DOCUMENTS ============
+
 // Get document history (for logged-in users) — must be before :docId routes
 app.get('/api/documents/history', optionalAuth, (req, res) => {
   try {
@@ -723,7 +826,7 @@ app.get('/api/documents/history', optionalAuth, (req, res) => {
     }
     const db = new Database(DB_PATH);
     const docs = db.prepare(`
-      SELECT id, original_name, status, text_length, deleted_at, created_at, updated_at
+      SELECT id, original_name, status, text_length, deleted_at, created_at, updated_at, folder_id
       FROM documents
       WHERE user_id = ?
       ORDER BY created_at DESC
@@ -1015,6 +1118,41 @@ app.post('/api/documents/:docId/chat', optionalAuth, async (req, res) => {
     res.json({ reply, chatCount: doc.chatCount, chatLimit });
   } catch (error) {
     console.error('Chat error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Chat with multiple documents
+app.post('/api/chat/multi', optionalAuth, async (req, res) => {
+  try {
+    const { docIds, message, history } = req.body;
+    if (!docIds || !Array.isArray(docIds) || docIds.length === 0) {
+      return res.status(400).json({ error: 'Array of docIds is required' });
+    }
+    if (!message) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+
+    // Verify all docs exist and are ready
+    const docsToChat = [];
+    for (const id of docIds) {
+      const doc = documents.get(id);
+      if (!doc) {
+        return res.status(404).json({ error: `Document ${id} not found` });
+      }
+      if (doc.status !== 'ready') {
+        return res.status(400).json({ error: `Document ${doc.fileName} is still processing` });
+      }
+      docsToChat.push(doc);
+    }
+
+    const reply = await chatWithMultipleDocuments(docsToChat, message, history || []);
+
+    // We don't save multi-chat history to a single document's session for now,
+    // as it spans multiple documents. The client will hold the state.
+    res.json({ reply });
+  } catch (error) {
+    console.error('Multi-chat error:', error);
     res.status(500).json({ error: error.message });
   }
 });

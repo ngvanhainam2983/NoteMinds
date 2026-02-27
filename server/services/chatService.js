@@ -44,3 +44,44 @@ export async function chatWithDocument(documentText, userMessage, history = []) 
 
   return response;
 }
+
+/**
+ * Chat with multiple documents
+ */
+export async function chatWithMultipleDocuments(documents, userMessage, history = []) {
+  // Truncate documents to fit context window.
+  // With multiple documents, we distribute the max context window across them.
+  const maxTotalChars = 15000;
+  const charsPerDoc = Math.floor(maxTotalChars / documents.length);
+
+  let combinedText = '';
+  documents.forEach((doc, idx) => {
+    const text = doc.text.length > charsPerDoc
+      ? doc.text.substring(0, charsPerDoc) + '...[Lược bớt]'
+      : doc.text;
+    combinedText += `\n\n--- TÀI LIỆU ${idx + 1}: ${doc.fileName} ---\n${text}`;
+  });
+
+  const SYSTEM_PROMPT = `Bạn là trợ lý học tập AI thông minh tên NoteMinds. Bạn được cung cấp nội dung từ NHIỀU tài liệu học tập bên dưới.
+
+NHIỆM VỤ:
+- Trả lời câu hỏi dựa trên nội dung được cung cấp từ các tài liệu.
+- Tổng hợp thông tin, so sánh, đối chiếu giữa các tài liệu nếu cần thiết.
+- Khi trích dẫn thông tin, hãy NÊU RÕ tên tài liệu (ví dụ: "Dựa theo tài liệu A...").
+- Nếu thông tin không có trong tài liệu, hãy báo rõ.
+
+NỘI DUNG CÁC TÀI LIỆU:
+${combinedText}`;
+
+  const messages = [
+    ...history.slice(-10),
+    { role: 'user', content: userMessage }
+  ];
+
+  const response = await callQwenChat(SYSTEM_PROMPT, messages, {
+    temperature: 0.7,
+    maxTokens: 2048
+  });
+
+  return response;
+}

@@ -318,6 +318,11 @@ export async function getDocumentSessions(docId) {
   return response.data;
 }
 
+export async function chatWithMultipleDocuments(docIds, message, history) {
+  const response = await api.post('/chat/multi', { docIds, message, history });
+  return response.data;
+}
+
 // ── Profile API ───────────────────────────────────────
 
 export async function updateProfile(displayName, email) {
@@ -514,6 +519,33 @@ export async function getSharedDocuments(documentId = null) {
 
 export async function deleteShareLink(shareId) {
   const response = await api.delete(`/shares/${shareId}`);
+  return response.data;
+}
+
+// ── Folders ───────────────────────────────────────────
+
+export async function getFolders() {
+  const response = await api.get('/folders');
+  return response.data.folders;
+}
+
+export async function createFolder(name, color) {
+  const response = await api.post('/folders', { name, color });
+  return response.data;
+}
+
+export async function updateFolder(id, name, color) {
+  const response = await api.put(`/folders/${id}`, { name, color });
+  return response.data;
+}
+
+export async function deleteFolder(id) {
+  const response = await api.delete(`/folders/${id}`);
+  return response.data;
+}
+
+export async function assignDocumentToFolder(documentId, folderId) {
+  const response = await api.put(`/documents/${documentId}/folder`, { folder_id: folderId });
   return response.data;
 }
 
