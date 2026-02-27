@@ -483,7 +483,7 @@ export async function getAnalytics(days = 7) {
 
 export async function getFolders() {
   const response = await api.get('/folders');
-  return response.data;
+  return response.data.folders;
 }
 
 export async function createFolder(name, color) {
