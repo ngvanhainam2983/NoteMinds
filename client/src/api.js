@@ -249,6 +249,24 @@ export async function generateFlashcards(docId) {
   return response.data;
 }
 
+export async function downloadDocument(docId) {
+  const response = await api.get(`/documents/${docId}/download`, {
+    responseType: 'blob',
+  });
+
+  // Extract filename from Content-Disposition header if available
+  const contentDisposition = response.headers['content-disposition'];
+  let filename = 'document.txt'; // fallback
+  if (contentDisposition) {
+    const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+    if (filenameMatch && filenameMatch.length === 2) {
+      filename = filenameMatch[1];
+    }
+  }
+
+  return { blob: response.data, filename };
+}
+
 export async function chatWithDocument(docId, message, history) {
   const response = await api.post(`/documents/${docId}/chat`, {
     message,

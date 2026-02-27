@@ -32,6 +32,7 @@ import {
 import { decryptMiddleware } from './middleware/encryptionMiddleware.js';
 import { initializeIndexes, getDatabaseStats } from './services/databaseIndexes.js';
 import { initializeEnhancedTables } from './services/enhancedDatabase.js';
+import { initDocumentCleanup } from './services/documentCleanup.js';
 import { logger, requestLoggerMiddleware } from './services/logger.js';
 import featureRoutes from './routes/featuresRoutes.js';
 import { validateShareToken } from './services/advancedFeatureService.js';
@@ -71,6 +72,9 @@ const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
+
+// Initialize cleanup cron job
+initDocumentCleanup(uploadsDir);
 
 // Multer config
 const storage = multer.diskStorage({
@@ -834,6 +838,44 @@ function getAllDocumentSessions(docId) {
     return {};
   }
 }
+
+// Download original document
+app.get('/api/documents/:docId/download', optionalAuth, async (req, res) => {
+  try {
+    const docId = req.params.docId;
+
+    // First try to find it in memory to get originalName
+    let originalName = 'document.txt';
+    const memDoc = documents.get(docId);
+    if (memDoc && memDoc.fileName) {
+      originalName = memDoc.fileName;
+    }
+
+    // Always fetch from DB to get the true file path
+    const db = new Database(DB_PATH);
+    const dbDoc = db.prepare('SELECT file_path, original_name FROM documents WHERE id = ?').get(docId);
+    db.close();
+
+    if (!dbDoc || !dbDoc.file_path || !fs.existsSync(dbDoc.file_path)) {
+      return res.status(404).json({ error: 'Tài liệu không còn tồn tại trên máy chủ' });
+    }
+
+    originalName = dbDoc.original_name || originalName;
+
+    res.download(dbDoc.file_path, originalName, (err) => {
+      if (err) {
+        console.error(`[Download] Error downloading ${docId}:`, err.message);
+        if (!res.headersSent) {
+          res.status(500).json({ error: 'Không thể tải xuống tệp' });
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Download error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Generate mindmap
 app.post('/api/documents/:docId/mindmap', async (req, res) => {

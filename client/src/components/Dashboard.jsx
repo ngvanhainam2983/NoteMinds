@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Map, CreditCard, MessageCircle, FileText, Loader2, Upload,
-  Search, BarChart3, Share2, Tag, Settings, Star
+  Search, BarChart3, Share2, Tag, Settings, Star, Download
 } from 'lucide-react';
 import MindmapView from './MindmapView';
 import FlashcardView from './FlashcardView';
@@ -10,7 +10,7 @@ import {
   SearchModal, AnalyticsModal, ShareModal, TagsModal,
   PreferencesModal, FavoriteButton
 } from './FeatureModals';
-import { generateMindmap, generateFlashcards, getRateLimit, getDocumentSessions } from '../api';
+import { generateMindmap, generateFlashcards, getRateLimit, getDocumentSessions, downloadDocument } from '../api';
 
 const TABS = [
   { id: 'mindmap', label: 'Sơ đồ tư duy', icon: Map },
@@ -39,6 +39,7 @@ export default function Dashboard({ doc, user }) {
   const [showShare, setShowShare] = useState(false);
   const [showTags, setShowTags] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const fetchRateLimit = useCallback(async () => {
     try {
@@ -107,6 +108,24 @@ export default function Dashboard({ doc, user }) {
     setActiveTab(tabId);
   };
 
+  const handleDownload = async () => {
+    if (isDownloading) return;
+    setIsDownloading(true);
+    try {
+      const { blob, filename } = await downloadDocument(doc.docId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert(err.response?.data?.error || 'Lỗi khi tải xuống tài liệu');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       {/* Document info bar */}
@@ -129,6 +148,17 @@ export default function Dashboard({ doc, user }) {
 
       {/* Feature toolbar */}
       <div className="flex items-center gap-2 mb-4 flex-wrap">
+        <button
+          onClick={handleDownload}
+          disabled={isDownloading}
+          className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-primary-600/10 border border-primary-500/30 rounded-lg text-primary-400 hover:bg-primary-600/20 transition-all disabled:opacity-50"
+        >
+          {isDownloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+          <span className="hidden sm:inline">{isDownloading ? 'Đang tải...' : 'Tải file gốc'}</span>
+        </button>
+
+        <div className="w-px h-6 bg-[#2e3144] mx-1 hidden sm:block"></div>
+
         {[
           { icon: Search, label: 'Tìm kiếm', onClick: () => setShowSearch(true) },
           { icon: BarChart3, label: 'Phân tích', onClick: () => setShowAnalytics(true) },
