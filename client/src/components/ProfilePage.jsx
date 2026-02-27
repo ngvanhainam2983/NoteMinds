@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
     ArrowLeft, User, Mail, Shield, ShieldCheck, Crown, Calendar, Clock,
     CheckCircle2, XCircle, Fingerprint, KeyRound, Loader2, Edit3,
-    Save, X, Lock, ShieldOff, RefreshCw, Copy, Palette, AlertCircle, Plus, Trash2
+    Save, X, Lock, ShieldOff, RefreshCw, Copy, Palette, AlertCircle, Plus, Trash2, Download
 } from 'lucide-react';
 import {
     updateProfile, get2FAStatus, getPasskeyList, changePassword,
@@ -427,11 +427,47 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
 
                             {twoFAStep === 'recovery-codes' && recoveryCodes && (
                                 <div className="space-y-4">
-                                    <p className="text-sm font-bold text-emerald-400 text-center">Lưu mã khôi phục</p>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {recoveryCodes.map((code, i) => <code key={i} className="text-xs font-mono text-center py-1.5 bg-[#0f1117] border border-[#2e3144] rounded-lg">{code}</code>)}
+                                    <div className="text-center">
+                                        <p className="text-sm font-bold text-emerald-400">Lưu mã khôi phục mới</p>
+                                        <p className="text-xs text-[#9496a1] mt-1">Lưu các mã này ở nơi an toàn. Bạn sẽ <strong className="text-red-400">KHÔNG</strong> thể xem lại chúng sau khi đóng.</p>
                                     </div>
-                                    <button onClick={() => { setTwoFAStep('status'); load2FAStatus(); setRecoveryCodes(null); }} className="w-full py-2 bg-primary-600 rounded-xl text-sm font-semibold">Đã lưu, đóng</button>
+
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {recoveryCodes.map((code, i) => <code key={i} className="text-sm tracking-wider font-mono text-center py-2 bg-[#0f1117] border border-[#2e3144] rounded-lg">{code}</code>)}
+                                    </div>
+
+                                    <div className="flex gap-2 pt-2">
+                                        <button
+                                            onClick={() => {
+                                                const blob = new Blob([recoveryCodes.join('\\n')], { type: 'text/plain' });
+                                                const url = URL.createObjectURL(blob);
+                                                const a = document.createElement('a');
+                                                a.href = url;
+                                                a.download = 'notemind-recovery-codes.txt';
+                                                a.click();
+                                                URL.revokeObjectURL(url);
+                                                setSuccess('Đã tải xuống mã khôi phục!');
+                                                setTimeout(() => setSuccess(''), 3000);
+                                            }}
+                                            className="flex-1 py-2.5 bg-[#242736] hover:bg-[#2e3144] rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-colors border border-[#2e3144]"
+                                        >
+                                            <Download size={15} /> Tải .txt
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(recoveryCodes.join('\\n'));
+                                                setSuccess('Đã sao chép vào bộ nhớ tạm!');
+                                                setTimeout(() => setSuccess(''), 3000);
+                                            }}
+                                            className="flex-1 py-2.5 bg-[#242736] hover:bg-[#2e3144] rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-colors border border-[#2e3144]"
+                                        >
+                                            <Copy size={15} /> Sao chép
+                                        </button>
+                                    </div>
+
+                                    <button onClick={() => { setTwoFAStep('status'); load2FAStatus(); setRecoveryCodes(null); }} className="w-full py-2.5 hover:opacity-90 transition-opacity bg-primary-600 rounded-xl text-sm font-bold text-white shadow-lg shadow-primary-500/20">
+                                        Đã lưu, đóng cửa sổ
+                                    </button>
                                 </div>
                             )}
 
