@@ -87,8 +87,20 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId 
   const handleGrade = async (grade) => {
     if (!currentCard || !docId) return;
     const timeMs = Date.now() - cardStartTime.current;
+    
+    // Map numeric grade (0-5) to difficulty string expected by backend
+    const difficultyMap = {
+      0: 'again',  // Quên
+      1: 'hard',   // Khó
+      2: 'hard',   // Nhớ mờ
+      3: 'good',   // Khá
+      4: 'good',   // Tốt
+      5: 'easy',   // Xuất sắc
+    };
+    const difficulty = difficultyMap[grade];
+    
     try {
-      const result = await reviewFlashcard(docId, currentIndex, grade, timeMs);
+      const result = await reviewFlashcard(docId, currentIndex, difficulty, timeMs);
       setReviewResult(result);
       setTimeout(() => {
         goNext();
