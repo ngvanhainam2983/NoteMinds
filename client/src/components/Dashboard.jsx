@@ -6,15 +6,17 @@ import {
 import MindmapView from './MindmapView';
 import FlashcardView from './FlashcardView';
 import ChatView from './ChatView';
+import QuizView from './QuizView';
 import {
   SearchModal, AnalyticsModal, ShareModal, TagsModal,
   PreferencesModal, FavoriteButton
 } from './FeatureModals';
-import { generateMindmap, generateFlashcards, getRateLimit, getDocumentSessions, downloadDocument } from '../api';
+import { generateMindmap, generateFlashcards, generateQuiz, getRateLimit, getDocumentSessions, downloadDocument } from '../api';
 
 const TABS = [
   { id: 'mindmap', label: 'Sơ đồ tư duy', icon: Map },
   { id: 'flashcard', label: 'Flashcard', icon: CreditCard },
+  { id: 'quiz', label: 'Kiểm tra', icon: FileText },
   { id: 'chat', label: 'Hỏi đáp AI', icon: MessageCircle },
 ];
 
@@ -27,8 +29,9 @@ export default function Dashboard({ doc, user }) {
   const [activeTab, setActiveTab] = useState('mindmap');
   const [mindmapData, setMindmapData] = useState(null);
   const [flashcardData, setFlashcardData] = useState(null);
+  const [quizData, setQuizData] = useState(null);
   const [chatMessages, setChatMessages] = useState([WELCOME_MESSAGE]);
-  const [loading, setLoading] = useState({ mindmap: false, flashcard: false });
+  const [loading, setLoading] = useState({ mindmap: false, flashcard: false, quiz: false });
   const [sessionLoading, setSessionLoading] = useState(true);
   const [errors, setErrors] = useState({});
   const [rateLimit, setRateLimit] = useState({ uploadLimit: 10, uploadsRemaining: 10, resetIn: 0, chatLimit: 10 });
@@ -62,6 +65,7 @@ export default function Dashboard({ doc, user }) {
       .then(({ sessions }) => {
         if (sessions?.mindmap) setMindmapData(sessions.mindmap);
         if (sessions?.flashcards) setFlashcardData(sessions.flashcards);
+        if (sessions?.quiz) setQuizData(sessions.quiz);
         if (sessions?.chat && sessions.chat.length > 0) setChatMessages(sessions.chat);
       })
       .catch(() => { /* no saved sessions, start fresh */ })
@@ -101,6 +105,20 @@ export default function Dashboard({ doc, user }) {
       setErrors(prev => ({ ...prev, flashcard: handleRateLimitError(err) }));
     } finally {
       setLoading(prev => ({ ...prev, flashcard: false }));
+    }
+  };
+
+  const handleGenerateQuiz = async () => {
+    if (quizData) return;
+    setLoading(prev => ({ ...prev, quiz: true }));
+    setErrors(prev => ({ ...prev, quiz: null }));
+    try {
+      const data = await generateQuiz(doc.docId);
+      setQuizData(data);
+    } catch (err) {
+      setErrors(prev => ({ ...prev, quiz: handleRateLimitError(err) }));
+    } finally {
+      setLoading(prev => ({ ...prev, quiz: false }));
     }
   };
 
@@ -235,7 +253,7 @@ export default function Dashboard({ doc, user }) {
             loading={loading.flashcard}
             error={errors.flashcard}
             onGenerate={handleGenerateFlashcards}
-            docId={doc.docId}
+            docId={doc?.docId}
           />
         )}
         {activeTab === 'chat' && (

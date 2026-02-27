@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import {
   Loader2, AlertCircle, CreditCard, RefreshCw,
-  ChevronLeft, ChevronRight, RotateCw, Download, Tag, Star
+  ChevronLeft, ChevronRight, RotateCw, Download, Tag, Star, Volume2
 } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
 import { reviewFlashcard } from '../api';
@@ -118,6 +118,19 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId 
     URL.revokeObjectURL(url);
   };
 
+  const speakText = (e, text) => {
+    e.stopPropagation(); // Prevent card flip
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel(); // Stop any currently playing speech
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'vi-VN';
+      utterance.rate = 1.0;
+      window.speechSynthesis.speak(utterance);
+    } else {
+      alert("Trình duyệt của bạn không hỗ trợ tính năng đọc văn bản.");
+    }
+  };
+
   return (
     <div className="p-6">
       {/* Header */}
@@ -165,18 +178,32 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId 
           >
             <div className="flip-card-inner">
               {/* Front - Question */}
-              <div className="flip-card-front bg-gradient-to-br from-[#242736] to-[#1a1d27] border border-[#2e3144] rounded-2xl p-8 flex flex-col items-center justify-center">
+              <div className="flip-card-front bg-gradient-to-br from-[#242736] to-[#1a1d27] border border-[#2e3144] rounded-2xl p-8 flex flex-col items-center justify-center relative">
                 <span className="text-xs text-accent-400 font-medium mb-4 flex items-center gap-1">
                   <Tag size={12} /> {currentCard?.tag || 'Câu hỏi'}
                 </span>
+                <button
+                  onClick={(e) => speakText(e, currentCard?.question || '')}
+                  className="absolute top-4 right-4 p-2 text-[#9496a1] hover:text-white bg-[#2e3144]/50 hover:bg-[#2e3144] rounded-full transition-colors"
+                  title="Đọc câu hỏi"
+                >
+                  <Volume2 size={16} />
+                </button>
                 <div className="text-lg font-medium text-center leading-relaxed">
                   <MarkdownRenderer content={currentCard?.question || ''} />
                 </div>
                 <span className="text-xs text-[#9496a1] mt-6">Nhấn để xem đáp án</span>
               </div>
               {/* Back - Answer */}
-              <div className="flip-card-back bg-gradient-to-br from-primary-600/20 to-[#1a1d27] border border-primary-500/30 rounded-2xl p-8 flex flex-col items-center justify-center">
+              <div className="flip-card-back bg-gradient-to-br from-primary-600/20 to-[#1a1d27] border border-primary-500/30 rounded-2xl p-8 flex flex-col items-center justify-center relative">
                 <span className="text-xs text-primary-400 font-medium mb-4">Đáp án</span>
+                <button
+                  onClick={(e) => speakText(e, currentCard?.answer || '')}
+                  className="absolute top-4 right-4 p-2 text-primary-400 hover:text-white bg-primary-600/20 hover:bg-primary-600/40 rounded-full transition-colors"
+                  title="Đọc đáp án"
+                >
+                  <Volume2 size={16} />
+                </button>
                 <div className="text-base text-center leading-relaxed">
                   <MarkdownRenderer content={currentCard?.answer || ''} />
                 </div>
@@ -237,9 +264,8 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId 
               <button
                 key={i}
                 onClick={() => { setCurrentIndex(i); setFlipped(false); }}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  i === currentIndex ? 'bg-primary-400 scale-125' : 'bg-[#2e3144] hover:bg-[#9496a1]'
-                }`}
+                className={`w-2 h-2 rounded-full transition-all ${i === currentIndex ? 'bg-primary-400 scale-125' : 'bg-[#2e3144] hover:bg-[#9496a1]'
+                  }`}
               />
             ))}
           </div>

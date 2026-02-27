@@ -9,6 +9,8 @@ import { fileURLToPath } from 'url';
 import { processDocument } from './services/documentProcessor.js';
 import { generateMindmap } from './services/mindmapGenerator.js';
 import { generateFlashcards } from './services/flashcardGenerator.js';
+import { generateQuiz } from './services/quizGenerator.js';
+import { reviewFlashcard, getDueFlashcards } from './services/srsService.js';
 import { chatWithDocument } from './services/chatService.js';
 import {
   createUser, authenticateUser, generateToken, getUserById,
@@ -915,6 +917,59 @@ app.post('/api/documents/:docId/flashcards', async (req, res) => {
     res.json(flashcards);
   } catch (error) {
     console.error('Flashcard generation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get due flashcards for SRS
+app.get('/api/documents/:docId/flashcards/due', requireAuth, (req, res) => {
+  try {
+    const dueCards = getDueFlashcards(req.user.id, req.params.docId);
+    res.json({ dueCards });
+  } catch (error) {
+    console.error('Error fetching due flashcards:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Review a flashcard (SRS)
+app.post('/api/documents/:docId/flashcards/:cardIdx/review', requireAuth, (req, res) => {
+  try {
+    const { difficulty, timeElapsedMs } = req.body;
+    if (!['easy', 'good', 'hard', 'again'].includes(difficulty)) {
+      return res.status(400).json({ error: 'Invalid difficulty level' });
+    }
+
+    // Usually flashcards are just stored as a JSON array in the session string.
+    // We treat the cardIdx (index in the array) as the unique flashcardId for now, 
+    // prefixed with docId to ensure global uniqueness in the metrics DB.
+    const flashcardId = `${req.params.docId}-card-${req.params.cardIdx}`;
+
+    const result = reviewFlashcard(req.user.id, req.params.docId, flashcardId, difficulty, timeElapsedMs);
+    res.json(result);
+  } catch (error) {
+    console.error('Error reviewing flashcard:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Generate quiz
+app.post('/api/documents/:docId/quiz', async (req, res) => {
+  try {
+    const doc = documents.get(req.params.docId);
+    if (!doc) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+    if (doc.status !== 'ready') {
+      return res.status(400).json({ error: 'Document is still processing' });
+    }
+
+    const quiz = await generateQuiz(doc.text, doc.fileName);
+    saveDocumentSession(req.params.docId, 'quiz', quiz);
+    broadcastDocEvent(req.params.docId, 'quiz', quiz);
+    res.json(quiz);
+  } catch (error) {
+    console.error('Quiz generation error:', error);
     res.status(500).json({ error: error.message });
   }
 });

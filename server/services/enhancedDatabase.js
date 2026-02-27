@@ -389,6 +389,43 @@ export function initializeEnhancedTables() {
     `);
     console.log('  ✓ Document sessions table created');
 
+    // ── Quizzes ──────────────────────────────────────────────
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS quizzes (
+        id TEXT PRIMARY KEY,
+        document_id TEXT NOT NULL,
+        data TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_quizzes_document 
+      ON quizzes(document_id);
+    `);
+    console.log('  ✓ Quizzes table created');
+
+    // ── Quiz Attempts ────────────────────────────────────────
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS user_quiz_attempts (
+        id TEXT PRIMARY KEY,
+        quiz_id TEXT NOT NULL,
+        user_id INTEGER NOT NULL,
+        document_id TEXT NOT NULL,
+        score INTEGER NOT NULL,
+        total_questions INTEGER NOT NULL,
+        answers_data TEXT NOT NULL,
+        completed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE,
+        FOREIGN KEY(user_id) REFERENCES users(id),
+        FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_quiz_attempts_user_doc 
+      ON user_quiz_attempts(user_id, document_id);
+    `);
+    console.log('  ✓ User quiz attempts table created');
+
     console.log('[Database] ✓ All enhanced tables initialized');
     db.close();
     return true;

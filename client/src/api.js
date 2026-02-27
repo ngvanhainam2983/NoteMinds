@@ -249,6 +249,24 @@ export async function generateFlashcards(docId) {
   return response.data;
 }
 
+export async function getDueFlashcards(docId) {
+  const response = await api.get(`/documents/${docId}/flashcards/due`);
+  return response.data;
+}
+
+export async function reviewFlashcard(docId, cardIdx, difficulty, timeElapsedMs = 0) {
+  const response = await api.post(`/documents/${docId}/flashcards/${cardIdx}/review`, {
+    difficulty,
+    timeElapsedMs
+  });
+  return response.data;
+}
+
+export async function generateQuiz(docId) {
+  const response = await api.post(`/documents/${docId}/quiz`);
+  return response.data;
+}
+
 export async function downloadDocument(docId) {
   const response = await api.get(`/documents/${docId}/download`, {
     responseType: 'blob',
@@ -500,18 +518,6 @@ export async function deleteShareLink(shareId) {
 }
 
 // ── Spaced Repetition ─────────────────────────────────
-
-export async function getDueFlashcards(documentId, limit = 20) {
-  const response = await api.get(`/flashcards/due?documentId=${documentId}&limit=${limit}`);
-  return response.data.dueCards;
-}
-
-export async function reviewFlashcard(flashcardId, documentId, qualityGrade, timeMs) {
-  const response = await api.post(`/flashcards/${flashcardId}/review`, {
-    documentId, qualityGrade, timeMs
-  });
-  return response.data;
-}
 
 export async function getFlashcardStats() {
   const response = await api.get('/flashcards/stats');

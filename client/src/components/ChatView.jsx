@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader2, MessageSquare, Sparkles, History, Trash2, Save, X, Lock } from 'lucide-react';
+import { Send, Bot, User, Loader2, MessageSquare, Sparkles, History, Trash2, Save, X, Lock, Volume2 } from 'lucide-react';
 import { chatWithDocument, getConversationHistory, getConversationMessages, saveConversation, deleteConversation } from '../api';
 import MarkdownRenderer from './MarkdownRenderer';
 
@@ -128,6 +128,18 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
     'Giải thích ý tưởng cốt lõi',
   ];
 
+  const speakText = (text) => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel(); // Stop any currently playing speech
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'vi-VN';
+      utterance.rate = 1.0;
+      window.speechSynthesis.speak(utterance);
+    } else {
+      alert("Trình duyệt của bạn không hỗ trợ tính năng đọc văn bản.");
+    }
+  };
+
   return (
     <div className="flex flex-col h-[600px] relative">
       {/* History sidebar */}
@@ -170,21 +182,21 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
 
       {/* Chat toolbar */}
       {!shareMode && (
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-[#2e3144]">
-        <button
-          onClick={() => { setShowHistory(true); loadHistory(); }}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-[#9496a1] hover:text-white hover:bg-[#242736] rounded-lg transition-colors"
-        >
-          <History size={13} /> Lịch sử
-        </button>
-        <button
-          onClick={handleSaveChat}
-          disabled={messages.length <= 1 || savingChat}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-[#9496a1] hover:text-white hover:bg-[#242736] rounded-lg transition-colors disabled:opacity-40"
-        >
-          {savingChat ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Lưu chat
-        </button>
-      </div>
+        <div className="flex items-center gap-2 px-4 py-2 border-b border-[#2e3144]">
+          <button
+            onClick={() => { setShowHistory(true); loadHistory(); }}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-[#9496a1] hover:text-white hover:bg-[#242736] rounded-lg transition-colors"
+          >
+            <History size={13} /> Lịch sử
+          </button>
+          <button
+            onClick={handleSaveChat}
+            disabled={messages.length <= 1 || savingChat}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-[#9496a1] hover:text-white hover:bg-[#242736] rounded-lg transition-colors disabled:opacity-40"
+          >
+            {savingChat ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Lưu chat
+          </button>
+        </div>
       )}
 
       {/* Messages area */}
@@ -201,15 +213,26 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
             )}
             <div
               className={`
-                max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed
+                max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed relative group
                 ${msg.role === 'user'
                   ? 'bg-primary-600 text-white rounded-br-md whitespace-pre-wrap'
-                  : 'bg-[#242736] text-[#e4e5e9] rounded-bl-md border border-[#2e3144]'
+                  : 'bg-[#242736] text-[#e4e5e9] rounded-bl-md border border-[#2e3144] pr-12'
                 }
               `}
             >
               {msg.role === 'assistant'
-                ? <MarkdownRenderer content={msg.content} />
+                ? (
+                  <>
+                    <button
+                      onClick={() => speakText(msg.content)}
+                      className="absolute top-2 right-2 p-1.5 text-[#9496a1] hover:text-primary-400 bg-[#1a1d27] rounded-md opacity-0 group-hover:opacity-100 transition-all border border-[#2e3144]"
+                      title="Đọc văn bản"
+                    >
+                      <Volume2 size={14} />
+                    </button>
+                    <MarkdownRenderer content={msg.content} />
+                  </>
+                )
                 : msg.content
               }
             </div>
@@ -269,32 +292,32 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
           <span className="text-xs text-[#9496a1]">Chế độ chỉ xem — không thể gửi tin nhắn</span>
         </div>
       ) : (
-      <div className="border-t border-[#2e3144] p-4">
-        <div className="flex gap-3 items-end">
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={isChatLimitReached ? `Đã hết ${chatLimit} tin nhắn — nâng cấp gói để tiếp tục` : 'Hỏi về tài liệu...'}
-            disabled={isChatLimitReached}
-            rows={1}
-            className="flex-1 bg-[#242736] border border-[#2e3144] rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:border-primary-500/50 transition-colors placeholder:text-[#9496a1]/50 disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ maxHeight: '120px' }}
-            onInput={(e) => {
-              e.target.style.height = 'auto';
-              e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
-            }}
-          />
-          <button
-            onClick={handleSend}
-            disabled={!input.trim() || loading || isChatLimitReached}
-            className="p-3 bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-          >
-            <Send size={18} />
-          </button>
+        <div className="border-t border-[#2e3144] p-4">
+          <div className="flex gap-3 items-end">
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={isChatLimitReached ? `Đã hết ${chatLimit} tin nhắn — nâng cấp gói để tiếp tục` : 'Hỏi về tài liệu...'}
+              disabled={isChatLimitReached}
+              rows={1}
+              className="flex-1 bg-[#242736] border border-[#2e3144] rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:border-primary-500/50 transition-colors placeholder:text-[#9496a1]/50 disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ maxHeight: '120px' }}
+              onInput={(e) => {
+                e.target.style.height = 'auto';
+                e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+              }}
+            />
+            <button
+              onClick={handleSend}
+              disabled={!input.trim() || loading || isChatLimitReached}
+              className="p-3 bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+            >
+              <Send size={18} />
+            </button>
+          </div>
         </div>
-      </div>
       )}
     </div>
   );
