@@ -10,7 +10,7 @@ const NAV_ITEMS = [
   { label: 'Lịch sử', target: 'history', icon: History, requireAuth: true },
 ];
 
-export default function Header({ onBackHome, showBack, user, onLoginClick, onLogout, onOpenAdmin, onOpenPricing, onUserUpdate, onOpenDocument, onOpenHistory, currentView }) {
+export default function Header({ onBackHome, showBack, user, onLoginClick, onLogout, onOpenAdmin, onOpenPricing, onUserUpdate, onOpenDocument, onOpenHistory, onOpenProfile, currentView }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [themePicker, setThemePicker] = useState(false);
   const { theme: currentTheme, setTheme } = useTheme();
@@ -66,16 +66,15 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
             {NAV_ITEMS.filter(item => !item.requireAuth || user).map((item) => {
               const Icon = item.icon;
               const isActive = (item.target === 'pricing' && currentView === 'pricing') ||
-                               (item.target === 'history' && currentView === 'history-list');
+                (item.target === 'history' && currentView === 'history-list');
               return (
                 <button
                   key={item.target}
                   onClick={() => handleNav(item.target)}
-                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
                       ? 'text-primary-400 bg-primary-600/10'
                       : 'text-[#9496a1] hover:text-white hover:bg-[#242736]'
-                  }`}
+                    }`}
                 >
                   {Icon && <Icon size={15} />}
                   {item.label}
@@ -106,11 +105,10 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
                       <button
                         key={key}
                         onClick={() => { setTheme(key); setThemePicker(false); }}
-                        className={`flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition-all ${
-                          currentTheme === key
+                        className={`flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition-all ${currentTheme === key
                             ? 'bg-primary-600/15 text-primary-400 ring-1 ring-primary-500/40'
                             : 'text-[#9496a1] hover:bg-[#242736] hover:text-white'
-                        }`}
+                          }`}
                       >
                         <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: t.primary['500'] }} />
                         {t.label}
@@ -134,6 +132,7 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
               onOpenPricing={onOpenPricing}
               onUserUpdate={onUserUpdate}
               onOpenDocument={onOpenDocument}
+              onOpenProfile={onOpenProfile}
             />
           ) : (
             <button
@@ -164,16 +163,15 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
             {NAV_ITEMS.filter(item => !item.requireAuth || user).map((item) => {
               const Icon = item.icon;
               const isActive = (item.target === 'pricing' && currentView === 'pricing') ||
-                               (item.target === 'history' && currentView === 'history-list');
+                (item.target === 'history' && currentView === 'history-list');
               return (
                 <button
                   key={item.target}
                   onClick={() => handleNav(item.target)}
-                  className={`flex items-center gap-1.5 text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
+                  className={`flex items-center gap-1.5 text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive
                       ? 'text-primary-400 bg-primary-600/10'
                       : 'text-[#9496a1] hover:text-white hover:bg-[#242736]'
-                  }`}
+                    }`}
                 >
                   {Icon && <Icon size={15} />}
                   {item.label}

@@ -9,6 +9,7 @@ import PricingPage from './components/PricingPage';
 import SharedDocViewer from './components/SharedDocViewer';
 import HistoryViewer from './components/HistoryViewer';
 import HistoryPage from './components/HistoryPage';
+import ProfilePage from './components/ProfilePage';
 import { getStoredUser, logout as apiLogout, getMe, verifyEmailToken, resetPassword } from './api';
 import { CheckCircle2, XCircle, Loader2, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
@@ -48,6 +49,8 @@ export default function App() {
     } else if (path === '/reset-password' && search.get('token')) {
       setEmailToken(search.get('token'));
       setView('reset-password');
+    } else if (path === '/profile') {
+      setView('profile');
     }
   }, []);
 
@@ -108,7 +111,7 @@ export default function App() {
         <HistoryViewer docId={historyDoc.docId} docName={historyDoc.docName} onBack={handleBackHome} />
       ) : (
         <>
-          {view !== 'admin' && view !== 'pricing' && (
+          {view !== 'admin' && view !== 'pricing' && view !== 'profile' && (
             <Header
               onBackHome={handleBackHome}
               showBack={view === 'dashboard' || view === 'history-list'}
@@ -120,6 +123,7 @@ export default function App() {
               onUserUpdate={(updated) => setUser(updated)}
               onOpenDocument={handleOpenDocument}
               onOpenHistory={() => { setView('history-list'); window.history.pushState({}, '', '/history'); }}
+              onOpenProfile={() => { setView('profile'); window.history.pushState({}, '', '/profile'); }}
               currentView={view}
             />
           )}
@@ -169,6 +173,15 @@ export default function App() {
 
           {view === 'reset-password' && emailToken && (
             <ResetPasswordPage token={emailToken} onGoHome={handleBackHome} />
+          )}
+
+          {view === 'profile' && (
+            <ProfilePage
+              user={user}
+              onBack={handleBackHome}
+              onUserUpdate={(updated) => setUser(updated)}
+              onOpenAuth={(tab) => openAuthModal(tab)}
+            />
           )}
 
           <AuthModal

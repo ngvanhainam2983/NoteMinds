@@ -15,7 +15,7 @@ import { startRegistration } from '@simplewebauthn/browser';
 import ConfirmModal from './ConfirmModal';
 import { useTheme, THEMES } from '../ThemeContext';
 
-export default function UserDropdown({ user, onLogout, onOpenAdmin, onOpenPricing, onUserUpdate, onOpenDocument }) {
+export default function UserDropdown({ user, onLogout, onOpenAdmin, onOpenPricing, onUserUpdate, onOpenDocument, onOpenProfile }) {
   const [open, setOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -80,6 +80,11 @@ export default function UserDropdown({ user, onLogout, onOpenAdmin, onOpenPricin
 
             {/* Menu items */}
             <div className="py-1">
+              <DropdownItem
+                icon={<User size={15} />}
+                label="Hồ sơ cá nhân"
+                onClick={() => { setOpen(false); onOpenProfile?.(); }}
+              />
               <DropdownItem
                 icon={<Settings size={15} />}
                 label="Cài đặt tài khoản"
