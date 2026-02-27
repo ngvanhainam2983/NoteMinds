@@ -439,7 +439,7 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                                     <div className="flex gap-2 pt-2">
                                         <button
                                             onClick={() => {
-                                                const blob = new Blob([recoveryCodes.join('\\n')], { type: 'text/plain' });
+                                                const blob = new Blob([recoveryCodes.join('\n')], { type: 'text/plain' });
                                                 const url = URL.createObjectURL(blob);
                                                 const a = document.createElement('a');
                                                 a.href = url;
@@ -455,7 +455,7 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                                         </button>
                                         <button
                                             onClick={() => {
-                                                navigator.clipboard.writeText(recoveryCodes.join('\\n'));
+                                                navigator.clipboard.writeText(recoveryCodes.join('\n'));
                                                 setSuccess('Đã sao chép vào bộ nhớ tạm!');
                                                 setTimeout(() => setSuccess(''), 3000);
                                             }}
