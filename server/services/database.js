@@ -96,4 +96,23 @@ db.exec(`
   );
 `);
 
+// ── Email verification & password reset migrations ──
+if (!cols.includes('email_verified')) {
+  db.exec("ALTER TABLE users ADD COLUMN email_verified INTEGER DEFAULT 0");
+  // Grandfather existing users as verified
+  db.exec("UPDATE users SET email_verified = 1 WHERE id > 0");
+}
+if (!cols.includes('verification_token')) {
+  db.exec("ALTER TABLE users ADD COLUMN verification_token TEXT");
+}
+if (!cols.includes('verification_token_expires')) {
+  db.exec("ALTER TABLE users ADD COLUMN verification_token_expires TEXT");
+}
+if (!cols.includes('reset_token')) {
+  db.exec("ALTER TABLE users ADD COLUMN reset_token TEXT");
+}
+if (!cols.includes('reset_token_expires')) {
+  db.exec("ALTER TABLE users ADD COLUMN reset_token_expires TEXT");
+}
+
 export default db;

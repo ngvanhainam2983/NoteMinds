@@ -104,6 +104,28 @@ export function logout() {
   clearAuth();
 }
 
+// ── Email Verification & Password Reset ───────────────
+
+export async function verifyEmailToken(token) {
+  const response = await api.post('/auth/verify-email', { token });
+  return response.data;
+}
+
+export async function resendVerification(email) {
+  const response = await api.post('/auth/resend-verification', { email });
+  return response.data;
+}
+
+export async function forgotPassword(email) {
+  const response = await api.post('/auth/forgot-password', { email });
+  return response.data;
+}
+
+export async function resetPassword(token, newPassword) {
+  const response = await api.post('/auth/reset-password', { token, newPassword });
+  return response.data;
+}
+
 export async function uploadFile(file, onProgress) {
   const formData = new FormData();
   formData.append('file', file);

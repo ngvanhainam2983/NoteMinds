@@ -9,20 +9,23 @@ import PricingPage from './components/PricingPage';
 import SharedDocViewer from './components/SharedDocViewer';
 import HistoryViewer from './components/HistoryViewer';
 import HistoryPage from './components/HistoryPage';
-import { getStoredUser, logout as apiLogout, getMe } from './api';
+import { getStoredUser, logout as apiLogout, getMe, verifyEmailToken, resetPassword } from './api';
+import { CheckCircle2, XCircle, Loader2, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
 export default function App() {
   const [currentDoc, setCurrentDoc] = useState(null);
-  const [view, setView] = useState('home'); // 'home' | 'dashboard' | 'admin' | 'pricing' | 'shared' | 'history' | 'history-list'
+  const [view, setView] = useState('home'); // 'home' | 'dashboard' | 'admin' | 'pricing' | 'shared' | 'history' | 'history-list' | 'verify-email' | 'reset-password'
   const [historyDoc, setHistoryDoc] = useState(null);
   const [user, setUser] = useState(getStoredUser);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalTab, setAuthModalTab] = useState('login');
   const [shareToken, setShareToken] = useState(null);
+  const [emailToken, setEmailToken] = useState(null);
 
   // Detect /share/:token, /history, /history/:docId, /session/:docId, or /price URL on mount
   useEffect(() => {
     const path = window.location.pathname;
+    const search = new URLSearchParams(window.location.search);
     const shareMatch = path.match(/^\/share\/([a-f0-9]+)$/i);
     const historyDocMatch = path.match(/^\/history\/([a-f0-9-]+)$/i);
     const sessionMatch = path.match(/^\/session\/([a-f0-9-]+)$/i);
@@ -39,6 +42,12 @@ export default function App() {
       setView('dashboard');
     } else if (path === '/price') {
       setView('pricing');
+    } else if (path === '/verify-email' && search.get('token')) {
+      setEmailToken(search.get('token'));
+      setView('verify-email');
+    } else if (path === '/reset-password' && search.get('token')) {
+      setEmailToken(search.get('token'));
+      setView('reset-password');
     }
   }, []);
 
@@ -154,6 +163,14 @@ export default function App() {
             />
           )}
 
+          {view === 'verify-email' && emailToken && (
+            <VerifyEmailPage token={emailToken} onGoHome={handleBackHome} />
+          )}
+
+          {view === 'reset-password' && emailToken && (
+            <ResetPasswordPage token={emailToken} onGoHome={handleBackHome} />
+          )}
+
           <AuthModal
             isOpen={showAuthModal}
             onClose={() => setShowAuthModal(false)}
@@ -196,7 +213,7 @@ function Features() {
         Tính năng <span className="gradient-text">nổi bật</span>
       </h2>
       <p className="text-center text-[#9496a1] mb-12 max-w-2xl mx-auto">
-        NoteMinds sử dụng NoteMindAI để tự động hóa khâu chuẩn bị tài liệu, 
+        NoteMinds sử dụng NoteMindAI để tự động hóa khâu chuẩn bị tài liệu,
         giúp bạn tập trung 100% vào việc hiểu và ghi nhớ
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -255,7 +272,7 @@ function WhySection() {
         Tại sao chọn <span className="gradient-text">NoteMinds</span>?
       </h2>
       <p className="text-center text-[#9496a1] mb-12 max-w-2xl mx-auto">
-        NoteMinds không chỉ là công cụ tóm tắt — đây là trợ lý học tập AI toàn diện, 
+        NoteMinds không chỉ là công cụ tóm tắt — đây là trợ lý học tập AI toàn diện,
         giúp bạn biến mọi tài liệu thành kiến thức thực sự
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -273,5 +290,180 @@ function WhySection() {
         ))}
       </div>
     </section>
+  );
+}
+
+// ── Verify Email Page ─────────────────────────────────
+function VerifyEmailPage({ token, onGoHome }) {
+  const [status, setStatus] = useState('loading'); // 'loading' | 'success' | 'error'
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    verifyEmailToken(token)
+      .then((data) => {
+        setStatus('success');
+        setMessage(data.message || 'Email đã được xác minh thành công!');
+      })
+      .catch((err) => {
+        setStatus('error');
+        setMessage(err.response?.data?.error || 'Xác minh email thất bại');
+      });
+  }, [token]);
+
+  return (
+    <div className="min-h-screen bg-[#0f1117] flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-[#1a1d27] border border-[#2e3144] rounded-2xl p-8 text-center">
+        {status === 'loading' && (
+          <>
+            <Loader2 size={48} className="mx-auto mb-4 text-primary-400 animate-spin" />
+            <h2 className="text-xl font-bold mb-2">Đang xác minh email...</h2>
+            <p className="text-sm text-[#9496a1]">Vui lòng đợi...</p>
+          </>
+        )}
+        {status === 'success' && (
+          <>
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center">
+              <CheckCircle2 size={32} className="text-green-400" />
+            </div>
+            <h2 className="text-xl font-bold mb-2">Xác minh thành công!</h2>
+            <p className="text-sm text-[#9496a1] mb-6">{message}</p>
+            <button
+              onClick={onGoHome}
+              className="px-6 py-2.5 bg-primary-600 hover:bg-primary-700 rounded-xl text-sm font-semibold transition-colors"
+            >
+              Về trang chủ
+            </button>
+          </>
+        )}
+        {status === 'error' && (
+          <>
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center">
+              <XCircle size={32} className="text-red-400" />
+            </div>
+            <h2 className="text-xl font-bold mb-2">Xác minh thất bại</h2>
+            <p className="text-sm text-red-400 mb-6">{message}</p>
+            <button
+              onClick={onGoHome}
+              className="px-6 py-2.5 bg-[#242736] hover:bg-[#2e3144] rounded-xl text-sm font-medium transition-colors"
+            >
+              Về trang chủ
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Reset Password Page ───────────────────────────────
+function ResetPasswordPage({ token, onGoHome }) {
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (newPassword.length < 6) {
+      return setError('Mật khẩu phải có ít nhất 6 ký tự');
+    }
+    if (newPassword !== confirmPassword) {
+      return setError('Mật khẩu xác nhận không khớp');
+    }
+    setLoading(true);
+    try {
+      await resetPassword(token, newPassword);
+      setSuccess(true);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Đặt lại mật khẩu thất bại');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (success) {
+    return (
+      <div className="min-h-screen bg-[#0f1117] flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-[#1a1d27] border border-[#2e3144] rounded-2xl p-8 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center">
+            <CheckCircle2 size={32} className="text-green-400" />
+          </div>
+          <h2 className="text-xl font-bold mb-2">Đặt lại mật khẩu thành công!</h2>
+          <p className="text-sm text-[#9496a1] mb-6">Bạn có thể đăng nhập với mật khẩu mới.</p>
+          <button
+            onClick={onGoHome}
+            className="px-6 py-2.5 bg-primary-600 hover:bg-primary-700 rounded-xl text-sm font-semibold transition-colors"
+          >
+            Về trang chủ để đăng nhập
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#0f1117] flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-[#1a1d27] border border-[#2e3144] rounded-2xl p-8">
+        <button
+          onClick={onGoHome}
+          className="flex items-center gap-1 text-sm text-[#9496a1] hover:text-white transition-colors mb-4"
+        >
+          <ArrowLeft size={14} /> Về trang chủ
+        </button>
+        <h2 className="text-xl font-bold mb-1">Đặt lại mật khẩu</h2>
+        <p className="text-sm text-[#9496a1] mb-6">Nhập mật khẩu mới cho tài khoản của bạn</p>
+
+        {error && (
+          <div className="mb-4 px-4 py-2.5 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-400">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="relative flex items-center">
+            <span className="absolute left-3 text-[#9496a1]"><Lock size={16} /></span>
+            <input
+              type={showPw ? 'text' : 'password'}
+              placeholder="Mật khẩu mới (ít nhất 6 ký tự)"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="w-full bg-[#0f1117] border border-[#2e3144] rounded-xl pl-10 pr-10 py-2.5 text-sm focus:outline-none focus:border-primary-500/50 transition-colors placeholder:text-[#9496a1]/50"
+              autoFocus
+            />
+            <button
+              type="button"
+              onClick={() => setShowPw(!showPw)}
+              className="absolute right-3 text-[#9496a1] hover:text-white transition-colors"
+            >
+              {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
+          <div className="relative flex items-center">
+            <span className="absolute left-3 text-[#9496a1]"><Lock size={16} /></span>
+            <input
+              type={showPw ? 'text' : 'password'}
+              placeholder="Xác nhận mật khẩu mới"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full bg-[#0f1117] border border-[#2e3144] rounded-xl pl-10 pr-10 py-2.5 text-sm focus:outline-none focus:border-primary-500/50 transition-colors placeholder:text-[#9496a1]/50"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading || !newPassword || !confirmPassword}
+            className="w-full py-3 bg-primary-600 hover:bg-primary-700 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-primary-600/25 mt-4"
+          >
+            {loading ? (
+              <><Loader2 size={16} className="animate-spin" /> Đang xử lý...</>
+            ) : (
+              <><Lock size={16} /> Đặt mật khẩu mới</>
+            )}
+          </button>
+        </form>
+      </div>
+    </div>
   );
 }

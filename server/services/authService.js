@@ -11,10 +11,10 @@ const JWT_EXPIRES_IN = '1d';
 // ── Plan definitions ───────────────────────────────────
 
 export const PLANS = {
-  free:      { label: 'Free',       dailyUploads: 5,  chatLimit: 10,  badge: null,      color: null },
-  basic:     { label: 'Basic',      dailyUploads: 10, chatLimit: 25,  badge: '⭐',      color: '#fbbf24' },
-  pro:       { label: 'Pro',        dailyUploads: 30, chatLimit: 50,  badge: '💎',      color: '#818cf8' },
-  unlimited: { label: 'Unlimited',  dailyUploads: -1, chatLimit: -1,  badge: '👑',      color: '#f43f5e' },
+  free: { label: 'Free', dailyUploads: 5, chatLimit: 10, badge: null, color: null },
+  basic: { label: 'Basic', dailyUploads: 10, chatLimit: 25, badge: '⭐', color: '#fbbf24' },
+  pro: { label: 'Pro', dailyUploads: 30, chatLimit: 50, badge: '💎', color: '#818cf8' },
+  unlimited: { label: 'Unlimited', dailyUploads: -1, chatLimit: -1, badge: '👑', color: '#f43f5e' },
 };
 
 const GUEST_DAILY_LIMIT = 1;
@@ -42,6 +42,7 @@ function formatUser(user) {
     isBanned: !!user.is_banned,
     banReason: user.ban_reason || null,
     bannedAt: user.banned_at || null,
+    emailVerified: !!user.email_verified,
     createdAt: user.created_at,
   };
 }
@@ -287,6 +288,58 @@ export function changePassword(userId, oldPassword, newPassword) {
   }
   const hash = bcrypt.hashSync(newPassword, 10);
   db.prepare('UPDATE users SET password = ?, updated_at = datetime(\'now\') WHERE id = ?').run(hash, userId);
+}
+
+// ── Email verification ─────────────────────────────────
+
+export function setVerificationToken(userId, token) {
+  const expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 hours
+  db.prepare(`
+    UPDATE users SET verification_token = ?, verification_token_expires = ?, updated_at = datetime('now')
+    WHERE id = ?
+  `).run(token, expires, userId);
+}
+
+export function verifyEmail(token) {
+  const user = db.prepare('SELECT * FROM users WHERE verification_token = ?').get(token);
+  if (!user) throw new Error('Token xác minh không hợp lệ');
+  if (new Date(user.verification_token_expires) < new Date()) {
+    throw new Error('Token xác minh đã hết hạn. Vui lòng yêu cầu gửi lại.');
+  }
+  db.prepare(`
+    UPDATE users SET email_verified = 1, verification_token = NULL, verification_token_expires = NULL, updated_at = datetime('now')
+    WHERE id = ?
+  `).run(user.id);
+  return formatUser({ ...user, email_verified: 1 });
+}
+
+export function getUserByEmail(email) {
+  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase());
+  return user; // raw user, not formatted
+}
+
+// ── Password reset ─────────────────────────────────────
+
+export function setResetToken(userId, token) {
+  const expires = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
+  db.prepare(`
+    UPDATE users SET reset_token = ?, reset_token_expires = ?, updated_at = datetime('now')
+    WHERE id = ?
+  `).run(token, expires, userId);
+}
+
+export function resetPasswordWithToken(token, newPassword) {
+  const user = db.prepare('SELECT * FROM users WHERE reset_token = ?').get(token);
+  if (!user) throw new Error('Token đặt lại mật khẩu không hợp lệ');
+  if (new Date(user.reset_token_expires) < new Date()) {
+    throw new Error('Token đã hết hạn. Vui lòng yêu cầu đặt lại mật khẩu mới.');
+  }
+  const hash = bcrypt.hashSync(newPassword, 10);
+  db.prepare(`
+    UPDATE users SET password = ?, reset_token = NULL, reset_token_expires = NULL, updated_at = datetime('now')
+    WHERE id = ?
+  `).run(hash, user.id);
+  return formatUser({ ...user, reset_token: null });
 }
 
 // ── Seed default admin ─────────────────────────────────

@@ -17,6 +17,7 @@ import {
   getAllUsers, setUserPlan, setUserRole,
   updateUserProfile, changePassword, ensureAdmin,
   banUser, unbanUser, banIp, unbanIp, getBannedIps, isIpBanned, updateLastIp,
+  setVerificationToken, verifyEmail, getUserByEmail, setResetToken, resetPasswordWithToken,
   GUEST_DAILY_LIMIT, PLANS,
 } from './services/authService.js';
 import { decryptMiddleware } from './middleware/encryptionMiddleware.js';
@@ -25,6 +26,7 @@ import { initializeEnhancedTables } from './services/enhancedDatabase.js';
 import { logger, requestLoggerMiddleware } from './services/logger.js';
 import featureRoutes from './routes/featuresRoutes.js';
 import { validateShareToken } from './services/advancedFeatureService.js';
+import { sendVerificationEmail, sendPasswordResetEmail, generateVerificationToken, testEmailConnection } from './services/emailService.js';
 import Database from 'better-sqlite3';
 
 dotenv.config();
@@ -178,7 +180,84 @@ app.post('/api/auth/register', async (req, res) => {
 
     const user = createUser(username, email, password, displayName);
     const token = generateToken(user);
-    res.json({ user, token });
+
+    // Send verification email
+    try {
+      const verifyToken = generateVerificationToken();
+      setVerificationToken(user.id, verifyToken);
+      await sendVerificationEmail(email, verifyToken, username);
+    } catch (emailErr) {
+      console.error('[Register] Verification email failed:', emailErr.message);
+      // Don't block registration if email fails
+    }
+
+    res.json({ user, token, message: 'Đăng ký thành công! Vui lòng kiểm tra email để xác minh tài khoản.' });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// ── Email verification routes ──
+
+app.post('/api/auth/verify-email', async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ error: 'Token không hợp lệ' });
+    const user = verifyEmail(token);
+    res.json({ user, message: 'Email đã được xác minh thành công!' });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/auth/resend-verification', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Vui lòng nhập email' });
+    const user = getUserByEmail(email);
+    if (!user) return res.status(404).json({ error: 'Email không tồn tại trong hệ thống' });
+    if (user.email_verified) return res.status(400).json({ error: 'Email đã được xác minh rồi' });
+
+    const verifyToken = generateVerificationToken();
+    setVerificationToken(user.id, verifyToken);
+    await sendVerificationEmail(email, verifyToken, user.username);
+    res.json({ message: 'Email xác minh đã được gửi lại!' });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Vui lòng nhập email' });
+    const user = getUserByEmail(email);
+    // Don't reveal if email exists or not for security
+    if (!user) {
+      return res.json({ message: 'Nếu email tồn tại, bạn sẽ nhận được link đặt lại mật khẩu.' });
+    }
+
+    const resetToken = generateVerificationToken();
+    setResetToken(user.id, resetToken);
+    await sendPasswordResetEmail(email, resetToken, user.username);
+    res.json({ message: 'Nếu email tồn tại, bạn sẽ nhận được link đặt lại mật khẩu.' });
+  } catch (err) {
+    console.error('[ForgotPassword] Error:', err.message);
+    res.json({ message: 'Nếu email tồn tại, bạn sẽ nhận được link đặt lại mật khẩu.' });
+  }
+});
+
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) {
+      return res.status(400).json({ error: 'Thông tin không hợp lệ' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Mật khẩu mới phải có ít nhất 6 ký tự' });
+    }
+    const user = resetPasswordWithToken(token, newPassword);
+    res.json({ user, message: 'Mật khẩu đã được đặt lại thành công!' });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -361,7 +440,7 @@ app.post('/api/upload', optionalAuth, uploadRateLimitMiddleware, upload.single('
     const userPlan = req.user?.plan || 'free';
     if (audioExts.includes(ext) && (userPlan === 'free' || !req.user)) {
       // Delete the uploaded file
-      fs.unlink(req.file.path, () => {});
+      fs.unlink(req.file.path, () => { });
       return res.status(403).json({
         error: 'Gói Free không hỗ trợ file âm thanh. Nâng cấp gói để sử dụng tính năng này!',
         requireUpgrade: true,
