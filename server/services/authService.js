@@ -48,6 +48,7 @@ function formatUser(user) {
     emailVerified: !!user.email_verified,
     totpEnabled: !!user.totp_enabled,
     passkeyEnabled: !!user.passkey_enabled,
+    avatar_url: user.avatar_url || null,
     createdAt: user.created_at,
   };
 }

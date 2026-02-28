@@ -112,6 +112,9 @@ if (!cols.includes('email_verified')) {
   // Grandfather existing users as verified
   db.exec("UPDATE users SET email_verified = 1 WHERE id > 0");
 }
+if (!cols.includes('avatar_url')) {
+  db.exec("ALTER TABLE users ADD COLUMN avatar_url TEXT");
+}
 if (!cols.includes('verification_token')) {
   db.exec("ALTER TABLE users ADD COLUMN verification_token TEXT");
 }

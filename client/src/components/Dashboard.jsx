@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Map, CreditCard, MessageCircle, FileText, Loader2, Upload,
-  Search, BarChart3, Share2, Tag, Settings, Star, Download, Focus
+  Search, BarChart3, Share2, Tag, Settings, Star, Download, Focus, Globe, Lock
 } from 'lucide-react';
 import MindmapView from './MindmapView';
 import FlashcardView from './FlashcardView';
@@ -12,7 +12,7 @@ import {
   SearchModal, AnalyticsModal, ShareModal, TagsModal,
   PreferencesModal, FavoriteButton
 } from './FeatureModals';
-import { generateMindmap, generateFlashcards, generateQuiz, getRateLimit, getDocumentSessions, downloadDocument } from '../api';
+import { generateMindmap, generateFlashcards, generateQuiz, getRateLimit, getDocumentSessions, downloadDocument, toggleDocumentPublic } from '../api';
 
 const TABS = [
   { id: 'mindmap', label: 'Sơ đồ tư duy', icon: Map },
@@ -37,6 +37,8 @@ export default function Dashboard({ doc, user }) {
   const [tabErrors, setTabErrors] = useState({});
   const [isDownloading, setIsDownloading] = useState(false);
   const [showPomodoro, setShowPomodoro] = useState(false);
+  const [isPublic, setIsPublic] = useState(doc?.is_public || false);
+  const [isTogglingPublic, setIsTogglingPublic] = useState(false);
   const [rateLimit, setRateLimit] = useState({ uploadLimit: 10, uploadsRemaining: 10, resetIn: 0, chatLimit: 10 });
 
   // Feature modals state
@@ -146,6 +148,19 @@ export default function Dashboard({ doc, user }) {
     }
   };
 
+  const handleTogglePublic = async () => {
+    if (isTogglingPublic || !doc?.docId) return;
+    setIsTogglingPublic(true);
+    try {
+      const data = await toggleDocumentPublic(doc.docId, !isPublic);
+      setIsPublic(data.is_public);
+    } catch (err) {
+      alert(err.response?.data?.error || 'Lỗi khi cập nhật trạng thái');
+    } finally {
+      setIsTogglingPublic(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       {/* Document info bar */}
@@ -163,12 +178,27 @@ export default function Dashboard({ doc, user }) {
             <span className="text-[10px] text-primary-400 font-medium">Đang tải dữ liệu...</span>
           </div>
         )}
+
+        {/* Toggle Public Visibility */}
+        <button
+          onClick={handleTogglePublic}
+          disabled={isTogglingPublic}
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs border rounded-lg transition-colors ${isPublic
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
+              : 'bg-[#242736] border-[#2e3144] hover:bg-[#2e3144] text-[#9496a1]'
+            } disabled:opacity-50`}
+          title={isPublic ? "Đang công khai" : "Chỉ mình tôi"}
+        >
+          {isTogglingPublic ? <Loader2 size={14} className="animate-spin" /> : isPublic ? <Globe size={14} /> : <Lock size={14} />}
+          <span className="hidden sm:inline">{isPublic ? 'Công khai' : 'Riêng tư'}</span>
+        </button>
+
         <FavoriteButton documentId={doc.docId} />
         <button
           onClick={() => setShowPomodoro(!showPomodoro)}
           className={`flex items-center gap-1.5 px-3 py-1.5 text-xs border rounded-lg transition-colors ${showPomodoro
-              ? 'bg-primary-500/10 border-primary-500/30 text-primary-400'
-              : 'bg-[#242736] border-[#2e3144] hover:bg-[#2e3144]'
+            ? 'bg-primary-500/10 border-primary-500/30 text-primary-400'
+            : 'bg-[#242736] border-[#2e3144] hover:bg-[#2e3144]'
             }`}
           title="Focus Mode (Pomodoro)"
         >

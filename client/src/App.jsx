@@ -10,6 +10,7 @@ import SharedDocViewer from './components/SharedDocViewer';
 import HistoryViewer from './components/HistoryViewer';
 import HistoryPage from './components/HistoryPage';
 import ProfilePage from './components/ProfilePage';
+import CommunityFeed from './components/CommunityFeed';
 import { getStoredUser, logout as apiLogout, getMe, verifyEmailToken, resetPassword } from './api';
 import { CheckCircle2, XCircle, Loader2, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
@@ -51,6 +52,8 @@ export default function App() {
       setView('reset-password');
     } else if (path === '/profile') {
       setView('profile');
+    } else if (path === '/community') {
+      setView('community');
     }
   }, []);
 
@@ -182,6 +185,10 @@ export default function App() {
               onUserUpdate={(updated) => setUser(updated)}
               onOpenAuth={(tab) => openAuthModal(tab)}
             />
+          )}
+
+          {view === 'community' && (
+            <CommunityFeed />
           )}
 
           <AuthModal

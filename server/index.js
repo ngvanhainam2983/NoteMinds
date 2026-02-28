@@ -1406,6 +1406,62 @@ app.post('/api/shared/:shareToken/chat', async (req, res) => {
   }
 });
 
+// ============ COMMUNITY / PUBLIC HUB ============
+
+app.get('/api/community/documents', async (req, res) => {
+  try {
+    const db = new Database(DB_PATH);
+    const limit = parseInt(req.query.limit) || 20;
+    const page = parseInt(req.query.page) || 1;
+    const offset = (page - 1) * limit;
+
+    const query = `
+      SELECT d.id, d.original_name as title, d.created_at, u.display_name as author
+      FROM documents d
+      JOIN users u ON d.user_id = u.id
+      WHERE d.is_public = 1 AND d.status = 'ready'
+      ORDER BY d.created_at DESC
+      LIMIT ? OFFSET ?
+    `;
+
+    const publicDocs = db.prepare(query).all(limit, offset);
+    db.close();
+
+    res.json({ documents: publicDocs });
+  } catch (error) {
+    console.error('[Community] Error fetching public documents:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/documents/:id/public', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { is_public } = req.body;
+
+    const db = new Database(DB_PATH);
+    const docInfo = db.prepare('SELECT user_id FROM documents WHERE id = ?').get(id);
+
+    if (!docInfo) {
+      db.close();
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    if (docInfo.user_id !== req.user.id) {
+      db.close();
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    db.prepare('UPDATE documents SET is_public = ? WHERE id = ?').run(is_public ? 1 : 0, id);
+    db.close();
+
+    res.json({ success: true, is_public: !!is_public });
+  } catch (error) {
+    console.error('Error updating document public status:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ============ ANALYTICS ============
 
 // Get user analytics and metrics

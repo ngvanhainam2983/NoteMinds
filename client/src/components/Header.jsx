@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BrainCircuit, ArrowLeft, LogIn, Menu, X, Palette, CheckCircle2, History } from 'lucide-react';
+import { BrainCircuit, ArrowLeft, LogIn, Menu, X, Palette, CheckCircle2, History, Globe } from 'lucide-react';
 import UserDropdown from './UserDropdown';
 import { useTheme, THEMES } from '../ThemeContext';
 
@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { label: 'Tại sao NoteMinds?', target: 'why' },
   { label: 'Tính năng', target: 'features' },
   { label: 'Bảng giá', target: 'pricing' },
+  { label: 'Cộng đồng', target: 'community', icon: Globe, requireAuth: false },
   { label: 'Lịch sử', target: 'history', icon: History, requireAuth: true },
 ];
 
@@ -23,6 +24,14 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
     }
     if (target === 'history') {
       onOpenHistory?.();
+      return;
+    }
+    if (target === 'community') {
+      window.history.pushState({}, '', '/community');
+      window.dispatchEvent(new Event('popstate'));
+      // Note: we can't easily instruct App.jsx from here without a prop, so we trigger a popstate, 
+      // or we can just use window.location.href = '/community' for simplicity since it's an SPA.
+      window.location.href = '/community';
       return;
     }
     // If not on home view, go home first then scroll
@@ -72,8 +81,8 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
                   key={item.target}
                   onClick={() => handleNav(item.target)}
                   className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
-                      ? 'text-primary-400 bg-primary-600/10'
-                      : 'text-[#9496a1] hover:text-white hover:bg-[#242736]'
+                    ? 'text-primary-400 bg-primary-600/10'
+                    : 'text-[#9496a1] hover:text-white hover:bg-[#242736]'
                     }`}
                 >
                   {Icon && <Icon size={15} />}
@@ -106,8 +115,8 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
                         key={key}
                         onClick={() => { setTheme(key); setThemePicker(false); }}
                         className={`flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition-all ${currentTheme === key
-                            ? 'bg-primary-600/15 text-primary-400 ring-1 ring-primary-500/40'
-                            : 'text-[#9496a1] hover:bg-[#242736] hover:text-white'
+                          ? 'bg-primary-600/15 text-primary-400 ring-1 ring-primary-500/40'
+                          : 'text-[#9496a1] hover:bg-[#242736] hover:text-white'
                           }`}
                       >
                         <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: t.primary['500'] }} />
@@ -169,8 +178,8 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
                   key={item.target}
                   onClick={() => handleNav(item.target)}
                   className={`flex items-center gap-1.5 text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive
-                      ? 'text-primary-400 bg-primary-600/10'
-                      : 'text-[#9496a1] hover:text-white hover:bg-[#242736]'
+                    ? 'text-primary-400 bg-primary-600/10'
+                    : 'text-[#9496a1] hover:text-white hover:bg-[#242736]'
                     }`}
                 >
                   {Icon && <Icon size={15} />}

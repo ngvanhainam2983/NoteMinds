@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
     ArrowLeft, User, Mail, Shield, ShieldCheck, Crown, Calendar, Clock,
     CheckCircle2, XCircle, Fingerprint, KeyRound, Loader2, Edit3,
-    Save, X, Lock, ShieldOff, RefreshCw, Copy, Palette, AlertCircle, Plus, Trash2, Download
+    Save, X, Lock, ShieldOff, RefreshCw, Copy, Palette, AlertCircle, Plus, Trash2, Download, Moon, Sun, Monitor
 } from 'lucide-react';
 import {
     updateProfile, get2FAStatus, getPasskeyList, changePassword,
@@ -12,6 +12,8 @@ import {
 import { useTheme, THEMES } from '../ThemeContext';
 import ConfirmModal from './ConfirmModal';
 import { startRegistration } from '@simplewebauthn/browser';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) {
     const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'security' | 'theme'
@@ -23,6 +25,8 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
     // Profile editing
     const [editing, setEditing] = useState(false);
     const [displayName, setDisplayName] = useState(user?.displayName || '');
+    const [avatarFile, setAvatarFile] = useState(null);
+    const [avatarPreview, setAvatarPreview] = useState(null);
 
     // Password
     const [oldPw, setOldPw] = useState('');
@@ -45,7 +49,7 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
     const [loadingPasskeys, setLoadingPasskeys] = useState(false);
 
     // Theme
-    const { theme: currentTheme, setTheme } = useTheme();
+    const { theme: currentTheme, setTheme, mode, setMode } = useTheme();
 
     useEffect(() => {
         if (!user) return;
@@ -83,13 +87,48 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
     const handleSaveProfile = async () => {
         setError(''); setSuccess('');
         try {
-            const result = await updateProfile({ displayName });
-            onUserUpdate?.(result.user);
-            setSuccess('Đã cập nhật tên hiển thị!');
+            // Need to handle both regular profile and avatar uploads.
+            // For now, we'll build a standard updateProfile call, assuming backend handles avatar separately or via multipart.
+            // Let's implement an avatar upload endpoint if needed, or assume updateProfile handles multipart.
+            // Given the original api.js, updateProfile sends JSON. Let's create an uploadAvatar api call.
+
+            if (avatarFile) {
+                const formData = new FormData();
+                formData.append('avatar', avatarFile);
+                const token = localStorage.getItem('notemind_token');
+                const response = await fetch(`${API_URL}/api/users/profile/avatar`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Lỗi khi tải lên ảnh đại diện');
+                }
+                const data = await response.json();
+                onUserUpdate?.(data.user);
+            }
+
+            if (displayName !== user?.displayName) {
+                const result = await updateProfile({ displayName });
+                onUserUpdate?.(result.user);
+            }
+
+            setSuccess('Đã cập nhật thông tin thành công!');
             setEditing(false);
+            setAvatarFile(null);
             setTimeout(() => setSuccess(''), 3000);
         } catch (err) {
             setError(err.response?.data?.error || err.message);
+        }
+    };
+
+    const handleAvatarChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 2 * 1024 * 1024) return setError('Ảnh đại diện không được vượt quá 2MB');
+            setAvatarFile(file);
+            setAvatarPreview(URL.createObjectURL(file));
         }
     };
 
@@ -236,16 +275,30 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
 
             {/* ── Profile Header ── */}
             <div className="relative bg-[#1a1d27] border border-[#2e3144] rounded-2xl overflow-hidden mb-6">
-                <div className="h-32 bg-gradient-to-r from-primary-600/30 via-primary-500/20 to-purple-600/30 relative">
+                <div className={`h-32 bg-gradient-to-r relative ${user.plan === 'premium' || user.plan === 'pro' ? 'from-amber-500/30 via-primary-500/20 to-purple-600/30' : 'from-primary-600/30 via-primary-500/20 to-purple-600/30'}`}>
                     <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDE4YzMuMzEgMCA2LTIuNjkgNi02cy0yLjY5LTYtNi02LTYgMi42OS02IDYgMi42OSA2IDYgNnptMTIgMGMzLjMxIDAgNi0yLjY5IDYtNnMtMi42OS02LTYtNi02IDIuNjktNiA2IDIuNjkgNiA2IDZ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-50" />
                 </div>
                 <div className="px-6 pb-6 -mt-12 relative">
                     <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4">
                         <div className="relative group">
-                            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-3xl font-bold border-4 border-[#1a1d27] shadow-xl">
-                                {initials}
+                            <div className={`w-24 h-24 rounded-2xl flex items-center justify-center text-3xl font-bold border-4 border-[#1a1d27] shadow-xl overflow-hidden ${user.plan === 'premium' || user.plan === 'pro' ? 'bg-gradient-to-br from-amber-400 to-primary-600 shadow-amber-500/20' : 'bg-gradient-to-br from-primary-500 to-purple-600'}`}>
+                                {avatarPreview || user.avatar_url ? (
+                                    <img src={avatarPreview || (user.avatar_url.startsWith('http') ? user.avatar_url : `${API_URL}${user.avatar_url}`)} alt="Avatar" className="w-full h-full object-cover" />
+                                ) : (
+                                    initials
+                                )}
                             </div>
-                            <div className={`absolute -bottom-1 -right-1 px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r ${planColors[user.plan] || planColors.free} shadow-lg`}>
+
+                            {editing && (
+                                <label className="absolute inset-0 bg-black/60 rounded-2xl flex flex-col items-center justify-center text-white cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Edit3 size={20} className="mb-1" />
+                                    <span className="text-[10px] uppercase font-bold tracking-wider">Đổi ảnh</span>
+                                    <input type="file" accept="image/png, image/jpeg, image/jpg" className="hidden" onChange={handleAvatarChange} />
+                                </label>
+                            )}
+
+                            <div className={`absolute -bottom-1 -right-1 px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r flex items-center gap-1 ${planColors[user.plan] || planColors.free} shadow-lg`}>
+                                {(user.plan === 'premium' || user.plan === 'pro' || user.plan === 'admin') && <Crown size={10} />}
                                 {user.planBadge || user.plan}
                             </div>
                         </div>
@@ -531,7 +584,36 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
             {activeTab === 'theme' && (
                 <div className="bg-[#1a1d27] border border-[#2e3144] rounded-xl p-6">
                     <h3 className="text-lg font-semibold mb-2 flex items-center gap-2"><Palette size={18} className="text-primary-400" /> Giao diện hiển thị</h3>
-                    <p className="text-sm text-[#9496a1] mb-6">Lựa chọn màu nhấn (accent color) cho NoteMinds. Giao diện được lưu trực tiếp trên trình duyệt của bạn.</p>
+
+                    <div className="mb-8 p-4 bg-[#0f1117] border border-[#2e3144] rounded-xl flex items-center justify-between flex-wrap gap-4">
+                        <div>
+                            <h4 className="text-sm font-medium">Chế độ hiển thị</h4>
+                            <p className="text-xs text-[#9496a1]">Chọn chế độ tối, sáng hoặc theo hệ thống.</p>
+                        </div>
+                        <div className="flex bg-[#1a1d27] border border-[#2e3144] rounded-lg p-1">
+                            <button
+                                onClick={() => setMode('light')}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${mode === 'light' ? 'bg-primary-600 text-white shadow-sm' : 'text-[#9496a1] hover:text-white hover:bg-[#242736]'}`}
+                            >
+                                <Sun size={14} /> Sáng
+                            </button>
+                            <button
+                                onClick={() => setMode('dark')}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${mode === 'dark' ? 'bg-primary-600 text-white shadow-sm' : 'text-[#9496a1] hover:text-white hover:bg-[#242736]'}`}
+                            >
+                                <Moon size={14} /> Tối
+                            </button>
+                            <button
+                                onClick={() => setMode('auto')}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${mode === 'auto' ? 'bg-primary-600 text-white shadow-sm' : 'text-[#9496a1] hover:text-white hover:bg-[#242736]'}`}
+                            >
+                                <Monitor size={14} /> Tự động
+                            </button>
+                        </div>
+                    </div>
+
+                    <h4 className="text-sm font-medium mb-1">Màu chủ đạo (Accent Color)</h4>
+                    <p className="text-xs text-[#9496a1] mb-4">Lựa chọn màu nhấn cho NoteMinds. Giao diện được lưu trực tiếp trên trình duyệt của bạn.</p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                         {Object.entries(THEMES).map(([key, t]) => (
                             <button

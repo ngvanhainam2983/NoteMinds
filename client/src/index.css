@@ -38,6 +38,18 @@
   --gradient-text: linear-gradient(135deg, #f43f5e 0%, #fb7185 50%, #ffa726 100%);
 }
 
+.light {
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-surface-2: #f1f5f9;
+  --color-border: #e2e8f0;
+  --color-text: #0f172a;
+  --color-text-secondary: #64748b;
+  
+  /* Slight tweak to gradient for better contrast in light mode */
+  --gradient-text: linear-gradient(135deg, #e11d48 0%, #f43f5e 50%, #fb8c00 100%);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -123,6 +135,12 @@ body {
   background: rgba(26, 29, 39, 0.8);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(46, 49, 68, 0.5);
+}
+
+.light .glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(226, 232, 240, 0.5);
 }
 
 /* Loading dots animation */

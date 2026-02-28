@@ -472,6 +472,18 @@ export async function searchDocuments(query, limit = 20) {
   return response.data;
 }
 
+// ── Community ─────────────────────────────────────────
+
+export async function getCommunityDocuments(page = 1, limit = 20) {
+  const response = await api.get(`/community/documents?page=${page}&limit=${limit}`);
+  return response.data;
+}
+
+export async function toggleDocumentPublic(documentId, is_public) {
+  const response = await api.put(`/documents/${documentId}/public`, { is_public });
+  return response.data;
+}
+
 // ── Analytics ─────────────────────────────────────────
 
 export async function getAnalytics(days = 7) {
