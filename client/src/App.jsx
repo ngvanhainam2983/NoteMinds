@@ -10,6 +10,7 @@ import SharedDocViewer from './components/SharedDocViewer';
 import HistoryPage from './components/HistoryPage';
 import ProfilePage from './components/ProfilePage';
 import CommunityFeed from './components/CommunityFeed';
+import PublicDocViewer from './components/PublicDocViewer';
 import { getStoredUser, logout as apiLogout, getMe, verifyEmailToken, resetPassword } from './api';
 import { CheckCircle2, XCircle, Loader2, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
@@ -30,9 +31,13 @@ export default function App() {
     const shareMatch = path.match(/^\/share\/([a-f0-9]+)$/i);
     const historyDocMatch = path.match(/^\/history\/([a-f0-9-]+)$/i);
     const sessionMatch = path.match(/^\/session\/([a-f0-9-]+)$/i);
+    const publicDocMatch = path.match(/^\/public\/([a-f0-9-]+)$/i);
     if (shareMatch) {
       setShareToken(shareMatch[1]);
       setView('shared');
+    } else if (publicDocMatch) {
+      setCurrentDoc({ docId: publicDocMatch[1], fileName: 'Tài liệu công khai' });
+      setView('public');
     } else if (historyDocMatch) {
       setCurrentDoc({ docId: historyDocMatch[1], fileName: 'Tài liệu đã lưu' });
       setView('dashboard');
@@ -191,6 +196,10 @@ export default function App() {
 
           {view === 'community' && (
             <CommunityFeed />
+          )}
+
+          {view === 'public' && currentDoc && (
+            <PublicDocViewer documentId={currentDoc.docId} onBack={handleBackHome} />
           )}
 
           <AuthModal

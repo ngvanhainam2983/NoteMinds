@@ -76,7 +76,9 @@ export default function CommunityFeed() {
                             key={doc.id}
                             className="bg-[#1a1d27] border border-[#2e3144] rounded-2xl p-6 hover:border-primary-500/50 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-primary-500/10 transition-all cursor-pointer group flex flex-col break-inside-avoid mb-6"
                             onClick={() => {
-                                alert(`Tính năng đang phát triển: Xem tài liệu công khai của ${doc.author} `);
+                                window.history.pushState({}, '', `/public/${doc.id}`);
+                                window.dispatchEvent(new Event('popstate')); // Quick hack to trigger App.jsx re-render or we can just location.href
+                                window.location.href = `/public/${doc.id}`;
                             }}
                         >
                             <div className="flex items-start gap-3 mb-4">

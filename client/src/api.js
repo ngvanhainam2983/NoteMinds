@@ -479,6 +479,11 @@ export async function getCommunityDocuments(page = 1, limit = 20) {
   return response.data;
 }
 
+export async function getPublicDocumentContent(id) {
+  const response = await api.get(`/public/documents/${id}/content`);
+  return response.data;
+}
+
 export async function toggleDocumentPublic(documentId, is_public) {
   const response = await api.put(`/documents/${documentId}/public`, { is_public });
   return response.data;

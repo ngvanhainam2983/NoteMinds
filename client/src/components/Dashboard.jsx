@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Map, CreditCard, MessageCircle, FileText, Loader2, Upload,
-  Search, BarChart3, Share2, Tag, Settings, Star, Download, Focus, Globe, Lock
+  Search, BarChart3, Share2, Tag, Settings, Star, Download, Focus, Globe, Lock, XCircle
 } from 'lucide-react';
 import MindmapView from './MindmapView';
 import FlashcardView from './FlashcardView';

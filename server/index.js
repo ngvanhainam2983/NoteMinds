@@ -1434,6 +1434,38 @@ app.get('/api/community/documents', async (req, res) => {
   }
 });
 
+// Fetch a single public document's content and sessions
+app.get('/api/public/documents/:id/content', async (req, res) => {
+  try {
+    const db = new Database(DB_PATH);
+    const docQuery = db.prepare('SELECT * FROM documents WHERE id = ? AND is_public = 1').get(req.params.id);
+    db.close();
+
+    if (!docQuery) {
+      return res.status(404).json({ error: 'Tài liệu không tồn tại hoặc không được chia sẻ công khai.' });
+    }
+
+    // Load pre-existing session data
+    const sessions = getAllDocumentSessions(docQuery.id);
+
+    res.json({
+      documentId: docQuery.id,
+      fileName: docQuery.original_name,
+      text: docQuery.text_content,
+      shareType: 'view', // Always read-only for public community docs
+      status: docQuery.status,
+      sessions: {
+        mindmap: sessions.mindmap || null,
+        flashcards: sessions.flashcards || null,
+        chat: sessions.chat || null,
+      }
+    });
+  } catch (error) {
+    console.error('[Public] Error getting public content:', error.message);
+    res.status(500).json({ error: 'Lỗi khi tải tài liệu công khai.' });
+  }
+});
+
 app.put('/api/documents/:id/public', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
