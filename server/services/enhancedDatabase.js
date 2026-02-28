@@ -57,6 +57,10 @@ export function initializeEnhancedTables() {
         db.exec('ALTER TABLE documents ADD COLUMN folder_id TEXT REFERENCES folders(id) ON DELETE SET NULL');
         console.log('  ✓ Added folder_id column to documents');
       }
+      if (!docCols.includes('is_public')) {
+        db.exec('ALTER TABLE documents ADD COLUMN is_public INTEGER DEFAULT 0');
+        console.log('  ✓ Added is_public column to documents');
+      }
     } catch (e) {
       // column already exists
     }
