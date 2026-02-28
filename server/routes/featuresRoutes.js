@@ -193,11 +193,12 @@ router.get('/tags', requireAuth, (req, res) => {
 // SEARCH
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-router.post('/search', requireAuth, (req, res) => {
+router.get('/search', requireAuth, (req, res) => {
   try {
-    const { query, limit = 20 } = req.body;
-    const results = advancedFeatureService.searchDocuments(req.user.id, query, limit);
-    const conversations = advancedFeatureService.searchConversations(req.user.id, query, limit);
+    const { q, limit = 20 } = req.query;
+    const query = q || '';
+    const results = advancedFeatureService.searchDocuments(req.user.id, query, parseInt(limit));
+    const conversations = advancedFeatureService.searchConversations(req.user.id, query, parseInt(limit));
 
     logAnalytic(req.user.id, 'search', null, { query });
     res.json({ documents: results, conversations });
