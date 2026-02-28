@@ -47,23 +47,29 @@ export function initializeEnhancedTables() {
     console.log('  ✓ Documents table created');
 
     // Migration: add deleted_at column if missing
+    const docCols = db.prepare('PRAGMA table_info(documents)').all().map(c => c.name);
+
     try {
-      const docCols = db.prepare('PRAGMA table_info(documents)').all().map(c => c.name);
       if (!docCols.includes('deleted_at')) {
         db.exec('ALTER TABLE documents ADD COLUMN deleted_at DATETIME');
         console.log('  ✓ Added deleted_at column to documents');
       }
+    } catch (e) { console.error('Error adding deleted_at:', e); }
+
+    try {
       if (!docCols.includes('folder_id')) {
-        db.exec('ALTER TABLE documents ADD COLUMN folder_id TEXT REFERENCES folders(id) ON DELETE SET NULL');
+        // Can't add REFERENCES if table folders doesn't exist yet, we'll just add the column
+        db.exec('ALTER TABLE documents ADD COLUMN folder_id TEXT');
         console.log('  ✓ Added folder_id column to documents');
       }
+    } catch (e) { console.error('Error adding folder_id:', e); }
+
+    try {
       if (!docCols.includes('is_public')) {
         db.exec('ALTER TABLE documents ADD COLUMN is_public INTEGER DEFAULT 0');
         console.log('  ✓ Added is_public column to documents');
       }
-    } catch (e) {
-      // column already exists
-    }
+    } catch (e) { console.error('Error adding is_public:', e); }
 
     // ── Folders (Workspaces) ─────────────────────────────────
     db.exec(`
