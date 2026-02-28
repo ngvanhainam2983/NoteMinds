@@ -19,7 +19,7 @@ export default function Hero() {
           <span className="text-sm font-medium text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-accent-400">Trợ lý học tập AI tự động 100%</span>
         </div>
 
-        <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold font-display leading-[1.1] mb-6 animate-in zoom-in-95 fade-in duration-700 delay-150">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold font-display leading-[1.1] mb-6 animate-in zoom-in-95 fade-in duration-700 delay-150">
           Biến tài liệu thành{' '}
           <span className="relative">
             <span className="absolute -inset-1 rounded-lg bg-gradient-to-r from-primary-600 to-accent-600 opacity-30 blur-lg animate-pulse"></span>
@@ -28,7 +28,7 @@ export default function Hero() {
           <br />chỉ trong vài phút
         </h1>
 
-        <p className="text-lg md:text-xl text-[#9496a1] max-w-2xl mx-auto mb-10 animate-in slide-in-from-bottom-6 fade-in duration-700 delay-300">
+        <p className="text-base sm:text-lg text-[#9496a1] max-w-2xl mx-auto mb-10 animate-in slide-in-from-bottom-6 fade-in duration-700 delay-300">
           Upload bài giảng PDF hoặc file dạng text — NoteMinds sẽ tự động tạo
           <strong className="text-white font-medium"> Sơ đồ tư duy</strong>,{' '}
           <strong className="text-white font-medium">Flashcard</strong> và cho phép bạn{' '}
@@ -38,7 +38,7 @@ export default function Hero() {
         <div className="flex items-center justify-center gap-4 animate-in slide-in-from-bottom-8 fade-in duration-700 delay-500">
           <button
             onClick={scrollToUpload}
-            className="group relative inline-flex items-center justify-center gap-2.5 px-8 py-4 font-bold text-white transition-all duration-300 bg-primary-600 font-display rounded-2xl hover:bg-primary-500 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 focus:ring-offset-[#0f1117] overflow-hidden"
+            className="group relative inline-flex items-center justify-center gap-2.5 px-7 py-3.5 text-base font-semibold text-white transition-all duration-300 bg-primary-600 font-display rounded-2xl hover:bg-primary-500 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 focus:ring-offset-[#0f1117] overflow-hidden"
           >
             {/* Glossy gradient overlay */}
             <div className="absolute inset-0 w-full h-full bg-gradient-to-tr from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-out" />
