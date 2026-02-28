@@ -137,7 +137,7 @@ export default function FileUpload({ onUploadComplete, user, onAuthRequired }) {
       >
         {/* Animated Background Glow on active/upload */}
         {(dragActive || uploading) && (
-          <div className="absolute inset-0 bg-gradient-to-tr from-primary-600/10 via-transparent to-accent-600/10 opacity-50 animate-pulse pointer-events-none" />
+          <div className="absolute inset-0 bg-primary-600/10 opacity-50 animate-pulse pointer-events-none" />
         )}
 
         {/* Glowing border effect when uploading/processing */}
@@ -154,12 +154,12 @@ export default function FileUpload({ onUploadComplete, user, onAuthRequired }) {
 
         {!uploading && !status && (
           <div className="relative z-10 transition-transform duration-300 group">
-            <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-tr from-primary-600/20 to-accent-600/20 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:shadow-[0_0_30px_rgba(99,102,241,0.3)] transition-all duration-500 relative">
+            <div className="w-20 h-20 mx-auto mb-6 bg-primary-600/20 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:shadow-[0_0_30px_rgba(99,102,241,0.3)] transition-all duration-500 relative">
               <div className="absolute inset-0 rounded-2xl border border-white/5" />
               <Upload size={32} className={`text-primary-400 transition-transform duration-300 ${dragActive ? '-translate-y-2 animate-pulse' : ''}`} />
             </div>
             <h3 className="text-xl font-bold mb-3 text-white">
-              Kéo thả file vào đây hoặc <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-accent-400">chọn file</span>
+              Kéo thả file vào đây hoặc <span className="text-primary-400">chọn file</span>
             </h3>
             <p className="text-sm text-[#9496a1] mb-6 font-medium">
               Hỗ trợ PDF, DOCX, PPTX, XLSX, TXT, MD, MP3, WAV (tối đa 50MB)
@@ -184,7 +184,7 @@ export default function FileUpload({ onUploadComplete, user, onAuthRequired }) {
             <p className="font-medium text-lg text-white">Đang tải lên... {uploadProgress}%</p>
             <div className="w-full max-w-sm mx-auto bg-[#242736] border border-[#2e3144] rounded-full h-3 p-0.5 overflow-hidden">
               <div
-                className="bg-gradient-to-r from-primary-600 to-accent-500 h-full rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(99,102,241,0.5)] relative"
+                className="bg-primary-600 h-full rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(99,102,241,0.5)] relative"
                 style={{ width: `${uploadProgress}%` }}
               >
                 <div className="absolute inset-0 bg-white/20 w-full h-full animate-[slide_1s_ease-in-out_infinite]" />
@@ -201,7 +201,7 @@ export default function FileUpload({ onUploadComplete, user, onAuthRequired }) {
                 <Loader2 size={32} className="text-accent-400 animate-spin" />
               </div>
             </div>
-            <p className="font-medium text-lg text-transparent bg-clip-text bg-gradient-to-r from-accent-400 to-accent-600">
+            <p className="font-medium text-lg text-accent-400">
               Đang xử lý tài liệu<span className="loading-dots"></span>
             </p>
             <p className="text-sm text-[#9496a1]">AI đang trích xuất và phân tích nội dung</p>
