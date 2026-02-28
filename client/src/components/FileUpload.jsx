@@ -122,12 +122,12 @@ export default function FileUpload({ onUploadComplete, user, onAuthRequired }) {
     <section className="max-w-2xl mx-auto px-4 pb-16 animate-slide-up" style={{ animationDelay: '0.2s' }}>
       <div
         className={`
-          relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300 cursor-pointer
+          relative border-2 border-dashed rounded-3xl p-12 text-center transition-all duration-500 cursor-pointer overflow-hidden
           ${dragActive
-            ? 'border-primary-400 bg-primary-600/10'
-            : 'border-[#2e3144] bg-[#1a1d27]/50 hover:border-primary-600/50 hover:bg-[#1a1d27]'
+            ? 'border-primary-400 bg-primary-600/20 scale-[1.02] shadow-[0_0_40px_rgba(99,102,241,0.2)]'
+            : 'border-[#2e3144] bg-[#1a1d27]/80 backdrop-blur-md hover:border-primary-500/50 hover:bg-[#1a1d27] hover:shadow-2xl'
           }
-          ${uploading ? 'pointer-events-none' : ''}
+          ${uploading ? 'pointer-events-none border-transparent bg-[#1a1d27]' : ''}
         `}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
@@ -135,6 +135,15 @@ export default function FileUpload({ onUploadComplete, user, onAuthRequired }) {
         onDrop={handleDrop}
         onClick={() => !uploading && fileInputRef.current?.click()}
       >
+        {/* Animated Background Glow on active/upload */}
+        {(dragActive || uploading) && (
+          <div className="absolute inset-0 bg-gradient-to-tr from-primary-600/10 via-transparent to-accent-600/10 opacity-50 animate-pulse pointer-events-none" />
+        )}
+
+        {/* Glowing rotating border effect when uploading */}
+        {uploading && (
+          <div className="absolute -inset-[1px] rounded-3xl bg-gradient-to-r from-primary-500 via-accent-500 to-primary-500 opacity-50 animate-[spin_4s_linear_infinite]" style={{ WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', padding: '2px' }} />
+        )}
         <input
           ref={fileInputRef}
           type="file"
@@ -144,52 +153,68 @@ export default function FileUpload({ onUploadComplete, user, onAuthRequired }) {
         />
 
         {!uploading && !status && (
-          <>
-            <div className="w-16 h-16 mx-auto mb-4 bg-primary-600/10 rounded-2xl flex items-center justify-center">
-              <Upload size={28} className="text-primary-400" />
+          <div className="relative z-10 transition-transform duration-300 group">
+            <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-tr from-primary-600/20 to-accent-600/20 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:shadow-[0_0_30px_rgba(99,102,241,0.3)] transition-all duration-500 relative">
+              <div className="absolute inset-0 rounded-2xl border border-white/5" />
+              <Upload size={32} className={`text-primary-400 transition-transform duration-300 ${dragActive ? '-translate-y-2 animate-pulse' : ''}`} />
             </div>
-            <h3 className="text-lg font-semibold mb-2">
-              Kéo thả file vào đây hoặc <span className="text-primary-400">chọn file</span>
+            <h3 className="text-xl font-bold mb-3 text-white">
+              Kéo thả file vào đây hoặc <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-accent-400">chọn file</span>
             </h3>
-            <p className="text-sm text-[#9496a1] mb-4">
+            <p className="text-sm text-[#9496a1] mb-6 font-medium">
               Hỗ trợ PDF, DOCX, PPTX, XLSX, TXT, MD, MP3, WAV (tối đa 50MB)
             </p>
             <div className="flex items-center justify-center gap-6 text-xs text-[#9496a1]">
-              <span className="flex items-center gap-1.5">
-                <FileText size={14} /> Tài liệu PDF
+              <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1a1d27] border border-[#2e3144]">
+                <FileText size={14} className="text-primary-400" /> Tài liệu Text/PDF
               </span>
-              <span className="flex items-center gap-1.5">
-                <Mic size={14} /> Ghi âm bài giảng
+              <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1a1d27] border border-[#2e3144]">
+                <Mic size={14} className="text-accent-400" /> Ghi âm bài giảng
               </span>
             </div>
-          </>
+          </div>
         )}
 
         {status === 'uploading' && (
-          <div className="space-y-4">
-            <Loader2 size={32} className="mx-auto text-primary-400 animate-spin" />
-            <p className="font-medium">Đang tải lên... {uploadProgress}%</p>
-            <div className="w-full max-w-xs mx-auto bg-[#242736] rounded-full h-2">
+          <div className="space-y-6 relative z-10 animate-in zoom-in-95 duration-500">
+            <div className="w-16 h-16 mx-auto rounded-full bg-primary-600/20 flex items-center justify-center relative">
+              <Loader2 size={32} className="text-primary-400 animate-spin relative z-10" />
+              <div className="absolute inset-0 bg-primary-500/30 blur-xl rounded-full animate-pulse" />
+            </div>
+            <p className="font-medium text-lg text-white">Đang tải lên... {uploadProgress}%</p>
+            <div className="w-full max-w-sm mx-auto bg-[#242736] border border-[#2e3144] rounded-full h-3 p-0.5 overflow-hidden">
               <div
-                className="bg-primary-500 h-2 rounded-full transition-all duration-300"
+                className="bg-gradient-to-r from-primary-600 to-accent-500 h-full rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(99,102,241,0.5)] relative"
                 style={{ width: `${uploadProgress}%` }}
-              />
+              >
+                <div className="absolute inset-0 bg-white/20 w-full h-full animate-[slide_1s_ease-in-out_infinite]" />
+              </div>
             </div>
           </div>
         )}
 
         {status === 'processing' && (
-          <div className="space-y-4">
-            <Loader2 size={32} className="mx-auto text-accent-400 animate-spin" />
-            <p className="font-medium">Đang xử lý tài liệu<span className="loading-dots"></span></p>
-            <p className="text-sm text-[#9496a1]">AI đang trích xuất nội dung</p>
+          <div className="space-y-4 animate-in fade-in zoom-in-95 duration-700 relative z-10">
+            <div className="relative w-24 h-24 mx-auto mb-4 perspective-1000">
+              <div className="absolute inset-0 bg-accent-500/20 border border-accent-500/40 rounded-2xl transform rotate-6 translate-y-2 opacity-50" />
+              <div className="absolute inset-0 bg-[#1a1d27] border border-[#2e3144] shadow-2xl rounded-2xl flex items-center justify-center p-4 animate-[flip_3s_ease-in-out_infinite_alternate]">
+                <Loader2 size={32} className="text-accent-400 animate-spin" />
+              </div>
+            </div>
+            <p className="font-medium text-lg text-transparent bg-clip-text bg-gradient-to-r from-accent-400 to-accent-600">
+              Đang xử lý tài liệu<span className="loading-dots"></span>
+            </p>
+            <p className="text-sm text-[#9496a1]">AI đang trích xuất và phân tích nội dung</p>
           </div>
         )}
 
         {status === 'ready' && (
-          <div className="space-y-4">
-            <CheckCircle2 size={32} className="mx-auto text-green-400" />
-            <p className="font-medium text-green-400">Tài liệu đã sẵn sàng!</p>
+          <div className="space-y-4 animate-in zoom-in scale-in duration-500 relative z-10">
+            <div className="w-20 h-20 mx-auto rounded-full bg-green-500/20 flex items-center justify-center relative">
+              <CheckCircle2 size={40} className="text-green-400 relative z-10" />
+              <div className="absolute inset-0 bg-green-500/30 blur-xl rounded-full animate-pulse" />
+            </div>
+            <p className="font-bold text-xl text-green-400">Tài liệu đã sẵn sàng!</p>
           </div>
         )}
 

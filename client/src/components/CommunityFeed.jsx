@@ -70,32 +70,25 @@ export default function CommunityFeed() {
                     <p className="text-[#9496a1] text-sm">Chưa có ai chia sẻ tài liệu công khai, hoặc không tìm thấy kết quả phù hợp.</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6">
                     {filteredDocs.map(doc => (
                         <div
                             key={doc.id}
-                            className="bg-[#1a1d27] border border-[#2e3144] rounded-xl p-5 hover:border-primary-500/50 hover:shadow-lg hover:shadow-primary-500/5 transition-all cursor-pointer group flex flex-col"
-                            // Here we could route them to a read-only viewer, or just the standard /doc route if it handles public viewing safely
-                            // For NoteMind's current structure, if they try to access a /doc /:id they don't own, the server will block them unless they use a share link.
-                            // To handle this properly, the community feed items need to be accessed via a public view mechanism.
-                            // We'll route them to the shared viewer if we have the shared capability, or build a quick public viewer. 
-                            // For now, let's assume /shared/:id can handle public docs if we adapt it, but since we just have document IDs here, 
-                            // we can redirect to a public read-only page or create a share_token automatically.
-                            // For simplicity, let's just make clicking do something basic for the UI state.
+                            className="bg-[#1a1d27] border border-[#2e3144] rounded-2xl p-6 hover:border-primary-500/50 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-primary-500/10 transition-all cursor-pointer group flex flex-col break-inside-avoid mb-6"
                             onClick={() => {
                                 alert(`Tính năng đang phát triển: Xem tài liệu công khai của ${doc.author} `);
                             }}
                         >
                             <div className="flex items-start gap-3 mb-4">
-                                <div className="p-2.5 bg-primary-500/10 rounded-lg text-primary-400 mt-0.5 group-hover:scale-110 group-hover:bg-primary-500 group-hover:text-white transition-all">
-                                    <FileText size={20} />
+                                <div className="p-3 bg-primary-500/10 rounded-xl text-primary-400 mt-0.5 group-hover:scale-110 group-hover:bg-primary-500 group-hover:text-white transition-all shadow-sm">
+                                    <FileText size={22} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="font-medium text-[15px] truncate group-hover:text-primary-400 transition-colors" title={doc.title}>
+                                    <h3 className="font-semibold text-[16px] leading-tight mb-1.5 group-hover:text-primary-400 transition-colors" title={doc.title}>
                                         {doc.title}
                                     </h3>
-                                    <p className="text-xs text-[#9496a1] mt-1 flex items-center gap-1.5">
-                                        <span className="w-4 h-4 rounded-full bg-gradient-to-tr from-primary-500 to-accent-500 flex items-center justify-center text-[8px] text-white font-bold opacity-80">
+                                    <p className="text-xs text-[#9496a1] flex items-center gap-1.5">
+                                        <span className="w-5 h-5 rounded-full bg-gradient-to-tr from-primary-500 to-accent-500 flex items-center justify-center text-[10px] text-white font-bold opacity-90 shadow-sm">
                                             {doc.author.charAt(0).toUpperCase()}
                                         </span>
                                         <span className="truncate">{doc.author}</span>
@@ -103,12 +96,12 @@ export default function CommunityFeed() {
                                 </div>
                             </div>
 
-                            <div className="mt-auto pt-4 border-t border-[#2e3144] flex items-center justify-between text-xs text-[#64748b]">
-                                <div className="flex items-center gap-1.5">
-                                    <Calendar size={12} />
+                            <div className="mt-2 pt-4 border-t border-[#2e3144] flex items-center justify-between text-xs text-[#64748b]">
+                                <div className="flex items-center gap-1.5 font-medium">
+                                    <Calendar size={13} />
                                     {new Date(doc.created_at).toLocaleDateString('vi-VN')}
                                 </div>
-                                <span className="px-2 py-0.5 bg-[#242736] rounded-md border border-[#2e3144]">
+                                <span className="px-2.5 py-1 bg-[#242736] rounded-md border border-[#2e3144] font-medium tracking-wide">
                                     Công khai
                                 </span>
                             </div>

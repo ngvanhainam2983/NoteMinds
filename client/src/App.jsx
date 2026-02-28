@@ -7,7 +7,6 @@ import AuthModal from './components/AuthModal';
 import AdminPanel from './components/AdminPanel';
 import PricingPage from './components/PricingPage';
 import SharedDocViewer from './components/SharedDocViewer';
-import HistoryViewer from './components/HistoryViewer';
 import HistoryPage from './components/HistoryPage';
 import ProfilePage from './components/ProfilePage';
 import CommunityFeed from './components/CommunityFeed';
@@ -35,12 +34,12 @@ export default function App() {
       setShareToken(shareMatch[1]);
       setView('shared');
     } else if (historyDocMatch) {
-      setHistoryDoc({ docId: historyDocMatch[1], docName: '' });
-      setView('history');
+      setCurrentDoc({ docId: historyDocMatch[1], fileName: 'Tài liệu đã lưu' });
+      setView('dashboard');
     } else if (path === '/history') {
       setView('history-list');
     } else if (sessionMatch) {
-      setCurrentDoc({ docId: sessionMatch[1], fileName: '', textLength: 0 });
+      setCurrentDoc({ docId: sessionMatch[1], fileName: 'Phiên học mới' });
       setView('dashboard');
     } else if (path === '/price') {
       setView('pricing');
@@ -87,8 +86,13 @@ export default function App() {
   };
 
   const handleOpenDocument = (doc) => {
-    setHistoryDoc({ docId: doc.id, docName: doc.original_name });
-    setView('history');
+    setCurrentDoc({
+      docId: doc.id,
+      fileName: doc.original_name || doc.title || 'Tài liệu đã lưu',
+      textLength: doc.text_length || 0,
+      is_public: !!doc.is_public
+    });
+    setView('dashboard');
     window.history.pushState({}, '', `/history/${doc.id}`);
   };
 
@@ -110,8 +114,6 @@ export default function App() {
     <div className="min-h-screen bg-[#0f1117]">
       {view === 'shared' && shareToken ? (
         <SharedDocViewer shareToken={shareToken} onBack={handleBackHome} />
-      ) : view === 'history' && historyDoc ? (
-        <HistoryViewer docId={historyDoc.docId} docName={historyDoc.docName} onBack={handleBackHome} />
       ) : (
         <>
           {view !== 'admin' && view !== 'pricing' && view !== 'profile' && (
@@ -240,11 +242,19 @@ function Features() {
         {features.map((f, i) => (
           <div
             key={i}
-            className="bg-[#1a1d27] border border-[#2e3144] rounded-2xl p-6 hover:border-primary-500/50 transition-all duration-300 hover:-translate-y-1"
+            className="group relative bg-[#1a1d27] border border-[#2e3144] rounded-3xl p-8 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl overflow-hidden"
           >
-            <div className="text-4xl mb-4">{f.icon}</div>
-            <h3 className="text-lg font-semibold mb-2">{f.title}</h3>
-            <p className="text-sm text-[#9496a1] leading-relaxed">{f.desc}</p>
+            {/* Glowing Hover Border & Background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-primary-600/5 to-accent-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute inset-0 border-2 border-transparent group-hover:border-primary-500/20 rounded-3xl transition-colors duration-500" />
+
+            <div className="relative z-10">
+              <div className="w-14 h-14 bg-gradient-to-tr from-[#242736] to-[#2e3144] border border-[#3f435c] rounded-2xl flex items-center justify-center text-2xl mb-6 shadow-inner group-hover:scale-110 transition-transform duration-500">
+                {f.icon}
+              </div>
+              <h3 className="text-xl font-bold mb-3 group-hover:text-primary-400 transition-colors duration-300">{f.title}</h3>
+              <p className="text-[15px] text-[#9496a1] leading-relaxed group-hover:text-[#aab0c8] transition-colors">{f.desc}</p>
+            </div>
           </div>
         ))}
       </div>
@@ -299,13 +309,21 @@ function WhySection() {
         {reasons.map((r, i) => (
           <div
             key={i}
-            className="bg-[#1a1d27] border border-[#2e3144] rounded-2xl p-6 hover:border-primary-500/50 transition-all duration-300 group"
+            className="group relative bg-[#1a1d27] border border-[#2e3144] rounded-3xl p-8 hover:-translate-y-2 transition-all duration-500 overflow-hidden"
           >
-            <div className="w-12 h-12 bg-primary-600/10 border border-primary-500/20 rounded-xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
-              {r.icon}
+            {/* Dynamic gradient background on hover */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-primary-900/10 via-transparent to-accent-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+            {/* Soft inner glow */}
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-primary-500/0 via-primary-500/10 to-accent-500/0 opacity-0 group-hover:opacity-100 blur-sm transition-all duration-500 rounded-3xl" />
+
+            <div className="relative z-10">
+              <div className="w-16 h-16 bg-gradient-to-br from-[#242736] to-[#2e3144] border border-[#3f435c] rounded-2xl flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition-transform duration-500 shadow-xl shadow-black/20">
+                <span className="group-hover:animate-bounce-subtle inline-block">{r.icon}</span>
+              </div>
+              <h3 className="text-xl font-bold mb-3 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-primary-400 group-hover:to-accent-400 transition-all duration-300">{r.title}</h3>
+              <p className="text-[15px] text-[#9496a1] leading-relaxed group-hover:text-[#aab0c8] transition-colors">{r.desc}</p>
             </div>
-            <h3 className="text-lg font-semibold mb-2">{r.title}</h3>
-            <p className="text-sm text-[#9496a1] leading-relaxed">{r.desc}</p>
           </div>
         ))}
       </div>

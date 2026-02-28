@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Loader2, AlertCircle, CreditCard, RefreshCw,
   ChevronLeft, ChevronRight, RotateCw, Download, Tag, Star, Volume2
@@ -23,12 +23,53 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId 
   const [reviewResult, setReviewResult] = useState(null);
   const cardStartTime = useRef(Date.now());
 
+  const [loadingText, setLoadingText] = useState("Đang phân tích và chia nhỏ kiến thức...");
+
+  useEffect(() => {
+    if (!loading) return;
+    const texts = [
+      "Đang phân tích và chia nhỏ kiến thức...",
+      "Trích xuất các thuật ngữ quan trọng...",
+      "Tạo câu hỏi Active Recall...",
+      "Thiết kế bộ thẻ ghi nhớ hoàn chỉnh..."
+    ];
+    let i = 0;
+    const interval = setInterval(() => {
+      i = (i + 1) % texts.length;
+      setLoadingText(texts[i]);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [loading]);
+
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-[500px] gap-4">
-        <Loader2 size={40} className="text-accent-400 animate-spin" />
-        <p className="text-[#9496a1]">NoteMindAI đang tạo bộ Flashcard<span className="loading-dots"></span></p>
-        <p className="text-xs text-[#9496a1]/60">Quá trình này có thể mất một chút thời gian. Vui lòng đợi.</p>
+      <div className="flex flex-col items-center justify-center min-h-[500px] h-full gap-8 relative overflow-hidden bg-[#1a1d27]">
+        {/* Flashcard Skeleton Animation */}
+        <div className="relative w-64 h-80 perspective-1000 mt-8">
+          {/* Back card 3 */}
+          <div className="absolute inset-0 bg-[#242736] border border-[#2e3144] rounded-2xl transform rotate-6 translate-y-4 opacity-30 pointer-events-none" />
+          {/* Back card 2 */}
+          <div className="absolute inset-0 bg-[#242736] border border-[#2e3144] rounded-2xl transform -rotate-3 translate-y-2 opacity-60 pointer-events-none" />
+          {/* Front card */}
+          <div className="absolute inset-0 bg-[#1a1d27] border border-[#2e3144] shadow-2xl rounded-2xl flex flex-col items-center justify-center p-6 animate-[flip_3s_ease-in-out_infinite_alternate]">
+            <div className="w-12 h-12 rounded-full bg-accent-500/20 flex items-center justify-center mb-6">
+              <Loader2 size={24} className="text-accent-400 animate-spin" />
+            </div>
+            <div className="w-full h-4 bg-[#2e3144] rounded-full animate-pulse mb-3" />
+            <div className="w-3/4 h-4 bg-[#2e3144] rounded-full animate-pulse mb-6" />
+            <div className="w-1/2 h-2 bg-[#2e3144] rounded-full animate-pulse opacity-50" />
+          </div>
+        </div>
+
+        {/* Progress Text */}
+        <div className="relative z-20 flex flex-col items-center">
+          <p className="font-medium bg-clip-text text-transparent bg-gradient-to-r from-accent-400 to-accent-600 transition-all duration-500 text-center w-72 min-h-[40px] flex items-center justify-center">
+            {loadingText}
+          </p>
+          <div className="w-48 bg-[#2e3144] h-1 rounded-full mt-4 overflow-hidden">
+            <div className="h-full bg-accent-500 rounded-full w-1/3 animate-[slide_2s_ease-in-out_infinite_alternate]" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -87,7 +128,7 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId 
   const handleGrade = async (grade) => {
     if (!currentCard || !docId) return;
     const timeMs = Date.now() - cardStartTime.current;
-    
+
     // Map numeric grade (0-5) to difficulty string expected by backend
     const difficultyMap = {
       0: 'again',  // Quên
@@ -98,7 +139,7 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId 
       5: 'easy',   // Xuất sắc
     };
     const difficulty = difficultyMap[grade];
-    
+
     try {
       const result = await reviewFlashcard(docId, currentIndex, difficulty, timeMs);
       setReviewResult(result);

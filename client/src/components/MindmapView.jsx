@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
 import ReactFlow, {
   Controls,
   Background,
@@ -183,12 +183,66 @@ export default function MindmapView({ data, loading, error, onGenerate }) {
     }
   }, [data]);
 
+  const [loadingText, setLoadingText] = useState("Đang phân tích cấu trúc tài liệu...");
+
+  useEffect(() => {
+    if (!loading) return;
+    const texts = [
+      "Đang phân tích cấu trúc tài liệu...",
+      "Trích xuất các ý chính và khái niệm...",
+      "Thiết lập các nhánh liên kết sơ đồ...",
+      "Hoàn thiện giao diện đồ họa..."
+    ];
+    let i = 0;
+    const interval = setInterval(() => {
+      i = (i + 1) % texts.length;
+      setLoadingText(texts[i]);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [loading]);
+
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-[500px] gap-4">
-        <Loader2 size={40} className="text-primary-400 animate-spin" />
-        <p className="text-[#9496a1]">NoteMindAI đang phân tích và tạo sơ đồ tư duy<span className="loading-dots"></span></p>
-        <p className="text-xs text-[#9496a1]/60">Quá trình này có thể mất một chút thời gian. Vui lòng đợi.</p>
+      <div className="flex flex-col items-center justify-center min-h-[500px] h-full gap-8 relative overflow-hidden bg-[#1a1d27]">
+        {/* Skeleton Graph Structure */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none">
+          {/* Center Root */}
+          <div className="w-48 h-16 bg-[#2e3144] rounded-2xl animate-pulse relative z-10 shadow-[0_0_30px_rgba(99,102,241,0.2)]" />
+
+          {/* Left Branch */}
+          <div className="absolute w-[200px] h-1 bg-gradient-to-l from-[#2e3144] to-transparent top-1/2 -ml-[200px] -translate-y-1/2" />
+          <div className="absolute -ml-[300px] -translate-y-1/2 w-32 h-10 bg-[#242736] rounded-xl animate-pulse delay-100" />
+
+          {/* Right Branch */}
+          <div className="absolute w-[200px] h-1 bg-gradient-to-r from-[#2e3144] to-transparent top-1/2 ml-[200px] -translate-y-1/2" />
+          <div className="absolute ml-[300px] -translate-y-1/2 w-32 h-10 bg-[#242736] rounded-xl animate-pulse delay-200" />
+
+          {/* Top Left Branch */}
+          <svg className="absolute w-full h-full opacity-50" style={{ transform: 'translate(-150px, -100px)' }}>
+            <path d="M 150 100 Q 50 100 50 0" fill="transparent" stroke="#2e3144" strokeWidth="2" />
+          </svg>
+          <div className="absolute -translate-x-[150px] -translate-y-[100px] w-28 h-8 bg-[#242736] rounded-xl animate-pulse delay-300" />
+
+          {/* Bottom Right Branch */}
+          <svg className="absolute w-full h-full opacity-50" style={{ transform: 'translate(150px, 100px)' }}>
+            <path d="M -150 -100 Q -50 -100 -50 0" fill="transparent" stroke="#2e3144" strokeWidth="2" />
+          </svg>
+          <div className="absolute translate-x-[150px] translate-y-[100px] w-28 h-8 bg-[#242736] rounded-xl animate-pulse delay-150" />
+        </div>
+
+        {/* Foreground Content */}
+        <div className="relative z-20 flex flex-col items-center bg-[#1a1d27]/80 backdrop-blur-md px-8 py-6 rounded-3xl border border-[#2e3144] shadow-xl animate-in zoom-in duration-500">
+          <div className="relative">
+            <Loader2 size={40} className="text-primary-400 animate-spin" />
+            <div className="absolute inset-0 bg-primary-400/20 rounded-full blur-xl animate-pulse" />
+          </div>
+          <p className="mt-4 font-medium bg-clip-text text-transparent bg-gradient-to-r from-primary-400 to-primary-600 transition-all duration-500 text-center w-64 min-h-[40px] flex items-center justify-center">
+            {loadingText}
+          </p>
+          <div className="w-full bg-[#2e3144] h-1 rounded-full mt-4 overflow-hidden">
+            <div className="h-full bg-primary-500 rounded-full w-1/3 animate-[slide_2s_ease-in-out_infinite_alternate]" />
+          </div>
+        </div>
       </div>
     );
   }
