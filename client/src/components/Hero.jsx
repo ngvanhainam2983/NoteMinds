@@ -35,22 +35,6 @@ export default function Hero() {
           <strong className="text-white font-medium">hỏi đáp trực tiếp</strong> với tài liệu một cách chuẩn xác.
         </p>
 
-        <div className="flex items-center justify-center gap-4 animate-in slide-in-from-bottom-8 fade-in duration-700 delay-500">
-          <button
-            onClick={scrollToUpload}
-            className="group relative inline-flex items-center justify-center gap-2.5 px-7 py-3.5 text-base font-semibold text-white transition-all duration-300 bg-primary-600 font-display rounded-2xl hover:bg-primary-500 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 focus:ring-offset-[#0f1117] overflow-hidden"
-          >
-            {/* Glossy gradient overlay */}
-            <div className="absolute inset-0 w-full h-full bg-gradient-to-tr from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-out" />
-
-            <Sparkles size={20} className="animate-pulse" />
-            Trải nghiệm ngay
-            <ArrowDown size={18} className="group-hover:translate-y-1 transition-transform" />
-
-            {/* Outer Glow */}
-            <div className="absolute inset-0 rounded-2xl ring-2 ring-primary-500/50 ring-offset-2 ring-offset-transparent group-hover:ring-primary-400 transition-all duration-300" />
-          </button>
-        </div>
       </div>
     </section>
   );

@@ -90,7 +90,7 @@ const PLANS = [
   },
 ];
 
-export default function PricingPage({ onBack, user, onLoginClick }) {
+export default function PricingPage({ user, onLoginClick }) {
   const currentPlan = user?.plan || 'free';
   const [contactPlan, setContactPlan] = useState(null);
   const [showContact, setShowContact] = useState(false);
@@ -106,24 +106,19 @@ export default function PricingPage({ onBack, user, onLoginClick }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#0f1117]">
-      <div className="max-w-6xl mx-auto px-4 py-8">
+    <section id="pricing" className="py-20">
+      <div className="max-w-6xl mx-auto px-4">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-8">
-          <button onClick={onBack} className="p-2 rounded-lg bg-[#1a1d27] hover:bg-[#242736] transition-colors">
-            <ArrowLeft size={18} />
-          </button>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold font-display">
-              Nâng cấp <span className="gradient-text">NoteMinds</span>
-            </h1>
-            <p className="text-sm text-[#9496a1]">Chọn gói phù hợp để tăng hiệu suất học tập</p>
-          </div>
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold font-display mb-4">
+            Bảng giá <span className="gradient-text">NoteMinds</span>
+          </h2>
+          <p className="text-[#9496a1]">Chọn gói phù hợp để tăng hiệu suất học tập</p>
         </div>
 
         {/* Current plan badge */}
         {user && (
-          <div className="mb-8 flex items-center gap-2">
+          <div className="mb-8 flex items-center justify-center gap-2">
             <span className="text-sm text-[#9496a1]">Gói hiện tại:</span>
             <span
               className="px-3 py-1 rounded-full text-sm font-semibold"
@@ -193,15 +188,14 @@ export default function PricingPage({ onBack, user, onLoginClick }) {
                 <button
                   onClick={() => handleSelectPlan(plan.key)}
                   disabled={isCurrent}
-                  className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                    isCurrent
+                  className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all ${isCurrent
                       ? 'bg-[#242736] text-[#9496a1] cursor-default'
                       : isDowngrade
                         ? 'bg-[#242736] text-[#9496a1] hover:bg-[#2e3144]'
                         : plan.popular
                           ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/25'
                           : 'bg-[#242736] hover:bg-[#2e3144] text-white'
-                  }`}
+                    }`}
                 >
                   {isCurrent ? '✓ Đang sử dụng' : !user ? 'Đăng nhập để mua' : isDowngrade ? 'Hạ gói' : 'Nâng cấp'}
                 </button>
@@ -230,7 +224,7 @@ export default function PricingPage({ onBack, user, onLoginClick }) {
           onClose={() => setShowContact(false)}
         />
       )}
-    </div>
+    </section>
   );
 }
 

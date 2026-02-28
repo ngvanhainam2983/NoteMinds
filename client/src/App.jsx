@@ -47,7 +47,10 @@ export default function App() {
       setCurrentDoc({ docId: sessionMatch[1], fileName: 'Phiên học mới' });
       setView('dashboard');
     } else if (path === '/price') {
-      setView('pricing');
+      setView('home');
+      setTimeout(() => {
+        document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+      }, 500);
     } else if (path === '/verify-email' && search.get('token')) {
       setEmailToken(search.get('token'));
       setView('verify-email');
@@ -121,7 +124,7 @@ export default function App() {
         <SharedDocViewer shareToken={shareToken} onBack={handleBackHome} />
       ) : (
         <>
-          {view !== 'admin' && view !== 'pricing' && view !== 'profile' && (
+          {view !== 'admin' && view !== 'profile' && (
             <Header
               onBackHome={handleBackHome}
               showBack={view === 'dashboard' || view === 'history-list'}
@@ -129,7 +132,6 @@ export default function App() {
               onLoginClick={() => openAuthModal('login')}
               onLogout={handleLogout}
               onOpenAdmin={() => setView('admin')}
-              onOpenPricing={() => { setView('pricing'); window.history.pushState({}, '', '/price'); }}
               onUserUpdate={(updated) => setUser(updated)}
               onOpenDocument={handleOpenDocument}
               onOpenHistory={() => { setView('history-list'); window.history.pushState({}, '', '/history'); }}
@@ -141,19 +143,20 @@ export default function App() {
           {view === 'home' && (
             <main>
               <Hero />
-              <section id="why">
-                <WhySection />
-              </section>
-              <section id="upload">
+              <section id="upload" className="relative z-20 -mt-8">
                 <FileUpload
                   onUploadComplete={handleUploadComplete}
                   user={user}
                   onAuthRequired={() => openAuthModal('register')}
                 />
               </section>
+              <section id="why">
+                <WhySection />
+              </section>
               <section id="features">
                 <Features />
               </section>
+              <PricingPage user={user} onLoginClick={() => openAuthModal('login')} />
             </main>
           )}
 
@@ -167,14 +170,6 @@ export default function App() {
 
           {view === 'admin' && (
             <AdminPanel onBack={handleBackHome} />
-          )}
-
-          {view === 'pricing' && (
-            <PricingPage
-              onBack={handleBackHome}
-              user={user}
-              onLoginClick={() => openAuthModal('login')}
-            />
           )}
 
           {view === 'verify-email' && emailToken && (

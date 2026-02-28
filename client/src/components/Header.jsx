@@ -18,10 +18,6 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
 
   const handleNav = (target) => {
     setMobileOpen(false);
-    if (target === 'pricing') {
-      onOpenPricing?.();
-      return;
-    }
     if (target === 'history') {
       onOpenHistory?.();
       return;
@@ -74,8 +70,7 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
           <nav className="hidden md:flex items-center gap-1">
             {NAV_ITEMS.filter(item => !item.requireAuth || user).map((item) => {
               const Icon = item.icon;
-              const isActive = (item.target === 'pricing' && currentView === 'pricing') ||
-                (item.target === 'history' && currentView === 'history-list');
+              const isActive = (item.target === 'history' && currentView === 'history-list');
               return (
                 <button
                   key={item.target}
@@ -138,7 +133,7 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
               user={user}
               onLogout={onLogout}
               onOpenAdmin={onOpenAdmin}
-              onOpenPricing={onOpenPricing}
+              onOpenPricing={() => handleNav('pricing')}
               onUserUpdate={onUserUpdate}
               onOpenDocument={onOpenDocument}
               onOpenProfile={onOpenProfile}
@@ -171,8 +166,7 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
           <nav className="max-w-7xl mx-auto px-4 py-3 flex flex-col gap-1">
             {NAV_ITEMS.filter(item => !item.requireAuth || user).map((item) => {
               const Icon = item.icon;
-              const isActive = (item.target === 'pricing' && currentView === 'pricing') ||
-                (item.target === 'history' && currentView === 'history-list');
+              const isActive = (item.target === 'history' && currentView === 'history-list');
               return (
                 <button
                   key={item.target}
