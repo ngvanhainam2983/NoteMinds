@@ -9,7 +9,7 @@ import {
   searchDocuments, getAnalytics, createShareLink, getSharedDocuments, deleteShareLink,
   getUserTags, createTag, addTagToDocument, removeTagFromDocument, getDocumentTags,
   getPreferences, setPreference, exportFlashcardsCSV, addFavorite, removeFavorite,
-  checkFavorite, getFlashcardStats
+  checkFavorite, getFlashcardStats, getStoredToken
 } from '../api';
 
 // ── Modal Wrapper ────────────────────────────────────
@@ -555,7 +555,10 @@ export function FavoriteButton({ documentId }) {
 
   useEffect(() => {
     if (!documentId) return;
-    checkFavorite(documentId).then(setIsFav).catch(() => { });
+    const token = getStoredToken();
+    if (token) {
+      checkFavorite(documentId).then(setIsFav).catch(() => { });
+    }
   }, [documentId]);
 
   const toggle = async () => {

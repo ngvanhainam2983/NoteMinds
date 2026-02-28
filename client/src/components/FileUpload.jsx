@@ -142,7 +142,9 @@ export default function FileUpload({ onUploadComplete, user, onAuthRequired }) {
 
         {/* Glowing rotating border effect when uploading */}
         {uploading && (
-          <div className="absolute -inset-[1px] rounded-3xl bg-gradient-to-r from-primary-500 via-accent-500 to-primary-500 opacity-50 animate-[spin_4s_linear_infinite]" style={{ WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', padding: '2px' }} />
+          <div className="absolute inset-0 rounded-3xl pointer-events-none overflow-hidden" style={{ WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', padding: '2px' }}>
+            <div className="absolute top-1/2 left-1/2 w-[200%] aspect-square -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-primary-500 via-accent-500 to-primary-500 opacity-60 animate-[spin_3s_linear_infinite]" />
+          </div>
         )}
         <input
           ref={fileInputRef}
