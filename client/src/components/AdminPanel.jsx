@@ -574,16 +574,17 @@ function AdminStatsPanel() {
         <div className="bg-surface border border-line rounded-xl p-4">
           <h3 className="text-sm font-semibold mb-3">Đăng ký 7 ngày qua</h3>
           <div className="flex items-end gap-2 h-32">
-            {stats.registrationTrend.map(d => {
-              const max = Math.max(1, ...stats.registrationTrend.map(x => x.count));
-              const height = (d.count / max) * 100;
+            {stats.registrationTrend.map((d, i) => {
+              const max = Math.max(1, ...stats.registrationTrend.map(x => x.count || 0));
+              const height = ((d.count || 0) / max) * 100;
+              const dateStr = d.date || d.day || '';
               return (
-                <div key={d.date} className="flex-1 flex flex-col items-center gap-1">
-                  <span className="text-[10px] text-muted">{d.count}</span>
+                <div key={dateStr || i} className="flex-1 flex flex-col items-center gap-1">
+                  <span className="text-[10px] text-muted">{d.count || 0}</span>
                   <div className="w-full bg-primary-500/20 rounded-t-lg relative" style={{ height: `${Math.max(4, height)}%` }}>
                     <div className="absolute inset-0 bg-primary-500 rounded-t-lg" style={{ height: `${height}%` }} />
                   </div>
-                  <span className="text-[9px] text-muted">{d.date.slice(5)}</span>
+                  <span className="text-[9px] text-muted">{dateStr.slice(5)}</span>
                 </div>
               );
             })}

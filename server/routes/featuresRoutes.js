@@ -777,9 +777,9 @@ router.get('/admin/stats', requireAuth, requireAdmin, (req, res) => {
 
     // User registration trend (last 30 days)
     const regTrend = db.prepare(`
-      SELECT date(created_at) as day, COUNT(*) as count
+      SELECT date(created_at) as date, COUNT(*) as count
       FROM users WHERE created_at >= date('now', '-30 days')
-      GROUP BY date(created_at) ORDER BY day ASC
+      GROUP BY date(created_at) ORDER BY date ASC
     `).all();
 
     // Top active users (last 7 days)
