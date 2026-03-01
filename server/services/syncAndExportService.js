@@ -3,8 +3,15 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { v4 as uuidv4 } from 'uuid';
 import PDFDocument from 'pdfkit';
-import { createCanvas } from 'canvas';
 import fs from 'fs';
+
+let createCanvas = null;
+try {
+  const canvasModule = await import('canvas');
+  createCanvas = canvasModule.createCanvas;
+} catch (e) {
+  console.warn('[SyncExport] canvas module not available, mindmap image export disabled');
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DB_PATH = path.join(__dirname, '../data/notemind.db');
@@ -261,6 +268,9 @@ export function exportConversationAsPDF(conversationId) {
 
 export function exportMindmapAsImage(mindmapData, documentId) {
   try {
+    if (!createCanvas) {
+      return { success: false, error: 'canvas module not available' };
+    }
     // Create canvas
     const width = 1200;
     const height = 800;
