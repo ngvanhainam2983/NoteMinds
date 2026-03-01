@@ -74,7 +74,7 @@ export default function App() {
     }
   }, []);
 
-  // Documents are auto-deleted after 24h on the server — no instant cleanup needed
+  // Documents are auto-deleted after 7 days on the server — no instant cleanup needed
 
   const handleUploadComplete = (docInfo) => {
     setCurrentDoc(docInfo);

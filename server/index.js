@@ -1627,20 +1627,20 @@ setTimeout(() => {
   initializeIndexes();
 }, 100);
 
-// ── Auto-cleanup: soft-delete documents older than 24h, purge files for deleted docs ──
+// ── Auto-cleanup: soft-delete documents older than 7 days, purge files for deleted docs ──
 function runDocumentCleanup() {
   try {
     const db = new Database(DB_PATH);
 
-    // 1. Soft-delete: mark documents older than 24h that haven't been deleted yet
+    // 1. Soft-delete: mark documents older than 7 days that haven't been deleted yet
     const softDeleted = db.prepare(`
       UPDATE documents
       SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
       WHERE deleted_at IS NULL
-        AND created_at <= datetime('now', '-24 hours')
+        AND created_at <= datetime('now', '-7 days')
     `).run();
     if (softDeleted.changes > 0) {
-      logger.info(`[Cleanup] Soft-deleted ${softDeleted.changes} documents older than 24h`);
+      logger.info(`[Cleanup] Soft-deleted ${softDeleted.changes} documents older than 7 days`);
     }
 
     // 2. Purge uploaded files for soft-deleted documents (file_path still set)
@@ -1664,10 +1664,10 @@ function runDocumentCleanup() {
       logger.info(`[Cleanup] Purged files for ${toClean.length} deleted documents`);
     }
 
-    // 3. Also evict from in-memory map if expired
+    // 3. Also evict from in-memory map if expired (7 days)
     for (const [docId, memDoc] of documents.entries()) {
       const age = Date.now() - new Date(memDoc.createdAt).getTime();
-      if (age > 24 * 60 * 60 * 1000) {
+      if (age > 7 * 24 * 60 * 60 * 1000) {
         documents.delete(docId);
       }
     }

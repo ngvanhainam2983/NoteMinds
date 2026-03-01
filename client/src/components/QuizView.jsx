@@ -141,87 +141,122 @@ export default function QuizView({ data, loading, error, onGenerate }) {
         const gradeColor = percent >= 80 ? 'emerald' : percent >= 50 ? 'amber' : 'red';
         const gradeMsg = percent === 100 ? 'Hoàn hảo!' : percent >= 80 ? 'Xuất sắc!' : percent >= 50 ? 'Khá tốt!' : 'Cần ôn thêm!';
         const gradeEmoji = percent === 100 ? '🏆' : percent >= 80 ? '🎉' : percent >= 50 ? '👍' : '💪';
+        const unansweredCount = qLen - answeredCount;
 
         return (
-            <div className="max-w-lg mx-auto py-8 px-4 animate-fade-in">
-                {/* Score Card */}
-                <div className="relative bg-surface border border-line rounded-2xl overflow-hidden shadow-xl">
-                    {/* Top accent bar */}
-                    <div className={`h-1.5 bg-gradient-to-r ${gradeColor === 'emerald' ? 'from-emerald-400 to-emerald-600' : gradeColor === 'amber' ? 'from-amber-400 to-amber-600' : 'from-red-400 to-red-600'}`} />
+            <div className="max-w-2xl mx-auto py-6 px-4 animate-fade-in">
+                {/* Hero Section */}
+                <div className={`relative rounded-2xl overflow-hidden mb-5 bg-gradient-to-br ${
+                    gradeColor === 'emerald' ? 'from-emerald-600/20 via-emerald-500/5 to-transparent' :
+                    gradeColor === 'amber' ? 'from-amber-600/20 via-amber-500/5 to-transparent' :
+                    'from-red-600/20 via-red-500/5 to-transparent'
+                } border border-line`}>
+                    {/* Decorative circles */}
+                    <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-primary-500/5" />
+                    <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-primary-500/5" />
 
-                    <div className="p-8 flex flex-col items-center gap-6">
+                    <div className="relative p-8 flex flex-col md:flex-row items-center gap-8">
                         {/* Circular Score */}
-                        <div className="relative">
-                            <svg className="w-36 h-36 -rotate-90" viewBox="0 0 128 128">
-                                <circle cx="64" cy="64" r="56" className="stroke-line" strokeWidth="8" fill="none" />
+                        <div className="relative shrink-0">
+                            <svg className="w-40 h-40 -rotate-90" viewBox="0 0 128 128">
+                                <circle cx="64" cy="64" r="54" className="stroke-line" strokeWidth="6" fill="none" />
                                 <circle
-                                    cx="64" cy="64" r="56"
+                                    cx="64" cy="64" r="54"
                                     className={`${gradeColor === 'emerald' ? 'stroke-emerald-500' : gradeColor === 'amber' ? 'stroke-amber-500' : 'stroke-red-500'}`}
-                                    strokeWidth="8" fill="none"
-                                    strokeDasharray={352} strokeDashoffset={352 - (percent / 100) * 352}
+                                    strokeWidth="6" fill="none"
+                                    strokeDasharray={339} strokeDashoffset={339 - (percent / 100) * 339}
                                     strokeLinecap="round"
                                     style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1)' }}
                                 />
                             </svg>
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                {percent === 100 && <Trophy size={24} className="text-amber-400 mb-1" />}
-                                <span className="text-4xl font-extrabold">{percent}%</span>
-                                <span className="text-xs text-muted font-medium">{score}/{qLen} câu đúng</span>
+                                <span className="text-5xl font-black tracking-tight">{percent}<span className="text-2xl text-muted">%</span></span>
                             </div>
                         </div>
 
-                        {/* Grade */}
-                        <div className="text-center">
-                            <p className="text-2xl font-bold">{gradeEmoji} {gradeMsg}</p>
-                            <p className="text-sm text-muted mt-1">{data.title}</p>
-                        </div>
+                        {/* Grade Info */}
+                        <div className="flex-1 text-center md:text-left">
+                            <p className="text-3xl font-extrabold mb-1">{gradeEmoji} {gradeMsg}</p>
+                            <p className="text-muted mb-4">{data.title}</p>
 
-                        {/* Stats row */}
-                        <div className="flex items-center gap-6 text-sm">
-                            <div className="flex items-center gap-1.5 text-muted">
-                                <Clock size={14} />
-                                <span>{formatTime(timer)}</span>
+                            {/* Stats pills */}
+                            <div className="flex flex-wrap items-center gap-2 justify-center md:justify-start">
+                                <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                    <CheckCircle2 size={13} /> {score} đúng
+                                </span>
+                                <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20">
+                                    <XCircle size={13} /> {qLen - score - unansweredCount} sai
+                                </span>
+                                {unansweredCount > 0 && (
+                                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-surface-2 text-muted border border-line">
+                                        <Target size={13} /> {unansweredCount} bỏ qua
+                                    </span>
+                                )}
+                                <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-surface-2 text-muted border border-line">
+                                    <Clock size={13} /> {formatTime(timer)}
+                                </span>
                             </div>
-                            <div className="flex items-center gap-1.5 text-emerald-400">
-                                <CheckCircle2 size={14} />
-                                <span>{score} đúng</span>
-                            </div>
-                            <div className="flex items-center gap-1.5 text-red-400">
-                                <XCircle size={14} />
-                                <span>{qLen - score} sai</span>
-                            </div>
-                        </div>
-
-                        {/* Question mini-grid */}
-                        <div className="w-full border-t border-line pt-5">
-                            <p className="text-xs text-muted font-medium uppercase tracking-wider mb-3">Tổng quan câu hỏi</p>
-                            <div className="flex flex-wrap gap-2 justify-center">
-                                {data.questions.map((q, i) => {
-                                    const correct = answers[i] === q.correctAnswerIndex;
-                                    const unanswered = answers[i] === undefined;
-                                    return (
-                                        <button
-                                            key={i}
-                                            onClick={() => { setView('review'); setCurrentIdx(i); }}
-                                            className={`w-9 h-9 rounded-lg text-xs font-bold transition-all hover:scale-110 ${unanswered ? 'bg-surface-2 text-muted' : correct ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/15 text-red-400 border border-red-500/30'}`}
-                                        >
-                                            {i + 1}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex gap-3 w-full pt-2">
-                            <button onClick={() => { setView('review'); setCurrentIdx(0); }} className="flex-1 py-3 rounded-xl border border-line hover:bg-surface-2 font-medium transition-all active:scale-[0.97] flex items-center justify-center gap-2">
-                                <Eye size={16} /> Xem lại
-                            </button>
-                            <button onClick={resetQuiz} className="flex-1 py-3 rounded-xl bg-primary-600 hover:bg-primary-700 font-medium transition-all active:scale-[0.97] shadow-lg shadow-primary-600/20 flex items-center justify-center gap-2 text-white">
-                                <RotateCcw size={16} /> Làm lại
-                            </button>
                         </div>
                     </div>
+                </div>
+
+                {/* Score breakdown bar */}
+                <div className="bg-surface border border-line rounded-xl p-4 mb-5">
+                    <div className="flex items-center justify-between text-xs font-medium text-muted mb-2.5">
+                        <span>Tỉ lệ trả lời</span>
+                        <span>{score}/{qLen} câu đúng</span>
+                    </div>
+                    <div className="h-3 bg-surface-2 rounded-full overflow-hidden flex">
+                        {score > 0 && (
+                            <div className="h-full bg-emerald-500 transition-all duration-700 rounded-l-full" style={{ width: `${(score / qLen) * 100}%` }} />
+                        )}
+                        {(qLen - score - unansweredCount) > 0 && (
+                            <div className="h-full bg-red-500 transition-all duration-700" style={{ width: `${((qLen - score - unansweredCount) / qLen) * 100}%` }} />
+                        )}
+                        {unansweredCount > 0 && (
+                            <div className="h-full bg-line transition-all duration-700 rounded-r-full" style={{ width: `${(unansweredCount / qLen) * 100}%` }} />
+                        )}
+                    </div>
+                    <div className="flex items-center gap-4 mt-2.5 text-[11px] font-medium">
+                        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Đúng</span>
+                        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /> Sai</span>
+                        {unansweredCount > 0 && <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-line" /> Bỏ qua</span>}
+                    </div>
+                </div>
+
+                {/* Question Grid */}
+                <div className="bg-surface border border-line rounded-xl p-4 mb-5">
+                    <p className="text-xs text-muted font-semibold uppercase tracking-wider mb-3">Chi tiết từng câu</p>
+                    <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
+                        {data.questions.map((q, i) => {
+                            const correct = answers[i] === q.correctAnswerIndex;
+                            const unanswered = answers[i] === undefined;
+                            return (
+                                <button
+                                    key={i}
+                                    onClick={() => { setView('review'); setCurrentIdx(i); }}
+                                    title={`Câu ${i + 1}: ${unanswered ? 'Bỏ qua' : correct ? 'Đúng' : 'Sai'}`}
+                                    className={`aspect-square rounded-lg text-xs font-bold transition-all hover:scale-110 hover:shadow-md flex items-center justify-center ${
+                                        unanswered ? 'bg-surface-2 text-muted border border-line'
+                                        : correct ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                                        : 'bg-red-500/15 text-red-400 border border-red-500/30'
+                                    }`}
+                                >
+                                    {unanswered ? <span className="opacity-40">{i + 1}</span> : correct ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3">
+                    <button onClick={() => { setView('review'); setCurrentIdx(0); }} className="flex-1 py-3.5 rounded-xl border border-line hover:bg-surface-2 font-medium transition-all active:scale-[0.97] flex items-center justify-center gap-2 text-sm">
+                        <Eye size={16} /> Xem lại đáp án
+                    </button>
+                    <button onClick={resetQuiz} className="flex-1 py-3.5 rounded-xl bg-primary-600 hover:bg-primary-700 font-medium transition-all active:scale-[0.97] shadow-lg shadow-primary-600/20 flex items-center justify-center gap-2 text-sm text-white">
+                        <RotateCcw size={16} /> Làm lại
+                    </button>
                 </div>
             </div>
         );
