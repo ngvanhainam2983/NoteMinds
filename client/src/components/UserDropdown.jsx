@@ -7,7 +7,7 @@ import {
 import { getDocumentHistory } from '../api';
 import ConfirmModal from './ConfirmModal';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 function UserAvatar({ user, size = 'sm' }) {
   const sizeClasses = size === 'sm' ? 'w-6 h-6 text-[10px]' : 'w-9 h-9 text-sm';

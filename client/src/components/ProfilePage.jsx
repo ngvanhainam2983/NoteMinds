@@ -13,7 +13,7 @@ import { useTheme, THEMES } from '../ThemeContext';
 import ConfirmModal from './ConfirmModal';
 import { startRegistration } from '@simplewebauthn/browser';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) {
     const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'security' | 'theme'
