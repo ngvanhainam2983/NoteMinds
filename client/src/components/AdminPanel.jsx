@@ -361,6 +361,7 @@ export default function AdminPanel({ onBack }) {
 
         {/* Tab content */}
         <div className="px-6 pb-8">
+        {tab === 'users' && (
           <>
             <div className="flex flex-col sm:flex-row gap-2 mb-4">
               <div className="relative flex-1">
