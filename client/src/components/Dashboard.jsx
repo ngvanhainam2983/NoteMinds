@@ -146,6 +146,24 @@ export default function Dashboard({ doc, user }) {
         if (sessions?.flashcards) setFlashcardData(sessions.flashcards);
         if (sessions?.quiz) setQuizData(sessions.quiz);
         if (sessions?.chat && sessions.chat.length > 0) setChatMessages(sessions.chat);
+
+        // Cache sessions for offline access
+        try {
+          const cacheEntry = {
+            document: document || { original_name: doc.fileName },
+            sessions: sessions || {},
+            cachedAt: new Date().toISOString()
+          };
+          const allCached = JSON.parse(localStorage.getItem('notemind_sessions_cache') || '{}');
+          allCached[doc.docId] = cacheEntry;
+          // Keep max 20 documents cached
+          const keys = Object.keys(allCached);
+          if (keys.length > 20) {
+            const sorted = keys.sort((a, b) => new Date(allCached[a].cachedAt) - new Date(allCached[b].cachedAt));
+            sorted.slice(0, keys.length - 20).forEach(k => delete allCached[k]);
+          }
+          localStorage.setItem('notemind_sessions_cache', JSON.stringify(allCached));
+        } catch { /* localStorage full */ }
       })
       .catch(() => { /* no saved sessions, start fresh */ })
       .finally(() => setSessionLoading(false));

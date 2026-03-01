@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
 import {
   WifiOff, FileText, Clock, CheckCircle2, AlertTriangle, Loader2,
-  Search, Folder, RefreshCw, CloudOff, History, ArrowLeft
+  Search, Folder, RefreshCw, CloudOff, History, ArrowLeft, Map, CreditCard, MessageCircle, Eye
 } from 'lucide-react';
+import OfflineDocViewer from './OfflineDocViewer';
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '';
@@ -27,6 +28,7 @@ const statusIcon = (doc) => {
 
 export default function OfflinePage({ onBack, onRetry, onDisable }) {
   const [search, setSearch] = useState('');
+  const [selectedDoc, setSelectedDoc] = useState(null); // { id, name }
 
   // Load cached data from localStorage
   const cachedDocs = useMemo(() => {
@@ -34,6 +36,14 @@ export default function OfflinePage({ onBack, onRetry, onDisable }) {
       const raw = localStorage.getItem('notemind_history_cache');
       return raw ? JSON.parse(raw) : [];
     } catch { return []; }
+  }, []);
+
+  // Load cached sessions to know which docs have content
+  const sessionsCache = useMemo(() => {
+    try {
+      const raw = localStorage.getItem('notemind_sessions_cache');
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
   }, []);
 
   const cachedFolders = useMemo(() => {
@@ -67,6 +77,28 @@ export default function OfflinePage({ onBack, onRetry, onDisable }) {
     const f = cachedFolders.find(f => f.id === folderId);
     return f ? f.color : '#6b7280';
   };
+
+  const getDocSessionInfo = (docId) => {
+    const s = sessionsCache[docId]?.sessions;
+    if (!s) return null;
+    const items = [];
+    if (s.mindmap) items.push({ icon: Map, label: 'Sơ đồ', color: 'text-blue-400' });
+    if (s.flashcards?.cards?.length || (Array.isArray(s.flashcards) && s.flashcards.length)) items.push({ icon: CreditCard, label: 'Flashcard', color: 'text-emerald-400' });
+    if (s.quiz?.questions?.length) items.push({ icon: FileText, label: 'Quiz', color: 'text-amber-400' });
+    if (s.chat?.length > 1) items.push({ icon: MessageCircle, label: 'Chat', color: 'text-purple-400' });
+    return items.length > 0 ? items : null;
+  };
+
+  // If viewing a specific document, show the offline doc viewer
+  if (selectedDoc) {
+    return (
+      <OfflineDocViewer
+        docId={selectedDoc.id}
+        docName={selectedDoc.name}
+        onBack={() => setSelectedDoc(null)}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-bg">
@@ -139,15 +171,24 @@ export default function OfflinePage({ onBack, onRetry, onDisable }) {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="bg-surface border border-line rounded-xl p-4">
             <div className="flex items-center gap-2 mb-1">
               <FileText size={14} className="text-primary-400" />
-              <span className="text-[11px] text-muted font-medium">Tài liệu đã lưu</span>
+              <span className="text-[11px] text-muted font-medium">Tài liệu</span>
             </div>
             <p className="text-xl font-extrabold text-txt">{cachedDocs.length}</p>
           </div>
           <div className="bg-surface border border-line rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Eye size={14} className="text-emerald-400" />
+              <span className="text-[11px] text-muted font-medium">Xem được</span>
+            </div>
+            <p className="text-xl font-extrabold text-txt">
+              {cachedDocs.filter(d => !!getDocSessionInfo(d.id)).length}
+            </p>
+          </div>
+          <div className="bg-surface border border-line rounded-xl p-4 hidden sm:block">
             <div className="flex items-center gap-2 mb-1">
               <Folder size={14} className="text-accent-400" />
               <span className="text-[11px] text-muted font-medium">Thư mục</span>
@@ -204,19 +245,28 @@ export default function OfflinePage({ onBack, onRetry, onDisable }) {
             </div>
             {filteredDocs.map((doc) => {
               const expired = !!doc.deleted_at;
+              const sessionInfo = getDocSessionInfo(doc.id);
+              const hasContent = !!sessionInfo;
               return (
                 <div
                   key={doc.id}
+                  onClick={() => {
+                    if (!expired && hasContent) {
+                      setSelectedDoc({ id: doc.id, name: doc.original_name || 'Tài liệu không tên' });
+                    }
+                  }}
                   className={`flex items-center gap-4 rounded-xl px-5 py-4 transition-all border ${
                     expired
                       ? 'bg-bg/50 border-line/50 opacity-60'
-                      : 'bg-surface-2/40 border-line/50 hover:border-line hover:bg-surface-2'
+                      : hasContent
+                        ? 'bg-surface-2/40 border-line/50 hover:border-primary-500/30 hover:bg-surface-2 hover:shadow-md hover:shadow-black/5 cursor-pointer'
+                        : 'bg-surface-2/40 border-line/50 hover:border-line hover:bg-surface-2'
                   }`}
                 >
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                    expired ? 'bg-surface border border-line' : 'bg-primary-600/10 border border-primary-500/15'
+                    expired ? 'bg-surface border border-line' : hasContent ? 'bg-primary-600/10 border border-primary-500/20' : 'bg-surface border border-line'
                   }`}>
-                    <FileText size={18} className={expired ? 'text-muted/60' : 'text-primary-400'} />
+                    <FileText size={18} className={expired ? 'text-muted/60' : hasContent ? 'text-primary-400' : 'text-muted/60'} />
                   </div>
 
                   <div className="flex-1 min-w-0">
@@ -257,14 +307,35 @@ export default function OfflinePage({ onBack, onRetry, onDisable }) {
                         {formatDate(doc.created_at)}
                       </span>
                     </div>
+                    {/* Session content badges */}
+                    {sessionInfo && (
+                      <div className="flex items-center gap-2 mt-2">
+                        {sessionInfo.map((item, i) => {
+                          const Icon = item.icon;
+                          return (
+                            <span key={i} className="text-[10px] px-1.5 py-0.5 rounded-md bg-surface border border-line flex items-center gap-1 font-medium">
+                              <Icon size={10} className={item.color} />
+                              <span className="text-muted">{item.label}</span>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Offline badge */}
+                  {/* Right side badge */}
                   <div className="shrink-0">
-                    <span className="text-[10px] px-2 py-1 rounded-lg bg-surface border border-line text-muted font-medium flex items-center gap-1">
-                      <WifiOff size={10} />
-                      Đã lưu
-                    </span>
+                    {hasContent ? (
+                      <span className="text-[10px] px-2 py-1 rounded-lg bg-primary-600/10 border border-primary-500/20 text-primary-400 font-medium flex items-center gap-1">
+                        <Eye size={10} />
+                        Xem được
+                      </span>
+                    ) : (
+                      <span className="text-[10px] px-2 py-1 rounded-lg bg-surface border border-line text-muted font-medium flex items-center gap-1">
+                        <WifiOff size={10} />
+                        Chỉ tên
+                      </span>
+                    )}
                   </div>
                 </div>
               );
@@ -280,8 +351,8 @@ export default function OfflinePage({ onBack, onRetry, onDisable }) {
           <div>
             <p className="text-xs font-medium text-txt mb-0.5">Mẹo</p>
             <p className="text-[11px] text-muted leading-relaxed">
-              Lịch sử tài liệu được tự động lưu mỗi khi bạn truy cập trang lịch sử khi có kết nối mạng.
-              Hãy mở trang lịch sử thường xuyên để cập nhật dữ liệu ngoại tuyến.
+              Tài liệu có nhãn <strong className="text-primary-400">Xem được</strong> là những tài liệu bạn đã mở khi có mạng — bao gồm sơ đồ tư duy, flashcard, quiz và chat.
+              Hãy mở tài liệu khi có mạng để lưu nội dung xem ngoại tuyến.
             </p>
           </div>
         </div>
