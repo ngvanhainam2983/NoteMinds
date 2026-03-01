@@ -517,10 +517,23 @@ app.get('/api/auth/me', requireAuth, (req, res) => {
 
 // ============ USER PROFILE ============
 
-app.put('/api/auth/profile', requireAuth, (req, res) => {
+app.put('/api/auth/profile', requireAuth, async (req, res) => {
   try {
     const { displayName, email } = req.body;
+    const oldEmail = req.user.email?.toLowerCase();
     const updated = updateUserProfile(req.user.id, displayName, email);
+
+    // If email changed, send verification email to the new address
+    if (email && email.toLowerCase() !== oldEmail) {
+      try {
+        const verifyToken = generateVerificationToken();
+        setVerificationToken(req.user.id, verifyToken);
+        await sendVerificationEmail(email, verifyToken, updated.username || updated.displayName);
+      } catch (emailErr) {
+        console.error('[Profile] Verification email failed:', emailErr.message);
+      }
+    }
+
     res.json({ user: updated });
   } catch (err) {
     res.status(400).json({ error: err.message });

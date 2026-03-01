@@ -301,7 +301,12 @@ export function updateUserProfile(userId, displayName, email) {
     db.prepare('UPDATE users SET display_name = ?, updated_at = datetime(\'now\') WHERE id = ?').run(displayName, userId);
   }
   if (email) {
+    const currentUser = db.prepare('SELECT email FROM users WHERE id = ?').get(userId);
+    const emailChanged = currentUser && currentUser.email?.toLowerCase() !== email.toLowerCase();
     db.prepare('UPDATE users SET email = ?, updated_at = datetime(\'now\') WHERE id = ?').run(email.toLowerCase(), userId);
+    if (emailChanged) {
+      db.prepare('UPDATE users SET email_verified = 0, updated_at = datetime(\'now\') WHERE id = ?').run(userId);
+    }
   }
   return getUserById(userId);
 }
