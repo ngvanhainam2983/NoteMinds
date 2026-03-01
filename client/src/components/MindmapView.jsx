@@ -12,7 +12,7 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { toPng } from 'html-to-image';
-import { Loader2, AlertCircle, Map, RefreshCw, Download, Image as ImageIcon } from 'lucide-react';
+import { Loader2, AlertCircle, Map, RefreshCw, Download, Image as ImageIcon, Lock } from 'lucide-react';
 
 // Color palette for branches — first & last use theme primary via CSS vars
 function getBranchColors() {
@@ -170,15 +170,15 @@ function convertToReactFlow(data) {
   return { nodes: rfNodes, edges: rfEdges };
 }
 
-export default function MindmapView({ data, loading, error, onGenerate }) {
+export default function MindmapView({ data, loading, error, onGenerate, isLocked }) {
   return (
     <ReactFlowProvider>
-      <MindmapViewInner data={data} loading={loading} error={error} onGenerate={onGenerate} />
+      <MindmapViewInner data={data} loading={loading} error={error} onGenerate={onGenerate} isLocked={isLocked} />
     </ReactFlowProvider>
   );
 }
 
-function MindmapViewInner({ data, loading, error, onGenerate }) {
+function MindmapViewInner({ data, loading, error, onGenerate, isLocked }) {
   const { getNodes } = useReactFlow();
   const [exporting, setExporting] = useState(false);
   const { nodes: initialNodes, edges: initialEdges } = useMemo(
@@ -329,16 +329,21 @@ function MindmapViewInner({ data, loading, error, onGenerate }) {
   if (!data) {
     return (
       <div className="flex flex-col items-center justify-center h-[500px] gap-5">
-        <div className="w-20 h-20 bg-primary-600/10 border border-primary-500/20 rounded-2xl flex items-center justify-center">
-          <Map size={36} className="text-primary-400" />
+        <div className={`w-20 h-20 border rounded-2xl flex items-center justify-center ${isLocked ? 'bg-gray-500/10 border-gray-500/20' : 'bg-primary-600/10 border-primary-500/20'}`}>
+          {isLocked ? <Lock size={36} className="text-gray-400" /> : <Map size={36} className="text-primary-400" />}
         </div>
         <div className="text-center">
-          <p className="text-txt font-semibold mb-1">Chưa có sơ đồ tư duy</p>
-          <p className="text-xs text-muted">Tạo sơ đồ tư duy AI từ tài liệu của bạn</p>
+          <p className="text-txt font-semibold mb-1">{isLocked ? 'Tài liệu gốc đã bị xóa' : 'Chưa có sơ đồ tư duy'}</p>
+          <p className="text-xs text-muted">{isLocked ? 'Không thể tạo mới vì file gốc không còn tồn tại' : 'Tạo sơ đồ tư duy AI từ tài liệu của bạn'}</p>
         </div>
         <button
           onClick={onGenerate}
-          className="px-7 py-3 bg-gradient-to-r from-primary-600 to-primary-500 rounded-xl text-sm font-semibold hover:from-primary-500 hover:to-primary-400 transition-all shadow-lg shadow-primary-600/20 hover:shadow-xl"
+          disabled={isLocked}
+          className={`px-7 py-3 rounded-xl text-sm font-semibold transition-all shadow-lg ${
+            isLocked
+              ? 'bg-gray-600 cursor-not-allowed opacity-50 shadow-none'
+              : 'bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 shadow-primary-600/20 hover:shadow-xl'
+          }`}
         >
           Tạo Sơ đồ tư duy
         </button>

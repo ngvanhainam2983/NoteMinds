@@ -330,11 +330,16 @@ export default function Dashboard({ doc, user }) {
       <div className="tour-tools flex items-center gap-2 mb-5 flex-wrap">
         <button
           onClick={handleDownload}
-          disabled={isDownloading}
-          className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium bg-primary-600/10 border border-primary-500/20 rounded-xl text-primary-400 hover:bg-primary-600/20 transition-all disabled:opacity-50"
+          disabled={isDownloading || docDetails.isLocked}
+          className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium border rounded-xl transition-all disabled:opacity-50 ${
+            docDetails.isLocked
+              ? 'bg-surface border-line text-muted cursor-not-allowed'
+              : 'bg-primary-600/10 border-primary-500/20 text-primary-400 hover:bg-primary-600/20'
+          }`}
+          title={docDetails.isLocked ? 'File gốc đã bị xóa' : ''}
         >
-          {isDownloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-          <span className="hidden sm:inline">{isDownloading ? 'Đang tải...' : 'Tải file gốc'}</span>
+          {isDownloading ? <Loader2 size={14} className="animate-spin" /> : docDetails.isLocked ? <Lock size={14} /> : <Download size={14} />}
+          <span className="hidden sm:inline">{isDownloading ? 'Đang tải...' : docDetails.isLocked ? 'Đã xóa gốc' : 'Tải file gốc'}</span>
         </button>
 
         <button
@@ -417,6 +422,7 @@ export default function Dashboard({ doc, user }) {
             loading={tabLoading.mindmap}
             error={tabErrors.mindmap}
             onGenerate={handleGenerateMindmap}
+            isLocked={docDetails.isLocked}
           />
         )}
         {activeTab === 'flashcard' && (
@@ -426,6 +432,7 @@ export default function Dashboard({ doc, user }) {
             error={tabErrors.flashcard}
             onGenerate={handleGenerateFlashcards}
             docId={doc?.docId}
+            isLocked={docDetails.isLocked}
           />
         )}
         {activeTab === 'quiz' && (
@@ -434,6 +441,7 @@ export default function Dashboard({ doc, user }) {
             loading={tabLoading.quiz}
             error={tabErrors.quiz}
             onGenerate={handleGenerateQuiz}
+            isLocked={docDetails.isLocked}
           />
         )}
       </div>
@@ -470,10 +478,16 @@ export default function Dashboard({ doc, user }) {
       {!showChat && (
         <button
           onClick={() => setShowChat(true)}
-          className="tour-chat-fab fixed bottom-6 right-6 z-30 w-14 h-14 bg-gradient-to-br from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white rounded-2xl flex items-center justify-center shadow-xl shadow-primary-600/30 hover:scale-105 active:scale-95 transition-all group"
+          disabled={docDetails.isLocked && chatMessages.length <= 1}
+          className={`tour-chat-fab fixed bottom-6 right-6 z-30 w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl transition-all group ${
+            docDetails.isLocked && chatMessages.length <= 1
+              ? 'bg-gray-600 cursor-not-allowed opacity-50 shadow-none'
+              : 'bg-gradient-to-br from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white shadow-primary-600/30 hover:scale-105 active:scale-95'
+          }`}
+          title={docDetails.isLocked && chatMessages.length <= 1 ? 'Tài liệu gốc đã bị xóa' : 'Trò chuyện với AI'}
         >
           <MessageCircle size={22} className="group-hover:scale-110 transition-transform" />
-          <span className="absolute -top-1 -right-1 w-3 h-3 bg-accent-500 rounded-full ring-2 ring-bg animate-pulse" />
+          {!(docDetails.isLocked && chatMessages.length <= 1) && <span className="absolute -top-1 -right-1 w-3 h-3 bg-accent-500 rounded-full ring-2 ring-bg animate-pulse" />}
         </button>
       )}
 

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import {
   Loader2, AlertCircle, CreditCard, RefreshCw,
-  ChevronLeft, ChevronRight, RotateCw, Download, Tag, Star, Volume2
+  ChevronLeft, ChevronRight, RotateCw, Download, Tag, Star, Volume2, Lock
 } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
 import { reviewFlashcard } from '../api';
@@ -15,7 +15,7 @@ const SR_GRADES = [
   { grade: 5, label: 'Xuất sắc', color: 'bg-emerald-600', emoji: '🤩' },
 ];
 
-export default function FlashcardView({ data, loading, error, onGenerate, docId }) {
+export default function FlashcardView({ data, loading, error, onGenerate, docId, isLocked }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [viewMode, setViewMode] = useState('card'); // 'card' | 'list'
@@ -93,11 +93,17 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId 
   if (!data) {
     return (
       <div className="flex flex-col items-center justify-center h-[500px] gap-4">
-        <CreditCard size={48} className="text-line" />
-        <p className="text-muted">Chưa có Flashcard</p>
+        {isLocked ? <Lock size={48} className="text-gray-400" /> : <CreditCard size={48} className="text-line" />}
+        <p className="text-muted">{isLocked ? 'Tài liệu gốc đã bị xóa' : 'Chưa có Flashcard'}</p>
+        {isLocked && <p className="text-xs text-muted -mt-2">Không thể tạo mới vì file gốc không còn tồn tại</p>}
         <button
           onClick={onGenerate}
-          className="px-6 py-2.5 bg-accent-600 rounded-xl text-sm font-medium hover:bg-accent-700 transition-colors shadow-lg shadow-accent-600/25"
+          disabled={isLocked}
+          className={`px-6 py-2.5 rounded-xl text-sm font-medium transition-colors shadow-lg ${
+            isLocked
+              ? 'bg-gray-600 cursor-not-allowed opacity-50 shadow-none'
+              : 'bg-accent-600 hover:bg-accent-700 shadow-accent-600/25'
+          }`}
         >
           Tạo Flashcard
         </button>

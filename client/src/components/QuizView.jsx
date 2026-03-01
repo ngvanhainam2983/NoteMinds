@@ -2,13 +2,13 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import {
     Loader2, AlertCircle, CheckCircle2, XCircle, RefreshCw,
     Presentation, ChevronLeft, ChevronRight, Trophy, Target,
-    Sparkles, Award, RotateCcw, Eye, ListChecks, Clock, Zap
+    Sparkles, Award, RotateCcw, Eye, ListChecks, Clock, Zap, Lock
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
-export default function QuizView({ data, loading, error, onGenerate }) {
+export default function QuizView({ data, loading, error, onGenerate, isLocked }) {
     const [currentIdx, setCurrentIdx] = useState(0);
     const [answers, setAnswers] = useState({});
     const [submitted, setSubmitted] = useState(false);
@@ -122,14 +122,16 @@ export default function QuizView({ data, loading, error, onGenerate }) {
     if (error || !data?.questions) {
         return (
             <div className="flex flex-col items-center justify-center h-[400px] gap-5 animate-fade-in">
-                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${error ? 'bg-red-500/10' : 'bg-surface-2'}`}>
-                    {error ? <AlertCircle size={28} className="text-red-400" /> : <Presentation size={28} className="text-muted" />}
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${error ? 'bg-red-500/10' : isLocked ? 'bg-gray-500/10' : 'bg-surface-2'}`}>
+                    {error ? <AlertCircle size={28} className="text-red-400" /> : isLocked ? <Lock size={28} className="text-gray-400" /> : <Presentation size={28} className="text-muted" />}
                 </div>
                 <div className="text-center">
-                    <p className={`font-semibold text-lg mb-1 ${error ? 'text-red-400' : 'text-txt'}`}>{error ? "Lỗi tạo bài tập" : "Chưa có bài kiểm tra"}</p>
-                    <p className="text-sm text-muted">{error ? "Vui lòng thử lại sau" : "Tạo bài kiểm tra từ nội dung tài liệu"}</p>
+                    <p className={`font-semibold text-lg mb-1 ${error ? 'text-red-400' : 'text-txt'}`}>{error ? "Lỗi tạo bài tập" : isLocked ? "Tài liệu gốc đã bị xóa" : "Chưa có bài kiểm tra"}</p>
+                    <p className="text-sm text-muted">{error ? "Vui lòng thử lại sau" : isLocked ? "Không thể tạo mới vì file gốc không còn tồn tại" : "Tạo bài kiểm tra từ nội dung tài liệu"}</p>
                 </div>
-                <button onClick={onGenerate} className="flex items-center gap-2 px-6 py-2.5 bg-primary-600 rounded-xl hover:bg-primary-700 transition-all shadow-lg shadow-primary-600/20 active:scale-95 font-medium text-white">
+                <button onClick={onGenerate} disabled={isLocked && !error} className={`flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all shadow-lg active:scale-95 font-medium text-white ${
+                    isLocked && !error ? 'bg-gray-600 cursor-not-allowed opacity-50 shadow-none' : 'bg-primary-600 hover:bg-primary-700 shadow-primary-600/20'
+                }`}>
                     <RefreshCw size={15} /> {error ? "Thử lại" : "Tạo Bài Kiểm Tra"}
                 </button>
             </div>
