@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
     ArrowLeft, User, Mail, Shield, ShieldCheck, Crown, Calendar, Clock,
     CheckCircle2, XCircle, Fingerprint, KeyRound, Loader2, Edit3,
-    Save, X, Lock, ShieldOff, RefreshCw, Copy, Palette, AlertCircle, Plus, Trash2, Download, Moon, Sun, Monitor
+    Save, X, Lock, ShieldOff, RefreshCw, Copy, Palette, AlertCircle, Plus, Trash2, Download, Moon, Sun, Monitor, Camera
 } from 'lucide-react';
 import {
     updateProfile, get2FAStatus, getPasskeyList, changePassword,
@@ -27,6 +27,7 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
     const [displayName, setDisplayName] = useState(user?.displayName || '');
     const [avatarFile, setAvatarFile] = useState(null);
     const [avatarPreview, setAvatarPreview] = useState(null);
+    const [avatarUploading, setAvatarUploading] = useState(false);
 
     // Password
     const [oldPw, setOldPw] = useState('');
@@ -129,6 +130,37 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
             if (file.size > 2 * 1024 * 1024) return setError('Ảnh đại diện không được vượt quá 2MB');
             setAvatarFile(file);
             setAvatarPreview(URL.createObjectURL(file));
+        }
+    };
+
+    const handleQuickAvatarUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (file.size > 2 * 1024 * 1024) return setError('Ảnh đại diện không được vượt quá 2MB');
+        setAvatarUploading(true);
+        setError('');
+        try {
+            const formData = new FormData();
+            formData.append('avatar', file);
+            const token = localStorage.getItem('notemind_token');
+            const response = await fetch(`${API_URL}/api/users/profile/avatar`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Lỗi khi tải lên ảnh đại diện');
+            }
+            const data = await response.json();
+            onUserUpdate?.(data.user);
+            setSuccess('Đã cập nhật ảnh đại diện!');
+            setTimeout(() => setSuccess(''), 3000);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setAvatarUploading(false);
+            e.target.value = '';
         }
     };
 
@@ -288,6 +320,12 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                                     initials
                                 )}
                             </div>
+
+                            {/* Quick avatar upload button */}
+                            <label className="absolute -top-1 -right-1 w-7 h-7 bg-primary-600 hover:bg-primary-700 rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-colors z-10" title="Đổi ảnh đại diện">
+                                {avatarUploading ? <Loader2 size={14} className="text-white animate-spin" /> : <Camera size={14} className="text-white" />}
+                                <input type="file" accept="image/png, image/jpeg, image/jpg, image/webp" className="hidden" onChange={handleQuickAvatarUpload} disabled={avatarUploading} />
+                            </label>
 
                             {editing && (
                                 <label className="absolute inset-0 bg-black/60 rounded-2xl flex flex-col items-center justify-center text-white cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
