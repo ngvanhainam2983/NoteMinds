@@ -121,7 +121,7 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
     // ── Error / Empty ───
     if (error || !data?.questions) {
         return (
-            <div className="flex flex-col items-center justify-center h-[400px] gap-5 animate-fade-in">
+            <div className="flex flex-col items-center justify-center min-h-[500px] gap-5 animate-fade-in">
                 <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${error ? 'bg-red-500/10' : isLocked ? 'bg-gray-500/10' : 'bg-surface-2'}`}>
                     {error ? <AlertCircle size={28} className="text-red-400" /> : isLocked ? <Lock size={28} className="text-gray-400" /> : <Presentation size={28} className="text-muted" />}
                 </div>
