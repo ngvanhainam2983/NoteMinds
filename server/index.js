@@ -41,6 +41,7 @@ import featureRoutes from './routes/featuresRoutes.js';
 import { validateShareToken } from './services/advancedFeatureService.js';
 import { sendVerificationEmail, sendPasswordResetEmail, generateVerificationToken, testEmailConnection } from './services/emailService.js';
 import Database from 'better-sqlite3';
+import jwt from 'jsonwebtoken';
 
 dotenv.config();
 
@@ -1277,6 +1278,37 @@ app.get('/api/rate-limit', optionalAuth, (req, res) => {
     plan: req.user?.plan || 'guest',
     planLabel: req.user?.planLabel || 'Guest',
   });
+});
+
+// ── Maintenance mode middleware ──
+const DB_MAIN_PATH = path.join(__dirname, 'data', 'notemind.db');
+app.use('/api', (req, res, next) => {
+  // Always allow these paths through (req.path is relative to /api mount)
+  const bypass = ['/system/settings', '/auth', '/login', '/register', '/me'];
+  if (bypass.some(p => req.path.startsWith(p)) || req.path.includes('/admin') || req.path.includes('/track-login')) return next();
+
+  try {
+    const db = new Database(DB_MAIN_PATH);
+    const row = db.prepare("SELECT value FROM system_settings WHERE key = 'maintenance_mode'").get();
+    db.close();
+    if (row) {
+      const enabled = JSON.parse(row.value);
+      if (enabled) {
+        // Allow admin users through (check req.user or decode token)
+        if (req.user && req.user.role === 'admin') return next();
+        try {
+          const authHeader = req.headers.authorization;
+          if (authHeader) {
+            const token = authHeader.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'notemind-secret-key-2024');
+            if (decoded.role === 'admin') return next();
+          }
+        } catch {}
+        return res.status(503).json({ error: 'maintenance', message: 'Hệ thống đang bảo trì. Vui lòng quay lại sau.' });
+      }
+    }
+  } catch {}
+  next();
 });
 
 // Feature routes - all advanced features (chat history, favorites, tags, search, analytics, sharing, spaced repetition, exports, sync, preferences)

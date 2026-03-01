@@ -14,8 +14,8 @@ import PublicDocViewer from './components/PublicDocViewer';
 import LeaderboardPage from './components/LeaderboardPage';
 import StatsPage from './components/StatsPage';
 import AnnouncementBanner from './components/AnnouncementBanner';
-import { getStoredUser, logout as apiLogout, getMe, verifyEmailToken, resetPassword } from './api';
-import { CheckCircle2, XCircle, Loader2, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { getStoredUser, logout as apiLogout, getMe, verifyEmailToken, resetPassword, getSystemSettings } from './api';
+import { CheckCircle2, XCircle, Loader2, Lock, Eye, EyeOff, ArrowLeft, Wrench } from 'lucide-react';
 
 export default function App() {
   const [currentDoc, setCurrentDoc] = useState(null);
@@ -26,6 +26,7 @@ export default function App() {
   const [authModalTab, setAuthModalTab] = useState('login');
   const [shareToken, setShareToken] = useState(null);
   const [emailToken, setEmailToken] = useState(null);
+  const [maintenance, setMaintenance] = useState(null);
 
   // Detect /share/:token, /history, /history/:docId, /session/:docId, or /price URL on mount
   useEffect(() => {
@@ -81,6 +82,17 @@ export default function App() {
     }
   }, []);
 
+  // Check maintenance mode
+  useEffect(() => {
+    getSystemSettings().then(s => {
+      if (s.maintenance_mode) {
+        setMaintenance(s.maintenance_message || 'Hệ thống đang bảo trì. Vui lòng quay lại sau.');
+      } else {
+        setMaintenance(null);
+      }
+    }).catch(() => {});
+  }, []);
+
   // Documents are auto-deleted after 7 days on the server — no instant cleanup needed
 
   const handleUploadComplete = (docInfo) => {
@@ -124,6 +136,41 @@ export default function App() {
   const handleAuthSuccess = (userData) => {
     setUser(userData);
   };
+
+  // Show maintenance screen for non-admin users
+  if (maintenance && (!user || user.role !== 'admin')) {
+    return (
+      <div className="min-h-screen bg-bg flex items-center justify-center p-4">
+        <div className="w-full max-w-md text-center">
+          <div className="bg-surface border border-line rounded-2xl p-10 space-y-6">
+            <div className="w-20 h-20 mx-auto bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-center">
+              <Wrench size={36} className="text-amber-400" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-extrabold tracking-tight mb-2">Đang bảo trì</h1>
+              <p className="text-muted text-sm leading-relaxed">{maintenance}</p>
+            </div>
+            <div className="flex items-center justify-center gap-2 text-xs text-muted">
+              <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
+              Hệ thống sẽ sớm hoạt động trở lại
+            </div>
+          </div>
+          <button
+            onClick={() => openAuthModal('login')}
+            className="mt-4 text-xs text-muted hover:text-txt transition-colors"
+          >
+            Đăng nhập Admin
+          </button>
+          <AuthModal
+            isOpen={showAuthModal}
+            onClose={() => setShowAuthModal(false)}
+            onAuthSuccess={handleAuthSuccess}
+            defaultTab={authModalTab}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-bg">
