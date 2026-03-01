@@ -92,20 +92,24 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
 
   if (!data) {
     return (
-      <div className="flex flex-col items-center justify-center h-[500px] gap-4">
-        {isLocked ? <Lock size={48} className="text-gray-400" /> : <CreditCard size={48} className="text-line" />}
-        <p className="text-muted">{isLocked ? 'Tài liệu gốc đã bị xóa' : 'Chưa có Flashcard'}</p>
-        {isLocked && <p className="text-xs text-muted -mt-2">Không thể tạo mới vì file gốc không còn tồn tại</p>}
+      <div className="flex flex-col items-center justify-center h-[500px] gap-5 animate-fade-in">
+        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${isLocked ? 'bg-gray-500/10' : 'bg-surface-2'}`}>
+          {isLocked ? <Lock size={28} className="text-gray-400" /> : <CreditCard size={28} className="text-muted" />}
+        </div>
+        <div className="text-center">
+          <p className={`font-semibold text-lg mb-1 text-txt`}>{isLocked ? 'Tài liệu gốc đã bị xóa' : 'Chưa có Flashcard'}</p>
+          <p className="text-sm text-muted">{isLocked ? 'Không thể tạo mới vì file gốc không còn tồn tại' : 'Tạo flashcard từ nội dung tài liệu'}</p>
+        </div>
         <button
           onClick={onGenerate}
           disabled={isLocked}
-          className={`px-6 py-2.5 rounded-xl text-sm font-medium transition-colors shadow-lg ${
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all shadow-lg active:scale-95 font-medium text-white ${
             isLocked
               ? 'bg-gray-600 cursor-not-allowed opacity-50 shadow-none'
               : 'bg-accent-600 hover:bg-accent-700 shadow-accent-600/25'
           }`}
         >
-          Tạo Flashcard
+          <RefreshCw size={15} /> Tạo Flashcard
         </button>
       </div>
     );
