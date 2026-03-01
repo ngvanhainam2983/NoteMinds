@@ -907,10 +907,19 @@ router.get('/export/markdown/:docId', requireAuth, (req, res) => {
     if (sessions.mindmap) {
       md += `## 🗺️ Sơ đồ tư duy\n\n`;
       if (sessions.mindmap.title) md += `**${sessions.mindmap.title}**\n\n`;
-      if (sessions.mindmap.data?.nodes) {
-        sessions.mindmap.data.nodes.forEach(n => {
-          if (n.data?.label) md += `- ${n.data.label}\n`;
-        });
+      // Recursively walk the hierarchical node tree
+      const walkNodes = (nodes, depth = 0) => {
+        if (!nodes) return;
+        for (const n of nodes) {
+          if (n.label) {
+            const indent = '  '.repeat(depth);
+            md += `${indent}- ${n.label}\n`;
+          }
+          if (n.children?.length) walkNodes(n.children, depth + 1);
+        }
+      };
+      if (sessions.mindmap.nodes) {
+        walkNodes(sessions.mindmap.nodes);
         md += '\n';
       }
     }
