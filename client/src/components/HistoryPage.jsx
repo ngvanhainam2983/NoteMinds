@@ -131,42 +131,42 @@ export default function HistoryPage({ onOpenDocument }) {
 
       {/* ── LEFT SIDEBAR (Folders) ── */}
       <div className="w-full md:w-64 flex flex-col gap-4 shrink-0 overflow-y-auto">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-sm font-bold text-txt uppercase tracking-wider">Thư viện</h2>
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-xs font-bold text-muted uppercase tracking-widest">Thư viện</h2>
         </div>
 
         <div className="space-y-1">
           {/* All Docs */}
           <button
             onClick={() => setActiveFolderId('all')}
-            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${activeFolderId === 'all' ? 'bg-primary-600 text-white' : 'text-muted hover:bg-surface hover:text-txt'
+            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${activeFolderId === 'all' ? 'bg-primary-600 text-white shadow-md shadow-primary-600/20' : 'text-muted hover:bg-surface-2 hover:text-txt'
               }`}
           >
             <div className="flex items-center gap-2.5">
               <History size={16} />
               <span>Tất cả tài liệu</span>
             </div>
-            <span className="text-xs opacity-70 bg-black/20 px-2 rounded-md">{docs.length}</span>
+            <span className="text-xs opacity-70 bg-black/15 px-2 py-0.5 rounded-md">{docs.length}</span>
           </button>
 
           {/* Unfiled Docs */}
           <button
             onClick={() => setActiveFolderId('unfiled')}
-            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${activeFolderId === 'unfiled' ? 'bg-primary-600 text-white' : 'text-muted hover:bg-surface hover:text-txt'
+            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${activeFolderId === 'unfiled' ? 'bg-primary-600 text-white shadow-md shadow-primary-600/20' : 'text-muted hover:bg-surface-2 hover:text-txt'
               }`}
           >
             <div className="flex items-center gap-2.5">
               <List size={16} />
               <span>Chưa phân loại</span>
             </div>
-            <span className="text-xs opacity-70 bg-black/20 px-2 rounded-md">
+            <span className="text-xs opacity-70 bg-black/15 px-2 py-0.5 rounded-md">
               {docs.filter(d => !d.folder_id).length}
             </span>
           </button>
         </div>
 
-        <div className="mt-4 flex items-center justify-between mb-2 group">
-          <h2 className="text-sm font-bold text-txt uppercase tracking-wider">Thư mục</h2>
+        <div className="mt-5 flex items-center justify-between mb-2 group">
+          <h2 className="text-xs font-bold text-muted uppercase tracking-widest">Thư mục</h2>
           <button
             onClick={() => { setEditingFolder(null); setFolderForm({ name: '', color: '#3b82f6' }); setIsFolderModalOpen(true); }}
             className="p-1 rounded bg-surface-2 hover:bg-primary-600 text-muted hover:text-txt transition-all"
@@ -230,7 +230,7 @@ export default function HistoryPage({ onOpenDocument }) {
             );
           })}
           {folders.length === 0 && !loading && (
-            <div className="text-xs text-[#666] italic text-center py-4">Chưa có thư mục nào</div>
+            <div className="text-xs text-muted italic text-center py-4">Chưa có thư mục nào</div>
           )}
         </div>
       </div>
@@ -295,10 +295,10 @@ export default function HistoryPage({ onOpenDocument }) {
                         }
                       }}
                       className={`flex items-center gap-4 rounded-xl px-5 py-4 transition-all border cursor-pointer group ${selectionMode && isSelected
-                        ? 'bg-primary-600/10 border-primary-500/50 shadow-inner'
+                        ? 'bg-primary-600/10 border-primary-500/40 shadow-inner'
                         : expired
-                          ? 'bg-bg/50 border-line opacity-60 hover:opacity-80'
-                          : 'bg-surface-2 border-line hover:border-primary-500/30'
+                          ? 'bg-bg/50 border-line/50 opacity-60 hover:opacity-80'
+                          : 'bg-surface-2/40 border-line/50 hover:border-primary-500/30 hover:bg-surface-2 hover:shadow-md hover:shadow-black/5'
                         }`}
                     >
                       {/* Checkbox for selection mode */}
@@ -308,9 +308,9 @@ export default function HistoryPage({ onOpenDocument }) {
                         </div>
                       )}
 
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${expired ? 'bg-surface border border-line' : 'bg-primary-600/10 border border-primary-500/20'
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${expired ? 'bg-surface border border-line' : 'bg-primary-600/10 border border-primary-500/15'
                         }`}>
-                        <FileText size={18} className={expired ? 'text-[#444]' : 'text-primary-400'} />
+                        <FileText size={18} className={expired ? 'text-muted/60' : 'text-primary-400'} />
                       </div>
 
                       <div className="flex-1 min-w-0">
@@ -354,8 +354,8 @@ export default function HistoryPage({ onOpenDocument }) {
                           </Menu.Button>
                           <Transition as={Fragment} enter="transition ease-out duration-100" enterFrom="transform opacity-0 scale-95" enterTo="transform opacity-100 scale-100" leave="transition ease-in duration-75" leaveFrom="transform opacity-100 scale-100" leaveTo="transform opacity-0 scale-95">
                             <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right rounded-xl bg-surface border border-line shadow-xl shadow-black/50 overflow-hidden z-50 focus:outline-none">
-                              <div className="px-3 py-2 border-b border-line bg-bg/50">
-                                <span className="text-[10px] uppercase font-bold text-[#666] tracking-wider">Di chuyển tới thư mục</span>
+                              <div className="px-3 py-2.5 border-b border-line bg-surface-2/50">
+                                <span className="text-[10px] uppercase font-bold text-muted tracking-wider">Di chuyển tới thư mục</span>
                               </div>
                               <div className="py-1 max-h-48 overflow-y-auto">
                                 <Menu.Item>

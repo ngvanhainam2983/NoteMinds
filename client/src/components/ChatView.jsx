@@ -146,11 +146,11 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
       {showHistory && (
         <div className="absolute inset-0 z-20 flex">
           <div className="w-72 bg-surface border-r border-line flex flex-col h-full">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-line">
-              <span className="text-sm font-medium flex items-center gap-2"><History size={14} /> Lịch sử chat</span>
-              <button onClick={() => setShowHistory(false)} className="p-1 hover:bg-line rounded"><X size={14} /></button>
+            <div className="flex items-center justify-between px-4 py-3.5 border-b border-line bg-surface-2/50">
+              <span className="text-sm font-semibold flex items-center gap-2"><History size={14} className="text-primary-400" /> Lịch sử chat</span>
+              <button onClick={() => setShowHistory(false)} className="p-1.5 hover:bg-line rounded-lg transition-colors"><X size={14} /></button>
             </div>
-            <div className="flex-1 overflow-y-auto p-2 space-y-1">
+            <div className="flex-1 overflow-y-auto p-2.5 space-y-1">
               {historyLoading ? (
                 <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-primary-400" /></div>
               ) : history.length > 0 ? (
@@ -158,14 +158,14 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
                   <div key={conv.id} className="flex items-center gap-1 group">
                     <button
                       onClick={() => handleLoadConversation(conv.id)}
-                      className="flex-1 text-left px-3 py-2 rounded-lg text-xs hover:bg-surface-2 transition-colors truncate"
+                      className="flex-1 text-left px-3 py-2.5 rounded-xl text-xs hover:bg-surface-2 transition-colors truncate"
                     >
-                      <p className="truncate">{conv.title || 'Hội thoại'}</p>
-                      <p className="text-[10px] text-muted">{conv.messageCount || 0} tin nhắn</p>
+                      <p className="truncate font-medium text-txt">{conv.title || 'Hội thoại'}</p>
+                      <p className="text-[10px] text-muted mt-0.5">{conv.messageCount || 0} tin nhắn</p>
                     </button>
                     <button
                       onClick={() => handleDeleteConversation(conv.id)}
-                      className="p-1 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 rounded transition-all"
+                      className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 rounded-lg transition-all"
                     >
                       <Trash2 size={12} className="text-red-400" />
                     </button>
@@ -182,17 +182,17 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
 
       {/* Chat toolbar */}
       {!shareMode && (
-        <div className="flex items-center gap-2 px-4 py-2 border-b border-line">
+        <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-line bg-surface-2/30">
           <button
             onClick={() => { setShowHistory(true); loadHistory(); }}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-muted hover:text-txt hover:bg-surface-2 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted hover:text-txt hover:bg-surface-2 rounded-lg transition-colors"
           >
             <History size={13} /> Lịch sử
           </button>
           <button
             onClick={handleSaveChat}
             disabled={messages.length <= 1 || savingChat}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-muted hover:text-txt hover:bg-surface-2 rounded-lg transition-colors disabled:opacity-40"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted hover:text-txt hover:bg-surface-2 rounded-lg transition-colors disabled:opacity-40"
           >
             {savingChat ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Lưu chat
           </button>
@@ -200,23 +200,23 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
       )}
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-5">
         {messages.map((msg, i) => (
           <div
             key={i}
             className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             {msg.role === 'assistant' && (
-              <div className="w-8 h-8 bg-primary-600/20 rounded-lg flex items-center justify-center shrink-0 mt-1">
-                <Bot size={16} className="text-primary-400" />
+              <div className="w-8 h-8 bg-gradient-to-br from-primary-600/20 to-primary-600/10 border border-primary-500/20 rounded-xl flex items-center justify-center shrink-0 mt-1">
+                <Bot size={15} className="text-primary-400" />
               </div>
             )}
             <div
               className={`
                 max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed relative group
                 ${msg.role === 'user'
-                  ? 'bg-primary-600 text-white rounded-br-md whitespace-pre-wrap'
-                  : 'bg-surface-2 text-txt rounded-bl-md border border-line pr-12'
+                  ? 'bg-gradient-to-br from-primary-600 to-primary-500 text-white rounded-br-md whitespace-pre-wrap shadow-md shadow-primary-600/15'
+                  : 'bg-surface-2/80 text-txt rounded-bl-md border border-line/50 pr-12'
                 }
               `}
             >
@@ -225,10 +225,10 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
                   <>
                     <button
                       onClick={() => speakText(msg.content)}
-                      className="absolute top-2 right-2 p-1.5 text-muted hover:text-primary-400 bg-surface rounded-md opacity-0 group-hover:opacity-100 transition-all border border-line"
+                      className="absolute top-2 right-2 p-1.5 text-muted hover:text-primary-400 bg-surface rounded-lg opacity-0 group-hover:opacity-100 transition-all border border-line/50"
                       title="Đọc văn bản"
                     >
-                      <Volume2 size={14} />
+                      <Volume2 size={13} />
                     </button>
                     <MarkdownRenderer content={msg.content} />
                   </>
@@ -237,8 +237,8 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
               }
             </div>
             {msg.role === 'user' && (
-              <div className="w-8 h-8 bg-accent-500/20 rounded-lg flex items-center justify-center shrink-0 mt-1">
-                <User size={16} className="text-accent-400" />
+              <div className="w-8 h-8 bg-gradient-to-br from-accent-500/20 to-accent-500/10 border border-accent-500/20 rounded-xl flex items-center justify-center shrink-0 mt-1">
+                <User size={15} className="text-accent-400" />
               </div>
             )}
           </div>
@@ -246,11 +246,15 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
 
         {loading && (
           <div className="flex gap-3 justify-start">
-            <div className="w-8 h-8 bg-primary-600/20 rounded-lg flex items-center justify-center shrink-0">
-              <Bot size={16} className="text-primary-400" />
+            <div className="w-8 h-8 bg-gradient-to-br from-primary-600/20 to-primary-600/10 border border-primary-500/20 rounded-xl flex items-center justify-center shrink-0">
+              <Bot size={15} className="text-primary-400" />
             </div>
-            <div className="bg-surface-2 border border-line rounded-2xl rounded-bl-md px-4 py-3">
-              <Loader2 size={16} className="text-primary-400 animate-spin" />
+            <div className="bg-surface-2/80 border border-line/50 rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-2">
+              <div className="flex gap-1.5">
+                <span className="w-2 h-2 bg-primary-400/60 rounded-full animate-bounce" style={{animationDelay: '0ms'}} />
+                <span className="w-2 h-2 bg-primary-400/60 rounded-full animate-bounce" style={{animationDelay: '150ms'}} />
+                <span className="w-2 h-2 bg-primary-400/60 rounded-full animate-bounce" style={{animationDelay: '300ms'}} />
+              </div>
             </div>
           </div>
         )}
@@ -260,14 +264,14 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
 
       {/* Suggested questions (only show at start) */}
       {messages.length <= 1 && (
-        <div className="px-4 pb-2 flex flex-wrap gap-2">
+        <div className="px-4 pb-3 flex flex-wrap gap-2">
           {suggestedQuestions.map((q, i) => (
             <button
               key={i}
               onClick={() => { setInput(q); inputRef.current?.focus(); }}
-              className="text-xs bg-surface-2 border border-line rounded-full px-3 py-1.5 text-muted hover:text-txt hover:border-primary-500/30 transition-colors"
+              className="text-xs bg-surface-2/60 border border-line/50 rounded-xl px-3.5 py-2 text-muted hover:text-txt hover:border-primary-500/30 hover:bg-primary-600/5 transition-all"
             >
-              {q}
+              <Sparkles size={10} className="inline mr-1.5 text-primary-400" />{q}
             </button>
           ))}
         </div>
@@ -275,8 +279,8 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
 
       {/* Chat counter */}
       <div className="px-4 pt-2 flex items-center gap-1.5">
-        <MessageSquare size={12} className={isChatLimitReached ? 'text-red-400' : 'text-muted'} />
-        <span className={`text-xs ${isChatLimitReached ? 'text-red-400' : 'text-muted'}`}>
+        <MessageSquare size={11} className={isChatLimitReached ? 'text-red-400' : 'text-muted'} />
+        <span className={`text-[11px] ${isChatLimitReached ? 'text-red-400' : 'text-muted'}`}>
           {isUnlimited ? (
             <>{chatCount} tin nhắn <Sparkles size={10} className="inline text-primary-400" /> không giới hạn</>
           ) : (
@@ -292,8 +296,8 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
           <span className="text-xs text-muted">Chế độ chỉ xem — không thể gửi tin nhắn</span>
         </div>
       ) : (
-        <div className="border-t border-line p-4">
-          <div className="flex gap-3 items-end">
+        <div className="border-t border-line p-3.5">
+          <div className="flex gap-2.5 items-end">
             <textarea
               ref={inputRef}
               value={input}
@@ -302,7 +306,7 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
               placeholder={isChatLimitReached ? `Đã hết ${chatLimit} tin nhắn — nâng cấp gói để tiếp tục` : 'Hỏi về tài liệu...'}
               disabled={isChatLimitReached}
               rows={1}
-              className="flex-1 bg-surface-2 border border-line rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:border-primary-500/50 transition-colors placeholder:text-muted/50 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex-1 bg-surface-2/60 border border-line/50 rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:border-primary-500/50 focus:bg-surface-2 transition-all placeholder:text-muted/50 disabled:opacity-40 disabled:cursor-not-allowed"
               style={{ maxHeight: '120px' }}
               onInput={(e) => {
                 e.target.style.height = 'auto';
@@ -312,9 +316,9 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
             <button
               onClick={handleSend}
               disabled={!input.trim() || loading || isChatLimitReached}
-              className="p-3 bg-primary-600 rounded-xl hover:bg-primary-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+              className="p-3 bg-gradient-to-br from-primary-600 to-primary-500 rounded-xl hover:from-primary-500 hover:to-primary-400 transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 shadow-md shadow-primary-600/15 disabled:shadow-none"
             >
-              <Send size={18} />
+              <Send size={17} className="text-white" />
             </button>
           </div>
         </div>

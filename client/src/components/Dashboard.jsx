@@ -227,93 +227,78 @@ export default function Dashboard({ doc, user }) {
         callback={handleJoyrideCallback}
         styles={{
           options: {
-            primaryColor: '#6366f1', // primary-500
+            primaryColor: '#6366f1',
             backgroundColor: '#1a1d27',
             textColor: '#e4e5e9',
             arrowColor: '#1a1d27',
             overlayColor: 'rgba(0, 0, 0, 0.75)',
             zIndex: 1000,
           },
-          tooltipContainer: {
-            textAlign: 'left',
-          },
-          buttonNext: {
-            backgroundColor: '#6366f1',
-            borderRadius: '8px',
-          },
-          buttonBack: {
-            color: '#9496a1',
-            marginRight: 10,
-          }
+          tooltipContainer: { textAlign: 'left' },
+          buttonNext: { backgroundColor: '#6366f1', borderRadius: '8px' },
+          buttonBack: { color: '#9496a1', marginRight: 10 }
         }}
-        locale={{
-          back: 'Quay lại',
-          close: 'Đóng',
-          last: 'Hoàn tất',
-          next: 'Tiếp theo',
-          skip: 'Bỏ qua'
-        }}
+        locale={{ back: 'Quay lại', close: 'Đóng', last: 'Hoàn tất', next: 'Tiếp theo', skip: 'Bỏ qua' }}
       />
 
       {/* Document info bar */}
-      <div className="tour-doc-info flex items-center gap-3 mb-4 bg-surface border border-line rounded-xl px-5 py-3">
-        <FileText size={18} className="text-primary-400 shrink-0" />
+      <div className="tour-doc-info flex items-center gap-4 mb-5 bg-gradient-to-r from-surface to-surface-2 border border-line rounded-2xl px-6 py-4 shadow-sm">
+        <div className="w-10 h-10 bg-primary-600/15 border border-primary-500/20 rounded-xl flex items-center justify-center shrink-0">
+          <FileText size={20} className="text-primary-400" />
+        </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium truncate">
+          <p className="text-sm font-semibold truncate text-txt">
             {docDetails.fileName}
-            {docDetails.isLocked && <span className="ml-2 px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 text-[10px] border border-red-500/20">Đã xóa gốc</span>}
+            {docDetails.isLocked && <span className="ml-2 px-2 py-0.5 rounded-md bg-red-500/10 text-red-400 text-[10px] border border-red-500/20 font-medium">Đã xóa gốc</span>}
           </p>
-          <p className="text-xs text-muted">
+          <p className="text-xs text-muted mt-0.5">
             {docDetails.textLength ? `${(docDetails.textLength / 1000).toFixed(1)}k ký tự` : 'Đã xử lý'}
+            {sessionLoading && <span className="ml-2 text-primary-400">• Đang tải dữ liệu...</span>}
           </p>
         </div>
-        {sessionLoading && (
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-primary-600/10 border border-primary-500/20 rounded-lg">
-            <Loader2 size={12} className="text-primary-400 animate-spin" />
-            <span className="text-[10px] text-primary-400 font-medium">Đang tải dữ liệu...</span>
-          </div>
-        )}
 
-        {/* Toggle Public Visibility */}
-        <button
-          onClick={handleTogglePublic}
-          disabled={isTogglingPublic}
-          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs border rounded-lg transition-colors ${isPublic
-            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
-            : 'bg-surface-2 border-line hover:bg-line text-muted'
-            } disabled:opacity-50`}
-          title={isPublic ? "Đang công khai" : "Chỉ mình tôi"}
-        >
-          {isTogglingPublic ? <Loader2 size={14} className="animate-spin" /> : isPublic ? <Globe size={14} /> : <Lock size={14} />}
-          <span className="hidden sm:inline">{isPublic ? 'Công khai' : 'Riêng tư'}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleTogglePublic}
+            disabled={isTogglingPublic}
+            className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium border rounded-xl transition-all ${isPublic
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
+              : 'bg-surface border-line hover:bg-line text-muted'
+              } disabled:opacity-50`}
+            title={isPublic ? "Đang công khai" : "Chỉ mình tôi"}
+          >
+            {isTogglingPublic ? <Loader2 size={14} className="animate-spin" /> : isPublic ? <Globe size={14} /> : <Lock size={14} />}
+            <span className="hidden sm:inline">{isPublic ? 'Công khai' : 'Riêng tư'}</span>
+          </button>
 
-        <FavoriteButton documentId={doc.docId} />
-        <button
-          onClick={() => setShowPomodoro(!showPomodoro)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs border rounded-lg transition-colors ${showPomodoro
-            ? 'bg-primary-500/10 border-primary-500/30 text-primary-400'
-            : 'bg-surface-2 border-line hover:bg-line'
-            }`}
-          title="Focus Mode (Pomodoro)"
-        >
-          <Focus size={14} />
-          <span className="hidden sm:inline">Tập trung</span>
-        </button>
+          <FavoriteButton documentId={doc.docId} />
+
+          <button
+            onClick={() => setShowPomodoro(!showPomodoro)}
+            className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium border rounded-xl transition-all ${showPomodoro
+              ? 'bg-primary-500/10 border-primary-500/30 text-primary-400'
+              : 'bg-surface border-line hover:bg-line text-muted'
+              }`}
+            title="Focus Mode (Pomodoro)"
+          >
+            <Focus size={14} />
+            <span className="hidden sm:inline">Tập trung</span>
+          </button>
+        </div>
       </div>
 
-      {/* Feature toolbar */}
-      <div className="tour-tools flex items-center gap-2 mb-4 flex-wrap">
+      {/* Feature toolbar + upload quota */}
+      <div className="tour-tools flex items-center gap-2 mb-5 flex-wrap">
         <button
           onClick={handleDownload}
           disabled={isDownloading}
-          className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-primary-600/10 border border-primary-500/30 rounded-lg text-primary-400 hover:bg-primary-600/20 transition-all disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium bg-primary-600/10 border border-primary-500/20 rounded-xl text-primary-400 hover:bg-primary-600/20 transition-all disabled:opacity-50"
         >
           {isDownloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
           <span className="hidden sm:inline">{isDownloading ? 'Đang tải...' : 'Tải file gốc'}</span>
         </button>
 
-        <div className="w-px h-6 bg-line mx-1 hidden sm:block"></div>
+        <div className="w-px h-5 bg-line mx-0.5 hidden sm:block"></div>
 
         {[
           { icon: Search, label: 'Tìm kiếm', onClick: () => setShowSearch(true) },
@@ -325,27 +310,24 @@ export default function Dashboard({ doc, user }) {
           <button
             key={i}
             onClick={btn.onClick}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-surface border border-line rounded-lg text-muted hover:text-txt hover:border-primary-500/40 transition-all"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-surface border border-line rounded-xl text-muted hover:text-txt hover:border-primary-500/30 hover:bg-surface-2 transition-all"
           >
             <btn.icon size={14} />
             <span className="hidden sm:inline">{btn.label}</span>
           </button>
         ))}
-      </div>
 
-      {/* Upload quota badge */}
-      <div className="flex items-center gap-2 mb-4">
-        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border ${rateLimit.uploadsRemaining > 0
-          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-          : 'bg-red-500/10 border-red-500/30 text-red-400'
+        <div className="flex-1" />
+
+        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border ${rateLimit.uploadsRemaining > 0
+          ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+          : 'bg-red-500/10 border-red-500/20 text-red-400'
           }`}>
-          <Upload size={13} />
-          <span>
+          <Upload size={12} />
+          <span className="hidden sm:inline">
             {rateLimit.uploadsRemaining > 0
-              ? `Còn ${rateLimit.uploadsRemaining}/${rateLimit.uploadLimit} lượt upload hôm nay`
-              : rateLimit.isGuest
-                ? 'Hết lượt miễn phí — đăng ký để có 5 lượt/ngày'
-                : 'Hết lượt upload — thử lại vào ngày mai'
+              ? `${rateLimit.uploadsRemaining}/${rateLimit.uploadLimit} lượt upload`
+              : rateLimit.isGuest ? 'Hết lượt miễn phí' : 'Hết lượt upload'
             }
           </span>
         </div>
@@ -355,7 +337,7 @@ export default function Dashboard({ doc, user }) {
       {showPomodoro && <PomodoroTimer onClose={() => setShowPomodoro(false)} />}
 
       {/* Tabs */}
-      <div className="tour-tabs flex gap-2 mb-6 bg-surface border border-line rounded-xl p-1.5">
+      <div className="tour-tabs flex gap-1 mb-6 bg-surface/80 backdrop-blur-sm border border-line rounded-2xl p-1.5">
         {TABS.map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -364,14 +346,14 @@ export default function Dashboard({ doc, user }) {
               key={tab.id}
               onClick={() => handleTabClick(tab.id)}
               className={`
-                flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+                flex-1 flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200
                 ${isActive
-                  ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/25'
+                  ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-lg shadow-primary-600/20'
                   : 'text-muted hover:text-txt hover:bg-surface-2'
                 }
               `}
             >
-              <Icon size={16} />
+              <Icon size={17} />
               <span className="hidden sm:inline">{tab.label}</span>
             </button>
           );
@@ -379,7 +361,7 @@ export default function Dashboard({ doc, user }) {
       </div>
 
       {/* Tab content */}
-      <div className="bg-surface border border-line rounded-2xl min-h-[500px] overflow-hidden">
+      <div className="bg-surface border border-line rounded-2xl min-h-[500px] overflow-hidden shadow-sm">
         {activeTab === 'mindmap' && (
           <MindmapView
             data={mindmapData}
@@ -408,15 +390,20 @@ export default function Dashboard({ doc, user }) {
       </div>
 
       {/* Floating Chatbox */}
-      <div className={`fixed bottom-6 right-6 z-40 transition-all duration-300 ${showChat ? 'w-[400px] h-[600px] max-w-[calc(100vw-3rem)] max-h-[calc(100vh-6rem)] opacity-100 translate-y-0' : 'w-14 h-14 opacity-0 pointer-events-none translate-y-10'}`}>
-        <div className="w-full h-full bg-surface border border-line shadow-2xl rounded-2xl flex flex-col overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 bg-surface-2 border-b border-line">
-            <div className="flex items-center gap-2">
-              <MessageCircle size={18} className="text-primary-400" />
-              <span className="font-semibold text-sm">Hỏi đáp với A.I</span>
+      <div className={`fixed bottom-6 right-6 z-40 transition-all duration-300 ${showChat ? 'w-[420px] h-[620px] max-w-[calc(100vw-3rem)] max-h-[calc(100vh-6rem)] opacity-100 translate-y-0' : 'w-14 h-14 opacity-0 pointer-events-none translate-y-10'}`}>
+        <div className="w-full h-full bg-surface border border-line shadow-2xl shadow-black/20 rounded-2xl flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3.5 bg-gradient-to-r from-surface-2 to-surface border-b border-line">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 bg-primary-600/20 rounded-lg flex items-center justify-center">
+                <MessageCircle size={16} className="text-primary-400" />
+              </div>
+              <div>
+                <span className="font-semibold text-sm block leading-tight">Trợ lý AI</span>
+                <span className="text-[10px] text-muted">Hỏi đáp về tài liệu</span>
+              </div>
             </div>
-            <button onClick={() => setShowChat(false)} className="text-muted hover:text-txt transition-colors">
-              <XCircle size={20} />
+            <button onClick={() => setShowChat(false)} className="p-1.5 rounded-lg hover:bg-surface text-muted hover:text-txt transition-colors">
+              <XCircle size={18} />
             </button>
           </div>
           <div className="flex-1 overflow-hidden">
@@ -434,9 +421,10 @@ export default function Dashboard({ doc, user }) {
       {!showChat && (
         <button
           onClick={() => setShowChat(true)}
-          className="fixed bottom-6 right-6 z-30 w-14 h-14 bg-primary-600 hover:bg-primary-700 text-white rounded-full flex items-center justify-center shadow-lg shadow-primary-600/30 hover:scale-110 active:scale-95 transition-all"
+          className="tour-chat-fab fixed bottom-6 right-6 z-30 w-14 h-14 bg-gradient-to-br from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white rounded-2xl flex items-center justify-center shadow-xl shadow-primary-600/30 hover:scale-105 active:scale-95 transition-all group"
         >
-          <MessageCircle size={24} />
+          <MessageCircle size={22} className="group-hover:scale-110 transition-transform" />
+          <span className="absolute -top-1 -right-1 w-3 h-3 bg-accent-500 rounded-full ring-2 ring-bg animate-pulse" />
         </button>
       )}
 

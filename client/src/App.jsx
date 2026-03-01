@@ -214,50 +214,53 @@ function Features() {
     {
       icon: '🧠',
       title: 'Sơ đồ tư duy AI',
-      desc: 'Tự động chuyển đổi tài liệu dài thành sơ đồ tư duy trực quan, dễ hiểu chỉ trong vài phút.'
+      desc: 'Tự động chuyển đổi tài liệu dài thành sơ đồ tư duy trực quan, dễ hiểu chỉ trong vài phút.',
+      color: 'from-primary-600/15 to-primary-600/5',
     },
     {
       icon: '📇',
       title: 'Flashcard thông minh',
-      desc: 'Tạo bộ thẻ ghi nhớ Active Recall từ các khái niệm quan trọng, hỗ trợ xuất Anki & Quizlet.'
+      desc: 'Tạo bộ thẻ ghi nhớ Active Recall từ các khái niệm quan trọng, hỗ trợ xuất Anki & Quizlet.',
+      color: 'from-accent-600/15 to-accent-600/5',
     },
     {
       icon: '💬',
       title: 'Hỏi đáp với tài liệu',
-      desc: 'Chat trực tiếp với AI để giải thích sâu hơn bất kỳ khái niệm nào trong bài giảng.'
+      desc: 'Chat trực tiếp với AI để giải thích sâu hơn bất kỳ khái niệm nào trong bài giảng.',
+      color: 'from-blue-600/15 to-blue-600/5',
     },
     {
       icon: '📄',
       title: 'Đa định dạng',
-      desc: 'Hỗ trợ PDF, file text, và cả file ghi âm bài giảng MP3, WAV, M4A.'
+      desc: 'Hỗ trợ PDF, file text, và cả file ghi âm bài giảng MP3, WAV, M4A.',
+      color: 'from-emerald-600/15 to-emerald-600/5',
     },
   ];
 
   return (
-    <section className="max-w-6xl mx-auto px-4 py-20">
-      <h2 className="text-3xl font-bold text-center mb-4 font-display">
+    <section className="max-w-6xl mx-auto px-4 py-24">
+      <h2 className="text-3xl font-extrabold text-center mb-4 font-display tracking-tight">
         Tính năng <span className="gradient-text">nổi bật</span>
       </h2>
-      <p className="text-center text-muted mb-12 max-w-2xl mx-auto">
+      <p className="text-center text-muted mb-14 max-w-2xl mx-auto">
         NoteMinds sử dụng NoteMindAI để tự động hóa khâu chuẩn bị tài liệu,
         giúp bạn tập trung 100% vào việc hiểu và ghi nhớ
       </p>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         {features.map((f, i) => (
           <div
             key={i}
-            className="group relative bg-surface border border-line rounded-3xl p-8 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl overflow-hidden"
+            className="group relative bg-surface border border-line rounded-2xl p-7 transition-all duration-500 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-black/10 overflow-hidden"
           >
-            {/* Glowing Hover Border & Background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-primary-600/5 to-accent-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            <div className="absolute inset-0 border-2 border-transparent group-hover:border-primary-500/20 rounded-3xl transition-colors duration-500" />
+            {/* Gradient overlay on hover */}
+            <div className={`absolute inset-0 bg-gradient-to-br ${f.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
 
             <div className="relative z-10">
-              <div className="w-14 h-14 bg-gradient-to-tr from-surface-2 to-line border border-line rounded-2xl flex items-center justify-center text-2xl mb-6 shadow-inner group-hover:scale-110 transition-transform duration-500">
+              <div className="w-14 h-14 bg-surface-2 border border-line rounded-2xl flex items-center justify-center text-2xl mb-5 group-hover:scale-110 group-hover:border-primary-500/30 transition-all duration-500">
                 {f.icon}
               </div>
-              <h3 className="text-xl font-bold mb-3 group-hover:text-primary-400 transition-colors duration-300">{f.title}</h3>
-              <p className="text-[15px] text-muted leading-relaxed group-hover:text-txt transition-colors">{f.desc}</p>
+              <h3 className="text-lg font-bold mb-2.5 group-hover:text-primary-400 transition-colors duration-300">{f.title}</h3>
+              <p className="text-sm text-muted leading-relaxed group-hover:text-txt transition-colors">{f.desc}</p>
             </div>
           </div>
         ))}
@@ -301,32 +304,29 @@ function WhySection() {
   ];
 
   return (
-    <section className="max-w-6xl mx-auto px-4 py-20">
-      <h2 className="text-3xl font-bold text-center mb-4 font-display">
+    <section className="max-w-6xl mx-auto px-4 py-24">
+      <h2 className="text-3xl font-extrabold text-center mb-4 font-display tracking-tight">
         Tại sao chọn <span className="gradient-text">NoteMinds</span>?
       </h2>
-      <p className="text-center text-muted mb-12 max-w-2xl mx-auto">
+      <p className="text-center text-muted mb-14 max-w-2xl mx-auto">
         NoteMinds không chỉ là công cụ tóm tắt — đây là trợ lý học tập AI toàn diện,
         giúp bạn biến mọi tài liệu thành kiến thức thực sự
       </p>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {reasons.map((r, i) => (
           <div
             key={i}
-            className="group relative bg-surface border border-line rounded-3xl p-8 hover:-translate-y-2 transition-all duration-500 overflow-hidden"
+            className="group relative bg-surface border border-line rounded-2xl p-7 hover:-translate-y-1.5 transition-all duration-500 overflow-hidden hover:shadow-xl hover:shadow-black/10"
           >
-            {/* Dynamic gradient background on hover */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-primary-900/10 via-transparent to-accent-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-            {/* Soft inner glow */}
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-primary-500/0 via-primary-500/10 to-accent-500/0 opacity-0 group-hover:opacity-100 blur-sm transition-all duration-500 rounded-3xl" />
+            {/* Subtle gradient background on hover */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-primary-900/5 via-transparent to-accent-900/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
             <div className="relative z-10">
-              <div className="w-16 h-16 bg-gradient-to-br from-surface-2 to-line border border-line rounded-2xl flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition-transform duration-500 shadow-xl shadow-black/20">
-                <span className="group-hover:animate-bounce-subtle inline-block">{r.icon}</span>
+              <div className="w-14 h-14 bg-surface-2 border border-line rounded-2xl flex items-center justify-center text-2xl mb-5 group-hover:scale-110 group-hover:border-primary-500/30 transition-all duration-500">
+                {r.icon}
               </div>
-              <h3 className="text-xl font-bold mb-3 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-primary-400 group-hover:to-accent-400 transition-all duration-300">{r.title}</h3>
-              <p className="text-[15px] text-muted leading-relaxed group-hover:text-txt transition-colors">{r.desc}</p>
+              <h3 className="text-lg font-bold mb-2.5 group-hover:gradient-text transition-all duration-300">{r.title}</h3>
+              <p className="text-sm text-muted leading-relaxed group-hover:text-txt transition-colors">{r.desc}</p>
             </div>
           </div>
         ))}

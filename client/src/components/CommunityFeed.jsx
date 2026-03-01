@@ -33,23 +33,25 @@ export default function CommunityFeed() {
 
     return (
         <div className="max-w-6xl mx-auto px-4 py-8 animate-fade-in">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
                 <div>
-                    <h1 className="text-3xl font-bold flex items-center gap-3 mb-2">
-                        <Globe className="text-primary-400" size={32} />
+                    <h1 className="text-3xl font-extrabold flex items-center gap-3 mb-2 font-display">
+                        <div className="w-10 h-10 bg-primary-600/15 border border-primary-500/20 rounded-xl flex items-center justify-center">
+                          <Globe className="text-primary-400" size={22} />
+                        </div>
                         Cộng đồng
                     </h1>
                     <p className="text-muted">Khám phá các tài liệu, flashcards và sơ đồ tư duy được chia sẻ công khai.</p>
                 </div>
 
                 <div className="relative w-full md:w-72">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={18} />
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" size={17} />
                     <input
                         type="text"
                         placeholder="Tìm kiếm tài liệu..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-surface border border-line rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-primary-500 transition-colors"
+                        className="w-full bg-surface border border-line rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary-500/50 transition-all"
                     />
                 </div>
             </div>

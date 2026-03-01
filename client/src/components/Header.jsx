@@ -46,18 +46,18 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
           {showBack && (
             <button
               onClick={onBackHome}
-              className="p-2 rounded-lg hover:bg-surface-2 transition-colors mr-2"
+              className="p-2 rounded-xl hover:bg-surface-2 transition-colors mr-1"
               title="Về trang chủ"
             >
               <ArrowLeft size={20} />
             </button>
           )}
-          <button onClick={onBackHome} className="flex items-center gap-2.5">
-            <div className="w-9 h-9 bg-primary-600 rounded-lg flex items-center justify-center">
+          <button onClick={onBackHome} className="flex items-center gap-2.5 group">
+            <div className="w-9 h-9 bg-gradient-to-br from-primary-600 to-primary-500 rounded-xl flex items-center justify-center shadow-md shadow-primary-600/20 group-hover:shadow-lg group-hover:shadow-primary-600/30 transition-shadow">
               <BrainCircuit size={20} className="text-white" />
             </div>
             <span className="text-xl font-bold font-display">
-              Note<span className="text-primary-400">Minds</span>
+              Note<span className="gradient-text">Minds</span>
             </span>
           </button>
         </div>

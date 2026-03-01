@@ -67,26 +67,26 @@ export default function PomodoroTimer({ onClose }) {
     const progress = 100 - (timeLeft / currentMode.time) * 100;
 
     return (
-        <div className="fixed bottom-6 right-6 z-50 w-72 bg-surface border border-line rounded-2xl shadow-xl shadow-black/40 overflow-hidden animate-in slide-in-from-bottom-5">
+        <div className="fixed bottom-6 right-6 z-50 w-72 bg-surface border border-line rounded-2xl shadow-2xl shadow-black/30 overflow-hidden animate-in slide-in-from-bottom-5">
             {/* Top Bar */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-line bg-bg/50">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-line bg-surface-2/30">
                 <div className="flex items-center gap-2">
                     <Focus size={16} className={currentMode.color} />
-                    <span className="text-sm font-semibold">Focus Mode</span>
+                    <span className="text-sm font-bold">Focus Mode</span>
                 </div>
-                <button onClick={onClose} className="p-1 hover:bg-surface-2 rounded text-muted hover:text-txt transition-colors">
-                    <X size={16} />
+                <button onClick={onClose} className="p-1.5 hover:bg-surface-2 rounded-lg text-muted hover:text-txt transition-colors">
+                    <X size={15} />
                 </button>
             </div>
 
             {/* Main Content */}
             <div className="p-5">
-                <div className="flex justify-center gap-1 mb-6 bg-bg p-1 rounded-lg">
+                <div className="flex justify-center gap-1 mb-6 bg-surface-2 p-1 rounded-xl border border-line/50">
                     {Object.entries(MODES).map(([key, m]) => (
                         <button
                             key={key}
                             onClick={() => switchMode(key)}
-                            className={`flex-1 py-1.5 text-[11px] font-medium rounded transition-colors ${mode === key ? `${m.bg} ${m.color}` : 'text-muted hover:text-txt'
+                            className={`flex-1 py-1.5 text-[11px] font-semibold rounded-lg transition-all ${mode === key ? `${m.bg} ${m.color}` : 'text-muted hover:text-txt'
                                 }`}
                         >
                             {m.label}
@@ -119,14 +119,14 @@ export default function PomodoroTimer({ onClose }) {
                             setIsActive(false);
                             setTimeLeft(currentMode.time);
                         }}
-                        className="p-2.5 rounded-xl bg-line hover:bg-surface-2 text-txt transition-colors"
+                        className="p-2.5 rounded-xl bg-surface-2 border border-line hover:bg-line text-txt transition-all"
                         title="Đặt lại"
                     >
                         <RotateCcw size={18} />
                     </button>
                     <button
                         onClick={toggleTimer}
-                        className={`flex items-center justify-center w-14 h-14 rounded-2xl shadow-lg transition-transform active:scale-95 ${isActive ? 'bg-line hover:bg-surface-2 text-txt' : 'bg-primary-600 hover:bg-primary-700 text-white'
+                        className={`flex items-center justify-center w-14 h-14 rounded-2xl shadow-lg transition-all active:scale-95 ${isActive ? 'bg-surface-2 border border-line hover:bg-line text-txt' : 'bg-gradient-to-br from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white shadow-primary-600/25'
                             }`}
                     >
                         {isActive ? <Pause size={24} /> : <Play size={24} className="ml-1" />}

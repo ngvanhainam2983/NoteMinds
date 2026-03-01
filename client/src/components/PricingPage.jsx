@@ -142,7 +142,7 @@ export default function PricingPage({ user, onLoginClick }) {
             return (
               <div
                 key={plan.key}
-                className={`relative bg-gradient-to-b ${plan.bg} border ${plan.popular ? plan.border : 'border-line'} rounded-2xl p-5 flex flex-col transition-all hover:scale-[1.02] hover:shadow-xl ${isCurrent ? 'ring-2 ring-primary-500/50' : ''}`}
+                className={`relative bg-gradient-to-b ${plan.bg} border ${plan.popular ? plan.border : 'border-line'} rounded-2xl p-6 flex flex-col transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-black/10 ${isCurrent ? 'ring-2 ring-primary-500/50' : ''}`}
               >
                 {plan.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-indigo-600 text-white text-xs font-bold rounded-full flex items-center gap-1">
@@ -157,27 +157,27 @@ export default function PricingPage({ user, onLoginClick }) {
                 )}
 
                 {/* Plan header */}
-                <div className="mb-4">
-                  <div className="flex items-center gap-2 mb-2">
+                <div className="mb-5">
+                  <div className="flex items-center gap-2 mb-3">
                     <span className="text-2xl">{plan.badge}</span>
                     <h3 className="text-lg font-bold" style={{ color: plan.color }}>{plan.name}</h3>
                   </div>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold">{plan.price}</span>
+                    <span className="text-3xl font-extrabold">{plan.price}</span>
                     <span className="text-xs text-muted">{plan.priceNote}</span>
                   </div>
                 </div>
 
                 {/* Features */}
-                <div className="flex-1 space-y-2.5 mb-5">
+                <div className="flex-1 space-y-3 mb-6">
                   {plan.features.map((feat, i) => (
-                    <div key={i} className="flex items-start gap-2 text-sm">
+                    <div key={i} className="flex items-start gap-2.5 text-sm">
                       <Check size={15} className="shrink-0 mt-0.5" style={{ color: plan.color }} />
                       <span className="text-muted">{feat}</span>
                     </div>
                   ))}
                   {plan.limitations.map((lim, i) => (
-                    <div key={i} className="flex items-start gap-2 text-sm text-[#666]">
+                    <div key={i} className="flex items-start gap-2.5 text-sm text-muted/60">
                       <span className="shrink-0 mt-0.5 w-[15px] text-center">✕</span>
                       <span>{lim}</span>
                     </div>
@@ -188,12 +188,12 @@ export default function PricingPage({ user, onLoginClick }) {
                 <button
                   onClick={() => handleSelectPlan(plan.key)}
                   disabled={isCurrent}
-                  className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all ${isCurrent
+                  className={`w-full py-3 rounded-xl text-sm font-semibold transition-all ${isCurrent
                       ? 'bg-surface-2 text-muted cursor-default'
                       : isDowngrade
                         ? 'bg-surface-2 text-muted hover:bg-line'
                         : plan.popular
-                          ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/25'
+                          ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/25'
                           : 'bg-surface-2 hover:bg-line text-txt'
                     }`}
                 >

@@ -103,8 +103,8 @@ function convertToReactFlow(data) {
           data: { label: sub.label },
           position: { x: subX, y: subY },
           style: {
-            background: '#242736',
-            color: '#e4e5e9',
+            background: 'var(--color-surface-2)',
+            color: 'var(--color-text)',
             border: `1px solid ${color}30`,
             borderRadius: '10px',
             padding: '8px 14px',
@@ -136,9 +136,9 @@ function convertToReactFlow(data) {
               data: { label: leaf.label },
               position: { x: leafX, y: leafY },
               style: {
-                background: '#1a1d27',
-                color: '#9496a1',
-                border: '1px solid #2e3144',
+                background: 'var(--color-surface)',
+                color: 'var(--color-text-secondary)',
+                border: '1px solid var(--color-border)',
                 borderRadius: '8px',
                 padding: '6px 12px',
                 fontSize: '11px',
@@ -154,7 +154,7 @@ function convertToReactFlow(data) {
               source: sub.id,
               target: leaf.id,
               type: 'smoothstep',
-              style: { stroke: '#2e3144', strokeWidth: 1 },
+              style: { stroke: 'var(--color-border)', strokeWidth: 1 },
             });
           });
         }
@@ -265,12 +265,17 @@ export default function MindmapView({ data, loading, error, onGenerate }) {
 
   if (!data) {
     return (
-      <div className="flex flex-col items-center justify-center h-[500px] gap-4">
-        <Map size={48} className="text-line" />
-        <p className="text-muted">Chưa có sơ đồ tư duy</p>
+      <div className="flex flex-col items-center justify-center h-[500px] gap-5">
+        <div className="w-20 h-20 bg-primary-600/10 border border-primary-500/20 rounded-2xl flex items-center justify-center">
+          <Map size={36} className="text-primary-400" />
+        </div>
+        <div className="text-center">
+          <p className="text-txt font-semibold mb-1">Chưa có sơ đồ tư duy</p>
+          <p className="text-xs text-muted">Tạo sơ đồ tư duy AI từ tài liệu của bạn</p>
+        </div>
         <button
           onClick={onGenerate}
-          className="px-6 py-2.5 bg-primary-600 rounded-xl text-sm font-medium hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/25"
+          className="px-7 py-3 bg-gradient-to-r from-primary-600 to-primary-500 rounded-xl text-sm font-semibold hover:from-primary-500 hover:to-primary-400 transition-all shadow-lg shadow-primary-600/20 hover:shadow-xl"
         >
           Tạo Sơ đồ tư duy
         </button>
@@ -280,9 +285,9 @@ export default function MindmapView({ data, loading, error, onGenerate }) {
 
   return (
     <div className="h-[600px] w-full">
-      <div className="px-4 py-3 border-b border-line flex items-center justify-between">
-        <h3 className="font-semibold text-sm">{data.title || 'Sơ đồ tư duy'}</h3>
-        <span className="text-xs text-muted">Kéo để di chuyển • Cuộn để zoom</span>
+      <div className="px-5 py-3.5 border-b border-line flex items-center justify-between bg-surface-2/30">
+        <h3 className="font-bold text-sm">{data.title || 'Sơ đồ tư duy'}</h3>
+        <span className="text-[11px] text-muted font-medium bg-surface-2 px-3 py-1 rounded-lg border border-line">Kéo để di chuyển • Cuộn để zoom</span>
       </div>
       <div style={{ height: 'calc(100% - 48px)' }}>
         <ReactFlow
@@ -298,12 +303,12 @@ export default function MindmapView({ data, loading, error, onGenerate }) {
         >
           <Controls
             style={{
-              background: '#242736',
-              border: '1px solid #2e3144',
-              borderRadius: '8px',
+              background: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+              borderRadius: '12px',
             }}
           />
-          <Background color="#2e3144" gap={20} size={1} />
+          <Background color="var(--color-border)" gap={20} size={1} />
         </ReactFlow>
       </div>
     </div>
