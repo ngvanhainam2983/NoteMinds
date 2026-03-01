@@ -173,7 +173,7 @@ export default function App() {
           )}
 
           {view === 'verify-email' && emailToken && (
-            <VerifyEmailPage token={emailToken} onGoHome={handleBackHome} />
+            <VerifyEmailPage token={emailToken} onGoHome={handleBackHome} onUserUpdate={setUser} />
           )}
 
           {view === 'reset-password' && emailToken && (
@@ -336,7 +336,7 @@ function WhySection() {
 }
 
 // ── Verify Email Page ─────────────────────────────────
-function VerifyEmailPage({ token, onGoHome }) {
+function VerifyEmailPage({ token, onGoHome, onUserUpdate }) {
   const [status, setStatus] = useState('loading'); // 'loading' | 'success' | 'error'
   const [message, setMessage] = useState('');
 
@@ -345,6 +345,9 @@ function VerifyEmailPage({ token, onGoHome }) {
       .then((data) => {
         setStatus('success');
         setMessage(data.message || 'Email đã được xác minh thành công!');
+        if (data.user) {
+          onUserUpdate?.(data.user);
+        }
       })
       .catch((err) => {
         setStatus('error');

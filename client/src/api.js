@@ -120,6 +120,9 @@ export function logout() {
 
 export async function verifyEmailToken(token) {
   const response = await api.post('/auth/verify-email', { token });
+  if (response.data.user) {
+    storeAuth(getStoredToken(), response.data.user);
+  }
   return response.data;
 }
 
