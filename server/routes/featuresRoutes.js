@@ -1221,12 +1221,18 @@ router.post('/admin/email-blast', requireAuth, requireAdmin, async (req, res) =>
     const id = uuidv4();
     const db = new Database(DB_PATH);
 
-    let whereClause = 'WHERE email IS NOT NULL AND email != ""';
+    let whereClause = "WHERE email IS NOT NULL AND email != ''";
     if (targetFilter === 'active') whereClause += " AND id IN (SELECT DISTINCT user_id FROM daily_activity WHERE activity_date >= date('now', '-7 days'))";
     else if (targetFilter === 'inactive') whereClause += " AND id NOT IN (SELECT DISTINCT user_id FROM daily_activity WHERE activity_date >= date('now', '-30 days'))";
-    else if (targetFilter && targetFilter.startsWith('plan:')) whereClause += ` AND plan = '${targetFilter.replace('plan:', '')}'`;
+    else if (targetFilter && targetFilter.startsWith('plan:')) {
+      const plan = targetFilter.replace('plan:', '');
+      whereClause += ` AND plan = ?`;
+      var planParam = plan;
+    }
 
-    const recipients = db.prepare(`SELECT id, email, username, display_name FROM users ${whereClause}`).all();
+    const recipients = planParam
+      ? db.prepare(`SELECT id, email, username, display_name FROM users ${whereClause}`).all(planParam)
+      : db.prepare(`SELECT id, email, username, display_name FROM users ${whereClause}`).all();
 
     db.prepare('INSERT INTO email_blasts (id, subject, content, target_filter, total_recipients, status, sent_by) VALUES (?, ?, ?, ?, ?, ?, ?)').run(id, subject, content, targetFilter || 'all', recipients.length, 'sending', req.user.id);
     db.prepare('INSERT INTO admin_audit_logs (id, admin_id, action, target_type, target_id, details) VALUES (?, ?, ?, ?, ?, ?)').run(uuidv4(), req.user.id, 'send_email_blast', 'email_blast', id, JSON.stringify({ subject, recipients: recipients.length }));
