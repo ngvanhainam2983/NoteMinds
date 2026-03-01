@@ -27,6 +27,7 @@ export default function App() {
   const [shareToken, setShareToken] = useState(null);
   const [emailToken, setEmailToken] = useState(null);
   const [maintenance, setMaintenance] = useState(null);
+  const [maintenanceChecked, setMaintenanceChecked] = useState(false);
 
   // Detect /share/:token, /history, /history/:docId, /session/:docId, or /price URL on mount
   useEffect(() => {
@@ -90,7 +91,7 @@ export default function App() {
       } else {
         setMaintenance(null);
       }
-    }).catch(() => {});
+    }).catch(() => {}).finally(() => setMaintenanceChecked(true));
   }, []);
 
   // Documents are auto-deleted after 7 days on the server — no instant cleanup needed
@@ -136,6 +137,11 @@ export default function App() {
   const handleAuthSuccess = (userData) => {
     setUser(userData);
   };
+
+  // Block rendering until maintenance check completes (prevents flash)
+  if (!maintenanceChecked) {
+    return <div className="min-h-screen bg-bg" />;
+  }
 
   // Show maintenance screen for non-admin users
   if (maintenance && (!user || user.role !== 'admin')) {
