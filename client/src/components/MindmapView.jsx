@@ -1,13 +1,18 @@
-import { useCallback, useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import ReactFlow, {
   Controls,
   Background,
   useNodesState,
   useEdgesState,
+  useReactFlow,
+  ReactFlowProvider,
   MarkerType,
+  getRectOfNodes,
+  getTransformForBounds,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { Loader2, AlertCircle, Map, RefreshCw } from 'lucide-react';
+import { toPng } from 'html-to-image';
+import { Loader2, AlertCircle, Map, RefreshCw, Download, Image as ImageIcon } from 'lucide-react';
 
 // Color palette for branches — first & last use theme primary via CSS vars
 function getBranchColors() {
@@ -166,6 +171,16 @@ function convertToReactFlow(data) {
 }
 
 export default function MindmapView({ data, loading, error, onGenerate }) {
+  return (
+    <ReactFlowProvider>
+      <MindmapViewInner data={data} loading={loading} error={error} onGenerate={onGenerate} />
+    </ReactFlowProvider>
+  );
+}
+
+function MindmapViewInner({ data, loading, error, onGenerate }) {
+  const { getNodes } = useReactFlow();
+  const [exporting, setExporting] = useState(false);
   const { nodes: initialNodes, edges: initialEdges } = useMemo(
     () => (data ? convertToReactFlow(data) : { nodes: [], edges: [] }),
     [data]
@@ -184,6 +199,54 @@ export default function MindmapView({ data, loading, error, onGenerate }) {
   }, [data]);
 
   const [loadingText, setLoadingText] = useState("Đang phân tích cấu trúc tài liệu...");
+
+  const handleExportPng = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const nodesBounds = getRectOfNodes(getNodes());
+      const padding = 50;
+      const imageWidth = nodesBounds.width + padding * 2;
+      const imageHeight = nodesBounds.height + padding * 2;
+      const transform = getTransformForBounds(
+        nodesBounds,
+        imageWidth,
+        imageHeight,
+        0.5,
+        2,
+        padding
+      );
+
+      const viewport = document.querySelector('.react-flow__viewport');
+      if (!viewport) throw new Error('Không tìm thấy viewport');
+
+      // Get computed CSS variables for the background color
+      const bgColor = getComputedStyle(document.documentElement)
+        .getPropertyValue('--color-surface').trim() || '#1a1b2e';
+
+      const dataUrl = await toPng(viewport, {
+        backgroundColor: bgColor,
+        width: imageWidth,
+        height: imageHeight,
+        style: {
+          width: `${imageWidth}px`,
+          height: `${imageHeight}px`,
+          transform: `translate(${transform[0]}px, ${transform[1]}px) scale(${transform[2]})`,
+        },
+        pixelRatio: 2,
+      });
+
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `mindmap-${data?.title?.slice(0, 30)?.replace(/[^a-zA-Z0-9_-]/g, '_') || 'export'}.png`;
+      a.click();
+    } catch (err) {
+      console.error('Export mindmap failed:', err);
+      alert('Lỗi xuất ảnh: ' + (err.message || 'Thử lại'));
+    } finally {
+      setExporting(false);
+    }
+  };
 
   useEffect(() => {
     if (!loading) return;
@@ -287,7 +350,18 @@ export default function MindmapView({ data, loading, error, onGenerate }) {
     <div className="h-[600px] w-full">
       <div className="px-5 py-3.5 border-b border-line flex items-center justify-between bg-surface-2/30">
         <h3 className="font-bold text-sm">{data.title || 'Sơ đồ tư duy'}</h3>
-        <span className="text-[11px] text-muted font-medium bg-surface-2 px-3 py-1 rounded-lg border border-line">Kéo để di chuyển • Cuộn để zoom</span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportPng}
+            disabled={exporting}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-surface-2 border border-line rounded-lg hover:bg-line transition-colors disabled:opacity-50 text-indigo-400"
+            title="Xuất PNG"
+          >
+            {exporting ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
+            Xuất PNG
+          </button>
+          <span className="text-[11px] text-muted font-medium bg-surface-2 px-3 py-1 rounded-lg border border-line hidden sm:inline">Kéo để di chuyển • Cuộn để zoom</span>
+        </div>
       </div>
       <div style={{ height: 'calc(100% - 48px)' }}>
         <ReactFlow
