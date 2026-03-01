@@ -15,6 +15,7 @@ import PublicProfilePage from './components/PublicProfilePage';
 import LeaderboardPage from './components/LeaderboardPage';
 import StatsPage from './components/StatsPage';
 import AnnouncementBanner from './components/AnnouncementBanner';
+import OfflinePage from './components/OfflinePage';
 import { getStoredUser, logout as apiLogout, getMe, verifyEmailToken, resetPassword, getSystemSettings } from './api';
 import { CheckCircle2, XCircle, Loader2, Lock, Eye, EyeOff, ArrowLeft, Wrench } from 'lucide-react';
 
@@ -30,6 +31,19 @@ export default function App() {
   const [publicUsername, setPublicUsername] = useState(null);
   const [maintenance, setMaintenance] = useState(null);
   const [maintenanceChecked, setMaintenanceChecked] = useState(false);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  // Online/Offline detection
+  useEffect(() => {
+    const goOnline = () => setIsOffline(false);
+    const goOffline = () => setIsOffline(true);
+    window.addEventListener('online', goOnline);
+    window.addEventListener('offline', goOffline);
+    return () => {
+      window.removeEventListener('online', goOnline);
+      window.removeEventListener('offline', goOffline);
+    };
+  }, []);
 
   // Detect /share/:token, /history, /history/:docId, /session/:docId, or /price URL on mount
   useEffect(() => {
@@ -148,8 +162,25 @@ export default function App() {
   };
 
   // Block rendering until maintenance check completes (prevents flash)
-  if (!maintenanceChecked) {
+  if (!maintenanceChecked && !isOffline) {
     return <div className="min-h-screen bg-bg" />;
+  }
+
+  // Show offline page when no network
+  if (isOffline) {
+    return (
+      <OfflinePage
+        onBack={null}
+        onRetry={() => {
+          // Force re-check connectivity
+          if (navigator.onLine) {
+            setIsOffline(false);
+          } else {
+            window.location.reload();
+          }
+        }}
+      />
+    );
   }
 
   // Show maintenance screen for non-admin users

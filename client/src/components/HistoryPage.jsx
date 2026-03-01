@@ -37,6 +37,12 @@ export default function HistoryPage({ onOpenDocument }) {
       ]);
       setDocs(fetchedDocs || []);
       setFolders(fetchedFolders || []);
+      // Cache for offline access
+      try {
+        localStorage.setItem('notemind_history_cache', JSON.stringify(fetchedDocs || []));
+        localStorage.setItem('notemind_folders_cache', JSON.stringify(fetchedFolders || []));
+        localStorage.setItem('notemind_history_cache_time', new Date().toISOString());
+      } catch (e) { /* localStorage full or unavailable */ }
     } catch (err) {
       console.error(err);
     } finally {
