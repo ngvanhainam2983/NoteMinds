@@ -1,0 +1,178 @@
+import { useState, useEffect } from 'react';
+import { getPublicProfile } from '../api';
+import { ArrowLeft, FileText, Brain, BookOpen, MessageCircle, Flame, Trophy, Calendar, Crown, Loader2, UserX, Globe } from 'lucide-react';
+
+const API_URL = import.meta.env.VITE_API_URL || '';
+
+const PLAN_BADGES = {
+  free: { label: 'Free', color: 'bg-zinc-500/15 text-zinc-400 border-zinc-500/30' },
+  pro: { label: 'Pro', color: 'bg-primary-500/15 text-primary-400 border-primary-500/30' },
+  ultimate: { label: 'Ultimate', color: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
+};
+
+export default function PublicProfilePage({ username, onBack, user: currentUser }) {
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!username) return;
+    setLoading(true);
+    setError('');
+    getPublicProfile(username)
+      .then(data => setProfile(data))
+      .catch(err => setError(err.response?.data?.error || 'Không tìm thấy người dùng'))
+      .finally(() => setLoading(false));
+  }, [username]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-bg flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3 text-muted">
+          <Loader2 size={32} className="animate-spin text-primary-500" />
+          <p className="text-sm">Đang tải hồ sơ...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !profile) {
+    return (
+      <div className="min-h-screen bg-bg flex items-center justify-center p-4">
+        <div className="w-full max-w-md text-center">
+          <div className="bg-surface border border-line rounded-2xl p-10 space-y-5">
+            <div className="w-20 h-20 mx-auto bg-red-500/10 border border-red-500/30 rounded-2xl flex items-center justify-center">
+              <UserX size={36} className="text-red-400" />
+            </div>
+            <div>
+              <h2 className="text-xl font-extrabold tracking-tight mb-1">Không tìm thấy</h2>
+              <p className="text-sm text-muted">{error || 'Người dùng không tồn tại hoặc đã bị chặn.'}</p>
+            </div>
+            <button
+              onClick={onBack}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-surface-2 hover:bg-line rounded-xl text-sm font-medium transition-colors"
+            >
+              <ArrowLeft size={15} /> Quay lại
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const { user: u, stats, recentDocs } = profile;
+  const badge = PLAN_BADGES[u.plan] || PLAN_BADGES.free;
+
+  const statCards = [
+    { icon: FileText, label: 'Tài liệu công khai', value: stats.publicDocs, color: 'text-primary-400 bg-primary-500/10' },
+    { icon: Brain, label: 'Flashcard đã ôn', value: stats.totalFlashcards, color: 'text-accent-400 bg-accent-500/10' },
+    { icon: BookOpen, label: 'Bài kiểm tra', value: stats.totalQuizzes, color: 'text-blue-400 bg-blue-500/10' },
+    { icon: MessageCircle, label: 'Tin nhắn AI', value: stats.totalChats, color: 'text-emerald-400 bg-emerald-500/10' },
+    { icon: Flame, label: 'Streak hiện tại', value: `${stats.currentStreak} ngày`, color: 'text-orange-400 bg-orange-500/10' },
+    { icon: Trophy, label: 'Streak dài nhất', value: `${stats.longestStreak} ngày`, color: 'text-amber-400 bg-amber-500/10' },
+  ];
+
+  return (
+    <div className="min-h-screen bg-bg">
+      {/* Top bar */}
+      <div className="sticky top-0 z-30 bg-bg/80 backdrop-blur-xl border-b border-line">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
+          <button
+            onClick={onBack}
+            className="p-2 rounded-xl hover:bg-surface-2 transition-colors"
+          >
+            <ArrowLeft size={18} />
+          </button>
+          <span className="text-sm font-medium text-muted">Hồ sơ người dùng</span>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 py-8 space-y-8 animate-fade-in">
+        {/* Profile header */}
+        <div className="bg-surface border border-line rounded-2xl p-8 relative overflow-hidden">
+          {/* Decorative gradient */}
+          <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-r from-primary-600/20 via-accent-600/10 to-primary-600/5 rounded-t-2xl" />
+
+          <div className="relative flex flex-col sm:flex-row items-center sm:items-end gap-5 pt-4">
+            {/* Avatar */}
+            {u.avatarUrl ? (
+              <img
+                src={u.avatarUrl.startsWith('http') ? u.avatarUrl : `${API_URL}${u.avatarUrl}`}
+                alt={u.displayName}
+                className="w-24 h-24 rounded-2xl object-cover border-4 border-surface ring-2 ring-primary-500/30 shadow-xl"
+              />
+            ) : (
+              <div className="w-24 h-24 rounded-2xl bg-gradient-to-tr from-primary-500 to-accent-500 flex items-center justify-center text-3xl font-extrabold text-white border-4 border-surface shadow-xl">
+                {(u.displayName || u.username || '?').charAt(0).toUpperCase()}
+              </div>
+            )}
+
+            <div className="text-center sm:text-left flex-1">
+              <div className="flex flex-col sm:flex-row items-center sm:items-center gap-2 mb-1">
+                <h1 className="text-2xl font-extrabold tracking-tight">{u.displayName || u.username}</h1>
+                <span className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-full border ${badge.color} flex items-center gap-1`}>
+                  {u.plan === 'ultimate' && <Crown size={11} />}
+                  {badge.label}
+                </span>
+              </div>
+              <p className="text-muted text-sm">@{u.username}</p>
+              <p className="text-xs text-muted mt-1.5 flex items-center gap-1.5 justify-center sm:justify-start">
+                <Calendar size={12} />
+                Tham gia {new Date(u.joinedAt).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' })}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats grid */}
+        <div>
+          <h2 className="text-lg font-bold mb-4">Hoạt động</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {statCards.map((s, i) => (
+              <div key={i} className="bg-surface border border-line rounded-xl p-4 flex items-center gap-3.5 hover:border-primary-500/30 transition-colors">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${s.color}`}>
+                  <s.icon size={18} />
+                </div>
+                <div>
+                  <div className="text-lg font-bold leading-tight">{s.value}</div>
+                  <div className="text-xs text-muted">{s.label}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Recent public documents */}
+        {recentDocs && recentDocs.length > 0 && (
+          <div>
+            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <Globe size={18} className="text-primary-400" />
+              Tài liệu công khai
+            </h2>
+            <div className="space-y-2">
+              {recentDocs.map(doc => (
+                <button
+                  key={doc.id}
+                  onClick={() => {
+                    window.location.href = `/public/${doc.id}`;
+                  }}
+                  className="w-full bg-surface border border-line rounded-xl p-4 flex items-center gap-3.5 hover:border-primary-500/30 hover:bg-surface-2 transition-all text-left group"
+                >
+                  <div className="w-9 h-9 rounded-lg bg-primary-500/10 flex items-center justify-center text-primary-400 group-hover:bg-primary-500 group-hover:text-white transition-all shrink-0">
+                    <FileText size={16} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate group-hover:text-primary-400 transition-colors">{doc.title}</p>
+                    <p className="text-xs text-muted mt-0.5">
+                      {new Date(doc.created_at).toLocaleDateString('vi-VN')}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

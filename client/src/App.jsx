@@ -11,6 +11,7 @@ import HistoryPage from './components/HistoryPage';
 import ProfilePage from './components/ProfilePage';
 import CommunityFeed from './components/CommunityFeed';
 import PublicDocViewer from './components/PublicDocViewer';
+import PublicProfilePage from './components/PublicProfilePage';
 import LeaderboardPage from './components/LeaderboardPage';
 import StatsPage from './components/StatsPage';
 import AnnouncementBanner from './components/AnnouncementBanner';
@@ -26,6 +27,7 @@ export default function App() {
   const [authModalTab, setAuthModalTab] = useState('login');
   const [shareToken, setShareToken] = useState(null);
   const [emailToken, setEmailToken] = useState(null);
+  const [publicUsername, setPublicUsername] = useState(null);
   const [maintenance, setMaintenance] = useState(null);
   const [maintenanceChecked, setMaintenanceChecked] = useState(false);
 
@@ -37,6 +39,7 @@ export default function App() {
     const historyDocMatch = path.match(/^\/history\/([a-f0-9-]+)$/i);
     const sessionMatch = path.match(/^\/session\/([a-f0-9-]+)$/i);
     const publicDocMatch = path.match(/^\/public\/([a-f0-9-]+)$/i);
+    const publicProfileMatch = path.match(/^\/profile\/@([a-zA-Z0-9_.-]+)$/i);
     if (shareMatch) {
       setShareToken(shareMatch[1]);
       setView('shared');
@@ -64,6 +67,9 @@ export default function App() {
       setView('reset-password');
     } else if (path === '/profile') {
       setView('profile');
+    } else if (publicProfileMatch) {
+      setPublicUsername(publicProfileMatch[1]);
+      setView('public-profile');
     } else if (path === '/community') {
       setView('community');
     } else if (path === '/leaderboard') {
@@ -107,6 +113,7 @@ export default function App() {
     setCurrentDoc(null);
     setShareToken(null);
     setHistoryDoc(null);
+    setPublicUsername(null);
     // Clean up URL if on a share or history page
     if (window.location.pathname !== '/') {
       window.history.pushState({}, '', '/');
@@ -184,7 +191,7 @@ export default function App() {
         <SharedDocViewer shareToken={shareToken} onBack={handleBackHome} />
       ) : (
         <>
-          {view !== 'admin' && view !== 'profile' && (
+          {view !== 'admin' && view !== 'profile' && view !== 'public-profile' && (
             <Header
               onBackHome={handleBackHome}
               showBack={view === 'dashboard' || view === 'history-list'}
@@ -272,6 +279,10 @@ export default function App() {
 
           {view === 'public' && currentDoc && (
             <PublicDocViewer documentId={currentDoc.docId} onBack={handleBackHome} />
+          )}
+
+          {view === 'public-profile' && publicUsername && (
+            <PublicProfilePage username={publicUsername} onBack={handleBackHome} user={user} />
           )}
 
           <AuthModal

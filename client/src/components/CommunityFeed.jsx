@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { getCommunityDocuments, likeDocument, unlikeDocument, getComments, postComment, deleteComment } from '../api';
-import { Globe, FileText, Search, Loader2, Calendar, Heart, MessageCircle, Send, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { getCommunityDocuments, likeDocument, unlikeDocument, getComments, postComment, deleteComment, submitReport } from '../api';
+import { Globe, FileText, Search, Loader2, Calendar, Heart, MessageCircle, Send, Trash2, ChevronDown, ChevronUp, Flag, X } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -13,6 +13,11 @@ export default function CommunityFeed({ user }) {
     const [commentsData, setCommentsData] = useState({});
     const [newComment, setNewComment] = useState({});
     const [likesState, setLikesState] = useState({}); // { docId: { liked, count } }
+    const [reportModal, setReportModal] = useState(null); // { docId, title }
+    const [reportReason, setReportReason] = useState('');
+    const [reportDetails, setReportDetails] = useState('');
+    const [reportLoading, setReportLoading] = useState(false);
+    const [reportSuccess, setReportSuccess] = useState(false);
 
     useEffect(() => {
         fetchDocuments();
@@ -95,6 +100,25 @@ export default function CommunityFeed({ user }) {
                 [docId]: (prev[docId] || []).filter(c => c.id !== commentId)
             }));
         } catch { /* ignore */ }
+    };
+
+    const handleReport = async () => {
+        if (!reportModal || !reportReason) return;
+        setReportLoading(true);
+        try {
+            await submitReport('document', reportModal.docId, reportReason, reportDetails);
+            setReportSuccess(true);
+            setTimeout(() => {
+                setReportModal(null);
+                setReportReason('');
+                setReportDetails('');
+                setReportSuccess(false);
+            }, 1500);
+        } catch {
+            // silently fail
+        } finally {
+            setReportLoading(false);
+        }
     };
 
     const filteredDocs = documents.filter(doc =>
@@ -181,7 +205,17 @@ export default function CommunityFeed({ user }) {
                                                     {doc.author.charAt(0).toUpperCase()}
                                                 </span>
                                             )}
-                                            <span className="truncate">{doc.author}</span>
+                                            {doc.author_username ? (
+                                                <span
+                                                    className="truncate hover:text-primary-400 hover:underline cursor-pointer transition-colors"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        window.location.href = `/profile/@${doc.author_username}`;
+                                                    }}
+                                                >{doc.author}</span>
+                                            ) : (
+                                                <span className="truncate">{doc.author}</span>
+                                            )}
                                         </p>
                                     </div>
                                 </div>
@@ -204,6 +238,18 @@ export default function CommunityFeed({ user }) {
                                     <span>{comments.length || doc.comments_count || 0}</span>
                                     {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                                 </button>
+                                {user && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setReportModal({ docId: doc.id, title: doc.title });
+                                        }}
+                                        className="flex items-center gap-1 text-xs font-medium text-muted hover:text-amber-400 transition-colors"
+                                        title="Báo cáo vi phạm"
+                                    >
+                                        <Flag size={13} />
+                                    </button>
+                                )}
                                 <div className="flex-1" />
                                 <div className="flex items-center gap-1.5 text-xs text-muted font-medium">
                                     <Calendar size={12} />
@@ -263,6 +309,75 @@ export default function CommunityFeed({ user }) {
                     })}
                 </div>
             )}
-        </div>
+            {/* Report Modal */}
+            {reportModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => !reportLoading && setReportModal(null)}>
+                    <div className="bg-surface border border-line rounded-2xl w-full max-w-md p-6 animate-fade-in" onClick={e => e.stopPropagation()}>
+                        {reportSuccess ? (
+                            <div className="text-center py-4">
+                                <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-green-500/10 border border-green-500/30 flex items-center justify-center">
+                                    <Flag size={24} className="text-green-400" />
+                                </div>
+                                <h3 className="text-lg font-bold mb-1">Đã gửi báo cáo</h3>
+                                <p className="text-sm text-muted">Cảm ơn bạn! Chúng tôi sẽ xem xét nội dung này.</p>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="flex items-center justify-between mb-5">
+                                    <h3 className="text-lg font-bold flex items-center gap-2">
+                                        <Flag size={18} className="text-amber-400" />
+                                        Báo cáo vi phạm
+                                    </h3>
+                                    <button onClick={() => setReportModal(null)} className="p-1.5 rounded-lg hover:bg-surface-2 text-muted hover:text-txt transition-colors">
+                                        <X size={18} />
+                                    </button>
+                                </div>
+                                <p className="text-xs text-muted mb-4 truncate">Tài liệu: <strong className="text-txt">{reportModal.title}</strong></p>
+
+                                <div className="space-y-2 mb-4">
+                                    {['Nội dung không phù hợp', 'Vi phạm bản quyền', 'Spam hoặc lừa đảo', 'Thông tin sai lệch', 'Khác'].map(reason => (
+                                        <button
+                                            key={reason}
+                                            onClick={() => setReportReason(reason)}
+                                            className={`w-full text-left px-4 py-2.5 rounded-xl text-sm border transition-all ${
+                                                reportReason === reason
+                                                    ? 'border-primary-500/50 bg-primary-500/10 text-primary-400 font-medium'
+                                                    : 'border-line hover:border-primary-500/30 text-muted hover:text-txt'
+                                            }`}
+                                        >
+                                            {reason}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <textarea
+                                    value={reportDetails}
+                                    onChange={e => setReportDetails(e.target.value)}
+                                    placeholder="Chi tiết thêm (không bắt buộc)..."
+                                    rows={2}
+                                    className="w-full bg-bg border border-line rounded-xl px-4 py-2.5 text-sm resize-none focus:outline-none focus:border-primary-500/50 mb-4 placeholder:text-muted/50"
+                                />
+
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => setReportModal(null)}
+                                        className="flex-1 py-2.5 rounded-xl bg-surface-2 hover:bg-line text-sm font-medium transition-colors"
+                                    >
+                                        Huỷ
+                                    </button>
+                                    <button
+                                        onClick={handleReport}
+                                        disabled={!reportReason || reportLoading}
+                                        className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    >
+                                        {reportLoading ? <Loader2 size={14} className="animate-spin" /> : <Flag size={14} />}
+                                        Gửi báo cáo
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}        </div>
     );
 }

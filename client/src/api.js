@@ -798,6 +798,13 @@ export async function adminGetAiUsage(days = 7) {
 }
 
 // ── Admin: Content Moderation ─────────────────────────
+
+// ── Public Profile ────────────────────────────────────
+export async function getPublicProfile(username) {
+  const response = await api.get(`/users/profile/${encodeURIComponent(username)}`);
+  return response.data;
+}
+
 export async function adminGetReports(status = 'pending', page = 1) {
   const response = await api.get(`/admin/reports?status=${status}&page=${page}`);
   return response.data;

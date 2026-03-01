@@ -1562,6 +1562,72 @@ app.post('/api/shared/:shareToken/chat', async (req, res) => {
 
 // ============ COMMUNITY / PUBLIC HUB ============
 
+// Public user profile
+app.get('/api/users/profile/:username', async (req, res) => {
+  try {
+    const db = new Database(DB_PATH);
+    const user = db.prepare(`
+      SELECT id, username, display_name, avatar_url, plan, created_at
+      FROM users WHERE username = ? AND is_banned = 0
+    `).get(req.params.username);
+
+    if (!user) {
+      db.close();
+      return res.status(404).json({ error: 'Người dùng không tồn tại' });
+    }
+
+    // Public documents count
+    const docStats = db.prepare(`
+      SELECT COUNT(*) as public_docs FROM documents WHERE user_id = ? AND is_public = 1 AND status = 'ready'
+    `).get(user.id);
+
+    // Activity stats
+    const activity = db.prepare(`
+      SELECT
+        COALESCE(SUM(documents_uploaded), 0) as total_documents,
+        COALESCE(SUM(flashcards_reviewed), 0) as total_flashcards,
+        COALESCE(SUM(quizzes_completed), 0) as total_quizzes,
+        COALESCE(SUM(chat_messages), 0) as total_chats
+      FROM daily_activity WHERE user_id = ?
+    `).get(user.id);
+
+    // Streak
+    const streak = db.prepare('SELECT current_streak, longest_streak FROM user_streaks WHERE user_id = ?').get(user.id);
+
+    // Recent public documents
+    const recentDocs = db.prepare(`
+      SELECT id, original_name as title, created_at
+      FROM documents WHERE user_id = ? AND is_public = 1 AND status = 'ready'
+      ORDER BY created_at DESC LIMIT 10
+    `).all(user.id);
+
+    db.close();
+
+    res.json({
+      user: {
+        username: user.username,
+        displayName: user.display_name,
+        avatarUrl: user.avatar_url,
+        plan: user.plan,
+        joinedAt: user.created_at,
+      },
+      stats: {
+        publicDocs: docStats.public_docs,
+        totalDocuments: activity.total_documents,
+        totalFlashcards: activity.total_flashcards,
+        totalQuizzes: activity.total_quizzes,
+        totalChats: activity.total_chats,
+        currentStreak: streak?.current_streak || 0,
+        longestStreak: streak?.longest_streak || 0,
+      },
+      recentDocs,
+    });
+  } catch (error) {
+    console.error('[PublicProfile] Error:', error.message);
+    res.status(500).json({ error: 'Lỗi khi tải thông tin người dùng' });
+  }
+});
+
 app.get('/api/community/documents', async (req, res) => {
   try {
     const db = new Database(DB_PATH);
@@ -1570,7 +1636,7 @@ app.get('/api/community/documents', async (req, res) => {
     const offset = (page - 1) * limit;
 
     const query = `
-      SELECT d.id, d.original_name as title, d.created_at, u.display_name as author, u.avatar_url as author_avatar
+      SELECT d.id, d.original_name as title, d.created_at, u.display_name as author, u.username as author_username, u.avatar_url as author_avatar
       FROM documents d
       JOIN users u ON d.user_id = u.id
       WHERE d.is_public = 1 AND d.status = 'ready'
