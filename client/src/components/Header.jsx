@@ -1,11 +1,15 @@
 import { useState } from 'react';
-import { BrainCircuit, ArrowLeft, LogIn, Menu, X, History, Globe, Trophy, BarChart3 } from 'lucide-react';
+import { BrainCircuit, ArrowLeft, LogIn, Menu, X, History, Globe, Trophy, BarChart3, Sparkles } from 'lucide-react';
 import UserDropdown from './UserDropdown';
 
-const NAV_ITEMS = [
-  { label: 'Tại sao NoteMinds?', target: 'why' },
+// Landing-page scroll links (only on home)
+const HOME_NAV = [
   { label: 'Tính năng', target: 'features' },
   { label: 'Bảng giá', target: 'pricing' },
+];
+
+// App-level page links (icon-first, compact)
+const APP_NAV = [
   { label: 'Cộng đồng', target: 'community', icon: Globe, requireAuth: false },
   { label: 'Xếp hạng', target: 'leaderboard', icon: Trophy, requireAuth: false },
   { label: 'Thống kê', target: 'stats', icon: BarChart3, requireAuth: true },
@@ -17,27 +21,16 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
 
   const handleNav = (target) => {
     setMobileOpen(false);
-    if (target === 'history') {
-      onOpenHistory?.();
-      return;
-    }
-    if (target === 'leaderboard') {
-      onOpenLeaderboard?.();
-      return;
-    }
-    if (target === 'stats') {
-      onOpenStats?.();
-      return;
-    }
+    if (target === 'history') { onOpenHistory?.(); return; }
+    if (target === 'leaderboard') { onOpenLeaderboard?.(); return; }
+    if (target === 'stats') { onOpenStats?.(); return; }
     if (target === 'community') {
       window.history.pushState({}, '', '/community');
       window.dispatchEvent(new Event('popstate'));
-      // Note: we can't easily instruct App.jsx from here without a prop, so we trigger a popstate, 
-      // or we can just use window.location.href = '/community' for simplicity since it's an SPA.
       window.location.href = '/community';
       return;
     }
-    // If not on home view, go home first then scroll
+    // Scroll-to-section links (home page)
     if (currentView !== 'home') {
       onBackHome?.();
       setTimeout(() => {
@@ -48,62 +41,87 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
     }
   };
 
+  const isActiveTarget = (target) =>
+    (target === 'history' && currentView === 'history-list') ||
+    (target === 'community' && currentView === 'community') ||
+    (target === 'leaderboard' && currentView === 'leaderboard') ||
+    (target === 'stats' && currentView === 'stats');
+
+  const allMobileItems = [...HOME_NAV, ...APP_NAV];
+
   return (
     <header className="sticky top-0 z-50 glass">
-      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-        {/* Left: Logo */}
-        <div className="flex items-center gap-3">
+      <div className="max-w-7xl mx-auto px-4 h-14 flex items-center gap-2">
+        {/* Logo */}
+        <div className="flex items-center gap-2.5 mr-1">
           {showBack && (
             <button
               onClick={onBackHome}
-              className="p-2 rounded-xl hover:bg-surface-2 transition-colors mr-1"
+              className="p-1.5 rounded-lg hover:bg-surface-2 transition-colors"
               title="Về trang chủ"
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={18} />
             </button>
           )}
-          <button onClick={onBackHome} className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 bg-gradient-to-br from-primary-600 to-primary-500 rounded-xl flex items-center justify-center shadow-md shadow-primary-600/20 group-hover:shadow-lg group-hover:shadow-primary-600/30 transition-shadow">
-              <BrainCircuit size={20} className="text-white" />
+          <button onClick={onBackHome} className="flex items-center gap-2 group">
+            <div className="w-8 h-8 bg-gradient-to-br from-primary-600 to-primary-500 rounded-lg flex items-center justify-center shadow-md shadow-primary-600/20 group-hover:shadow-lg group-hover:shadow-primary-600/30 transition-all group-hover:scale-105">
+              <BrainCircuit size={17} className="text-white" />
             </div>
-            <span className="text-xl font-bold font-display">
+            <span className="text-lg font-bold font-display hidden sm:inline">
               Note<span className="gradient-text">Minds</span>
             </span>
           </button>
         </div>
 
-        {/* Center: Nav links (desktop) */}
+        {/* Center nav */}
         {!showBack && (
-          <nav className="hidden md:flex items-center gap-1">
-            {NAV_ITEMS.filter(item => !item.requireAuth || user).map((item) => {
+          <nav className="hidden md:flex items-center gap-0.5 flex-1 justify-center">
+            {/* Home scroll links */}
+            {currentView === 'home' && HOME_NAV.map((item) => (
+              <button
+                key={item.target}
+                onClick={() => handleNav(item.target)}
+                className="px-3 py-1.5 rounded-lg text-[13px] font-medium text-muted hover:text-txt hover:bg-surface-2 transition-colors"
+              >
+                {item.label}
+              </button>
+            ))}
+
+            {/* Separator between home & app nav */}
+            {currentView === 'home' && user && (
+              <div className="w-px h-4 bg-line mx-1.5" />
+            )}
+
+            {/* App page links — icon pills with label */}
+            {APP_NAV.filter(item => !item.requireAuth || user).map((item) => {
               const Icon = item.icon;
-              const isActive = (item.target === 'history' && currentView === 'history-list') ||
-                (item.target === 'community' && currentView === 'community') ||
-                (item.target === 'leaderboard' && currentView === 'leaderboard') ||
-                (item.target === 'stats' && currentView === 'stats');
+              const active = isActiveTarget(item.target);
               return (
                 <button
                   key={item.target}
                   onClick={() => handleNav(item.target)}
-                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
-                    ? 'text-primary-400 bg-primary-600/10'
-                    : 'text-muted hover:text-txt hover:bg-surface-2'
-                    }`}
+                  title={item.label}
+                  className={`
+                    flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[13px] font-medium transition-all
+                    ${active
+                      ? 'text-primary-400 bg-primary-600/10'
+                      : 'text-muted hover:text-txt hover:bg-surface-2'
+                    }
+                  `}
                 >
-                  {Icon && <Icon size={15} />}
-                  {item.label}
+                  <Icon size={15} className={active ? 'text-primary-400' : ''} />
+                  <span className="hidden lg:inline">{item.label}</span>
                 </button>
               );
             })}
           </nav>
         )}
 
-        {/* Right: Actions */}
-        <div className="flex items-center gap-3">
-          <span className="hidden lg:inline text-xs text-muted bg-surface-2 px-3 py-1.5 rounded-full">
-            Bài dự thi của đội Đèn Giao Thông
-          </span>
+        {/* Spacer when showBack (no nav) */}
+        {showBack && <div className="flex-1" />}
 
+        {/* Right side */}
+        <div className="flex items-center gap-2 ml-auto">
           {user ? (
             <UserDropdown
               user={user}
@@ -117,18 +135,18 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
           ) : (
             <button
               onClick={onLoginClick}
-              className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-sm font-medium transition-colors shadow-lg shadow-primary-600/25"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 rounded-lg text-sm font-semibold transition-all shadow-lg shadow-primary-600/25 hover:shadow-primary-500/30"
             >
               <LogIn size={15} />
               <span className="hidden sm:inline">Đăng nhập</span>
             </button>
           )}
 
-          {/* Mobile hamburger (only when nav is relevant) */}
+          {/* Mobile hamburger */}
           {!showBack && (
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden p-2 rounded-lg hover:bg-surface-2 transition-colors"
+              className="md:hidden p-1.5 rounded-lg hover:bg-surface-2 transition-colors"
             >
               {mobileOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
@@ -136,26 +154,23 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
         </div>
       </div>
 
-      {/* Mobile nav dropdown */}
+      {/* Mobile nav */}
       {mobileOpen && !showBack && (
         <div className="md:hidden border-t border-line bg-surface/95 backdrop-blur-lg animate-fade-in">
-          <nav className="max-w-7xl mx-auto px-4 py-3 flex flex-col gap-1">
-            {NAV_ITEMS.filter(item => !item.requireAuth || user).map((item) => {
+          <nav className="max-w-7xl mx-auto px-4 py-2 flex flex-col gap-0.5">
+            {allMobileItems.filter(item => !item.requireAuth || user).map((item) => {
               const Icon = item.icon;
-              const isActive = (item.target === 'history' && currentView === 'history-list') ||
-                (item.target === 'community' && currentView === 'community') ||
-                (item.target === 'leaderboard' && currentView === 'leaderboard') ||
-                (item.target === 'stats' && currentView === 'stats');
+              const active = isActiveTarget(item.target);
               return (
                 <button
                   key={item.target}
                   onClick={() => handleNav(item.target)}
-                  className={`flex items-center gap-1.5 text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive
+                  className={`flex items-center gap-2.5 text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${active
                     ? 'text-primary-400 bg-primary-600/10'
                     : 'text-muted hover:text-txt hover:bg-surface-2'
                     }`}
                 >
-                  {Icon && <Icon size={15} />}
+                  {Icon ? <Icon size={16} /> : <Sparkles size={16} />}
                   {item.label}
                 </button>
               );
