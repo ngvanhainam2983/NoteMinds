@@ -2,11 +2,16 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Shield, Users, ArrowLeft, Search, Loader2, CheckCircle2, AlertCircle,
   RefreshCw, Ban, ShieldCheck, Globe, Trash2, Plus,
-  UserX, UserCheck, Clock, Wifi,
+  UserX, UserCheck, Clock, Wifi, BarChart3, FileText, Megaphone,
+  ScrollText, Eye, EyeOff, Edit3, Save, X, TrendingUp,
+  ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import {
   adminGetUsers, adminSetPlan, adminSetRole, adminGetPlans,
   adminBanUser, adminUnbanUser, adminGetBannedIps, adminBanIp, adminUnbanIp,
+  adminGetStats, adminGetDocuments, adminDeleteDocument, adminToggleDocPublic,
+  getAnnouncements, createAnnouncement, updateAnnouncement, deleteAnnouncement,
+  adminGetAuditLogs,
 } from '../api';
 import ConfirmModal from './ConfirmModal';
 
@@ -191,9 +196,13 @@ export default function AdminPanel({ onBack }) {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-4 bg-surface p-1 rounded-xl w-fit">
-          <TabBtn active={tab === 'users'} onClick={() => setTab('users')} icon={<Users size={14} />} label={`Người dùng (${totalUsers})`} />
-          <TabBtn active={tab === 'ips'} onClick={() => setTab('ips')} icon={<Globe size={14} />} label={`IP bị chặn (${bannedIps.length})`} />
+        <div className="flex gap-1 mb-4 bg-surface p-1 rounded-xl w-fit flex-wrap">
+          <TabBtn active={tab === 'users'} onClick={() => setTab('users')} icon={<Users size={14} />} label={`Users (${totalUsers})`} />
+          <TabBtn active={tab === 'ips'} onClick={() => setTab('ips')} icon={<Globe size={14} />} label={`IP (${bannedIps.length})`} />
+          <TabBtn active={tab === 'stats'} onClick={() => setTab('stats')} icon={<BarChart3 size={14} />} label="Thống kê" />
+          <TabBtn active={tab === 'docs'} onClick={() => setTab('docs')} icon={<FileText size={14} />} label="Tài liệu" />
+          <TabBtn active={tab === 'announcements'} onClick={() => setTab('announcements')} icon={<Megaphone size={14} />} label="Thông báo" />
+          <TabBtn active={tab === 'audit'} onClick={() => setTab('audit')} icon={<ScrollText size={14} />} label="Nhật ký" />
         </div>
 
         {tab === 'users' && (
@@ -256,6 +265,11 @@ export default function AdminPanel({ onBack }) {
         {tab === 'ips' && (
           <IpBanPanel bannedIps={bannedIps} onBanIp={handleBanIp} onUnbanIp={handleUnbanIp} loading={loading} />
         )}
+
+        {tab === 'stats' && <AdminStatsPanel />}
+        {tab === 'docs' && <AdminDocsPanel showToast={showToast} askConfirm={askConfirm} />}
+        {tab === 'announcements' && <AdminAnnouncementsPanel showToast={showToast} askConfirm={askConfirm} />}
+        {tab === 'audit' && <AdminAuditPanel />}
       </div>
 
       {toast && (
@@ -515,6 +529,431 @@ function IpBanPanel({ bannedIps, onBanIp, onUnbanIp, loading }) {
           </table>
         )}
       </div>
+    </div>
+  );
+}
+// ── Admin Stats Panel ─────────────────────────────────
+function AdminStatsPanel() {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    adminGetStats().then(setStats).catch(() => {}).finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-primary-400" /></div>;
+  if (!stats) return <div className="text-center py-8 text-muted">Không thể tải dữ liệu thống kê</div>;
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard icon={<Users size={16} />} label="Tổng user" value={stats.totalUsers} color="#60a5fa" />
+        <StatCard icon={<TrendingUp size={16} />} label="User mới hôm nay" value={stats.newUsersToday} color="#34d399" />
+        <StatCard icon={<TrendingUp size={16} />} label="User mới tuần" value={stats.newUsersThisWeek} color="#a78bfa" />
+        <StatCard icon={<FileText size={16} />} label="Tổng tài liệu" value={stats.totalDocuments} color="#fbbf24" />
+      </div>
+
+      {stats.planDistribution && (
+        <div className="bg-surface border border-line rounded-xl p-4">
+          <h3 className="text-sm font-semibold mb-3">Phân bổ gói dịch vụ</h3>
+          <div className="space-y-2">
+            {stats.planDistribution.map(p => (
+              <div key={p.plan} className="flex items-center gap-3">
+                <span className="w-20 text-xs font-medium">{p.plan || 'free'}</span>
+                <div className="flex-1 h-3 bg-surface-2 rounded-full overflow-hidden">
+                  <div className="h-full bg-primary-500 rounded-full" style={{ width: `${stats.totalUsers > 0 ? (p.count / stats.totalUsers) * 100 : 0}%` }} />
+                </div>
+                <span className="text-xs text-muted w-10 text-right">{p.count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {stats.registrationTrend && stats.registrationTrend.length > 0 && (
+        <div className="bg-surface border border-line rounded-xl p-4">
+          <h3 className="text-sm font-semibold mb-3">Đăng ký 7 ngày qua</h3>
+          <div className="flex items-end gap-2 h-32">
+            {stats.registrationTrend.map(d => {
+              const max = Math.max(1, ...stats.registrationTrend.map(x => x.count));
+              const height = (d.count / max) * 100;
+              return (
+                <div key={d.date} className="flex-1 flex flex-col items-center gap-1">
+                  <span className="text-[10px] text-muted">{d.count}</span>
+                  <div className="w-full bg-primary-500/20 rounded-t-lg relative" style={{ height: `${Math.max(4, height)}%` }}>
+                    <div className="absolute inset-0 bg-primary-500 rounded-t-lg" style={{ height: `${height}%` }} />
+                  </div>
+                  <span className="text-[9px] text-muted">{d.date.slice(5)}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {stats.topUsers && stats.topUsers.length > 0 && (
+        <div className="bg-surface border border-line rounded-xl p-4">
+          <h3 className="text-sm font-semibold mb-3">Top users (theo tài liệu)</h3>
+          <div className="space-y-2">
+            {stats.topUsers.map((u, i) => (
+              <div key={u.id} className="flex items-center gap-3 text-sm">
+                <span className="w-6 text-center font-bold text-muted">{i + 1}</span>
+                <span className="flex-1 truncate">{u.display_name || u.username}</span>
+                <span className="text-primary-400 font-medium">{u.doc_count} tài liệu</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Admin Documents Panel ─────────────────────────────
+function AdminDocsPanel({ showToast, askConfirm }) {
+  const [docs, setDocs] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('all');
+  const [loading, setLoading] = useState(true);
+
+  const fetchDocs = async () => {
+    setLoading(true);
+    try {
+      const data = await adminGetDocuments({ page, limit: 20, search, filter });
+      setDocs(data.documents || []);
+      setTotal(data.total || 0);
+    } catch { showToast('error', 'Lỗi tải tài liệu'); }
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchDocs(); }, [page, filter]);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setPage(1);
+    fetchDocs();
+  };
+
+  const handleDelete = (docId, title) => {
+    askConfirm('Xóa tài liệu', `Bạn có chắc muốn xóa "${title}"?`, 'danger', async () => {
+      try {
+        await adminDeleteDocument(docId);
+        showToast('success', 'Đã xóa tài liệu');
+        fetchDocs();
+      } catch { showToast('error', 'Lỗi xóa tài liệu'); }
+    });
+  };
+
+  const handleTogglePublic = async (docId) => {
+    try {
+      const result = await adminToggleDocPublic(docId);
+      setDocs(prev => prev.map(d => d.id === docId ? { ...d, is_public: result.is_public } : d));
+      showToast('success', result.is_public ? 'Đã công khai' : 'Đã ẩn');
+    } catch { showToast('error', 'Lỗi cập nhật'); }
+  };
+
+  const totalPages = Math.ceil(total / 20);
+
+  return (
+    <div className="space-y-4">
+      <form onSubmit={handleSearch} className="flex gap-2">
+        <div className="relative flex-1">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Tìm tài liệu..."
+            className="w-full bg-surface border border-line rounded-xl pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-primary-500/50"
+          />
+        </div>
+        <select
+          value={filter}
+          onChange={(e) => { setFilter(e.target.value); setPage(1); }}
+          className="bg-surface border border-line rounded-xl px-3 py-2 text-sm focus:outline-none cursor-pointer"
+        >
+          <option value="all">Tất cả</option>
+          <option value="public">Công khai</option>
+          <option value="private">Riêng tư</option>
+        </select>
+      </form>
+
+      {loading ? (
+        <div className="flex justify-center py-8"><Loader2 size={24} className="animate-spin text-primary-400" /></div>
+      ) : (
+        <div className="bg-surface border border-line rounded-xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-line text-muted text-xs uppercase tracking-wider">
+                <th className="text-left py-3 px-4">Tài liệu</th>
+                <th className="text-left py-3 px-4 hidden sm:table-cell">Tác giả</th>
+                <th className="text-center py-3 px-4">Trạng thái</th>
+                <th className="text-left py-3 px-4">Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              {docs.map(d => (
+                <tr key={d.id} className="border-b border-line last:border-b-0 hover:bg-surface-2/50">
+                  <td className="py-3 px-4">
+                    <p className="font-medium text-sm truncate max-w-xs">{d.original_name || d.title || 'Không rõ'}</p>
+                    <p className="text-[11px] text-muted">{new Date(d.created_at).toLocaleDateString('vi-VN')}</p>
+                  </td>
+                  <td className="py-3 px-4 hidden sm:table-cell text-muted text-xs">{d.username || '?'}</td>
+                  <td className="py-3 px-4 text-center">
+                    <button
+                      onClick={() => handleTogglePublic(d.id)}
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-colors ${d.is_public ? 'bg-emerald-500/10 text-emerald-400' : 'bg-surface-2 text-muted'}`}
+                    >
+                      {d.is_public ? <><Eye size={11} /> Công khai</> : <><EyeOff size={11} /> Riêng tư</>}
+                    </button>
+                  </td>
+                  <td className="py-3 px-4">
+                    <button
+                      onClick={() => handleDelete(d.id, d.original_name || d.title)}
+                      className="flex items-center gap-1 px-2 py-1 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs transition-colors"
+                    >
+                      <Trash2 size={11} /> Xóa
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {docs.length === 0 && (
+                <tr><td colSpan={4} className="text-center py-8 text-muted">Không tìm thấy tài liệu</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1} className="p-1.5 rounded-lg bg-surface hover:bg-surface-2 disabled:opacity-40 transition-colors"><ChevronLeft size={16} /></button>
+          <span className="text-sm text-muted">Trang {page}/{totalPages}</span>
+          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="p-1.5 rounded-lg bg-surface hover:bg-surface-2 disabled:opacity-40 transition-colors"><ChevronRight size={16} /></button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Admin Announcements Panel ─────────────────────────
+function AdminAnnouncementsPanel({ showToast, askConfirm }) {
+  const [announcements, setAnnouncements] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(null); // null | 'new' | announcementObj
+  const [form, setForm] = useState({ title: '', content: '', type: 'info', is_active: 1, expires_at: '' });
+
+  useEffect(() => {
+    fetchAnnouncements();
+  }, []);
+
+  const fetchAnnouncements = async () => {
+    setLoading(true);
+    try {
+      const data = await getAnnouncements();
+      setAnnouncements(data || []);
+    } catch { /* ignore */ }
+    setLoading(false);
+  };
+
+  const startNew = () => {
+    setForm({ title: '', content: '', type: 'info', is_active: 1, expires_at: '' });
+    setEditing('new');
+  };
+
+  const startEdit = (a) => {
+    setForm({ title: a.title, content: a.content || '', type: a.type || 'info', is_active: a.is_active, expires_at: a.expires_at || '' });
+    setEditing(a);
+  };
+
+  const handleSave = async () => {
+    if (!form.title.trim()) return;
+    try {
+      if (editing === 'new') {
+        const a = await createAnnouncement(form);
+        setAnnouncements(prev => [a, ...prev]);
+        showToast('success', 'Đã tạo thông báo');
+      } else {
+        const a = await updateAnnouncement(editing.id, form);
+        setAnnouncements(prev => prev.map(x => x.id === editing.id ? a : x));
+        showToast('success', 'Đã cập nhật');
+      }
+      setEditing(null);
+    } catch { showToast('error', 'Lỗi lưu thông báo'); }
+  };
+
+  const handleDelete = (id) => {
+    askConfirm('Xóa thông báo', 'Bạn có chắc muốn xóa thông báo này?', 'danger', async () => {
+      try {
+        await deleteAnnouncement(id);
+        setAnnouncements(prev => prev.filter(a => a.id !== id));
+        showToast('success', 'Đã xóa');
+      } catch { showToast('error', 'Lỗi xóa'); }
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold flex items-center gap-2"><Megaphone size={14} className="text-primary-400" /> Quản lý thông báo</h3>
+        <button onClick={startNew} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 rounded-lg text-xs font-medium transition-colors">
+          <Plus size={12} /> Tạo mới
+        </button>
+      </div>
+
+      {editing && (
+        <div className="bg-surface border border-primary-500/30 rounded-xl p-4 space-y-3">
+          <input
+            value={form.title}
+            onChange={(e) => setForm(p => ({ ...p, title: e.target.value }))}
+            placeholder="Tiêu đề thông báo..."
+            className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary-500/50"
+          />
+          <textarea
+            value={form.content}
+            onChange={(e) => setForm(p => ({ ...p, content: e.target.value }))}
+            placeholder="Nội dung (tùy chọn)..."
+            rows={2}
+            className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-primary-500/50"
+          />
+          <div className="flex flex-wrap gap-2">
+            <select
+              value={form.type}
+              onChange={(e) => setForm(p => ({ ...p, type: e.target.value }))}
+              className="bg-bg border border-line rounded-lg px-2 py-1.5 text-xs focus:outline-none cursor-pointer"
+            >
+              <option value="info">Thông tin</option>
+              <option value="warning">Cảnh báo</option>
+              <option value="update">Cập nhật</option>
+              <option value="important">Quan trọng</option>
+            </select>
+            <label className="flex items-center gap-1.5 text-xs">
+              <input type="checkbox" checked={!!form.is_active} onChange={(e) => setForm(p => ({ ...p, is_active: e.target.checked ? 1 : 0 }))} />
+              Đang hoạt động
+            </label>
+            <input
+              type="datetime-local"
+              value={form.expires_at}
+              onChange={(e) => setForm(p => ({ ...p, expires_at: e.target.value }))}
+              className="bg-bg border border-line rounded-lg px-2 py-1.5 text-xs focus:outline-none"
+              title="Hết hạn (tùy chọn)"
+            />
+          </div>
+          <div className="flex gap-2">
+            <button onClick={handleSave} className="flex items-center gap-1 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 rounded-lg text-xs font-medium transition-colors">
+              <Save size={12} /> Lưu
+            </button>
+            <button onClick={() => setEditing(null)} className="px-3 py-1.5 bg-surface-2 hover:bg-line rounded-lg text-xs transition-colors">
+              Hủy
+            </button>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="flex justify-center py-8"><Loader2 size={24} className="animate-spin text-primary-400" /></div>
+      ) : announcements.length === 0 ? (
+        <div className="text-center py-8 text-muted">
+          <Megaphone size={28} className="mx-auto mb-2 opacity-40" />
+          <p className="text-sm">Chưa có thông báo nào</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {announcements.map(a => (
+            <div key={a.id} className="bg-surface border border-line rounded-xl p-4 flex items-start gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-medium text-sm">{a.title}</p>
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${a.is_active ? 'bg-emerald-500/15 text-emerald-400' : 'bg-surface-2 text-muted'}`}>
+                    {a.is_active ? 'Đang hiển thị' : 'Đã ẩn'}
+                  </span>
+                  <span className="px-1.5 py-0.5 bg-surface-2 rounded text-[10px] text-muted font-medium">{a.type}</span>
+                </div>
+                {a.content && <p className="text-xs text-muted mt-1 line-clamp-2">{a.content}</p>}
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <button onClick={() => startEdit(a)} className="p-1.5 rounded-lg hover:bg-surface-2 text-muted hover:text-txt transition-colors"><Edit3 size={13} /></button>
+                <button onClick={() => handleDelete(a.id)} className="p-1.5 rounded-lg hover:bg-red-500/10 text-muted hover:text-red-400 transition-colors"><Trash2 size={13} /></button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Admin Audit Log Panel ─────────────────────────────
+function AdminAuditPanel() {
+  const [logs, setLogs] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchLogs();
+  }, [page]);
+
+  const fetchLogs = async () => {
+    setLoading(true);
+    try {
+      const data = await adminGetAuditLogs(page, 30);
+      setLogs(data.logs || []);
+      setTotal(data.total || 0);
+    } catch { /* ignore */ }
+    setLoading(false);
+  };
+
+  const totalPages = Math.ceil(total / 30);
+
+  return (
+    <div className="space-y-4">
+      {loading ? (
+        <div className="flex justify-center py-8"><Loader2 size={24} className="animate-spin text-primary-400" /></div>
+      ) : logs.length === 0 ? (
+        <div className="text-center py-8 text-muted">
+          <ScrollText size={28} className="mx-auto mb-2 opacity-40" />
+          <p className="text-sm">Chưa có nhật ký hoạt động</p>
+        </div>
+      ) : (
+        <div className="bg-surface border border-line rounded-xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-line text-muted text-xs uppercase tracking-wider">
+                <th className="text-left py-3 px-4">Thời gian</th>
+                <th className="text-left py-3 px-4">Admin</th>
+                <th className="text-left py-3 px-4">Hành động</th>
+                <th className="text-left py-3 px-4 hidden sm:table-cell">Chi tiết</th>
+              </tr>
+            </thead>
+            <tbody>
+              {logs.map(log => (
+                <tr key={log.id} className="border-b border-line last:border-b-0 hover:bg-surface-2/50">
+                  <td className="py-2.5 px-4 text-xs text-muted whitespace-nowrap">
+                    {new Date(log.created_at).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                  </td>
+                  <td className="py-2.5 px-4 text-xs font-medium">{log.admin_username || 'System'}</td>
+                  <td className="py-2.5 px-4">
+                    <span className="px-2 py-0.5 bg-primary-500/10 text-primary-400 rounded text-[11px] font-medium">{log.action}</span>
+                  </td>
+                  <td className="py-2.5 px-4 text-xs text-muted hidden sm:table-cell truncate max-w-xs">
+                    {log.target_type && `[${log.target_type}] `}{log.details || '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1} className="p-1.5 rounded-lg bg-surface hover:bg-surface-2 disabled:opacity-40 transition-colors"><ChevronLeft size={16} /></button>
+          <span className="text-sm text-muted">Trang {page}/{totalPages}</span>
+          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="p-1.5 rounded-lg bg-surface hover:bg-surface-2 disabled:opacity-40 transition-colors"><ChevronRight size={16} /></button>
+        </div>
+      )}
     </div>
   );
 }

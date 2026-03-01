@@ -1,18 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Map, CreditCard, MessageCircle, FileText, Loader2, Upload,
-  Search, BarChart3, Share2, Tag, Settings, Star, Download, Focus, Globe, Lock, XCircle
+  Search, BarChart3, Share2, Tag, Settings, Star, Download, Focus, Globe, Lock, XCircle, StickyNote, FileDown
 } from 'lucide-react';
 import MindmapView from './MindmapView';
 import FlashcardView from './FlashcardView';
 import ChatView from './ChatView';
 import QuizView from './QuizView';
 import PomodoroTimer from './PomodoroTimer';
+import NotesPanel from './NotesPanel';
 import {
   SearchModal, AnalyticsModal, ShareModal, TagsModal,
   PreferencesModal, FavoriteButton
 } from './FeatureModals';
-import { generateMindmap, generateFlashcards, generateQuiz, getRateLimit, getDocumentSessions, downloadDocument, toggleDocumentPublic } from '../api';
+import { generateMindmap, generateFlashcards, generateQuiz, getRateLimit, getDocumentSessions, downloadDocument, toggleDocumentPublic, exportMarkdown } from '../api';
+import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts';
 import Joyride, { STATUS } from 'react-joyride';
 
 const TABS = [
@@ -92,6 +94,24 @@ export default function Dashboard({ doc, user }) {
   const [showShare, setShowShare] = useState(false);
   const [showTags, setShowTags] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
+  const [showNotes, setShowNotes] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    onSearch: () => setShowSearch(true),
+    onExport: () => handleExportMarkdown(),
+    onNewNote: () => setShowNotes(true),
+    onEscape: () => {
+      setShowSearch(false);
+      setShowAnalytics(false);
+      setShowShare(false);
+      setShowTags(false);
+      setShowPreferences(false);
+      setShowNotes(false);
+      setShowChat(false);
+    },
+  });
 
   const fetchRateLimit = useCallback(async () => {
     try {
@@ -216,6 +236,25 @@ export default function Dashboard({ doc, user }) {
     }
   };
 
+  const handleExportMarkdown = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      const data = await exportMarkdown(doc.docId);
+      const blob = new Blob([data.markdown], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = data.filename || 'notemind-export.md';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert(err.response?.data?.error || 'Lỗi khi xuất Markdown');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       <Joyride
@@ -298,6 +337,15 @@ export default function Dashboard({ doc, user }) {
           <span className="hidden sm:inline">{isDownloading ? 'Đang tải...' : 'Tải file gốc'}</span>
         </button>
 
+        <button
+          onClick={handleExportMarkdown}
+          disabled={isExporting}
+          className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 hover:bg-emerald-500/20 transition-all disabled:opacity-50"
+        >
+          {isExporting ? <Loader2 size={14} className="animate-spin" /> : <FileDown size={14} />}
+          <span className="hidden sm:inline">{isExporting ? 'Đang xuất...' : 'Xuất Markdown'}</span>
+        </button>
+
         <div className="w-px h-5 bg-line mx-0.5 hidden sm:block"></div>
 
         {[
@@ -305,6 +353,7 @@ export default function Dashboard({ doc, user }) {
           { icon: BarChart3, label: 'Phân tích', onClick: () => setShowAnalytics(true) },
           { icon: Share2, label: 'Chia sẻ', onClick: () => setShowShare(true) },
           { icon: Tag, label: 'Nhãn', onClick: () => setShowTags(true) },
+          { icon: StickyNote, label: 'Ghi chú', onClick: () => setShowNotes(true) },
           { icon: Settings, label: 'Cài đặt', onClick: () => setShowPreferences(true) },
         ].map((btn, i) => (
           <button
@@ -434,6 +483,7 @@ export default function Dashboard({ doc, user }) {
       <ShareModal isOpen={showShare} onClose={() => setShowShare(false)} documentId={doc.docId} />
       <TagsModal isOpen={showTags} onClose={() => setShowTags(false)} documentId={doc.docId} />
       <PreferencesModal isOpen={showPreferences} onClose={() => setShowPreferences(false)} />
+      <NotesPanel docId={doc.docId} isOpen={showNotes} onClose={() => setShowNotes(false)} />
     </div>
   );
 }

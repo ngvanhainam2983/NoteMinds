@@ -11,12 +11,15 @@ import HistoryPage from './components/HistoryPage';
 import ProfilePage from './components/ProfilePage';
 import CommunityFeed from './components/CommunityFeed';
 import PublicDocViewer from './components/PublicDocViewer';
+import LeaderboardPage from './components/LeaderboardPage';
+import StatsPage from './components/StatsPage';
+import AnnouncementBanner from './components/AnnouncementBanner';
 import { getStoredUser, logout as apiLogout, getMe, verifyEmailToken, resetPassword } from './api';
 import { CheckCircle2, XCircle, Loader2, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
 export default function App() {
   const [currentDoc, setCurrentDoc] = useState(null);
-  const [view, setView] = useState('home'); // 'home' | 'dashboard' | 'admin' | 'pricing' | 'shared' | 'history' | 'history-list' | 'verify-email' | 'reset-password'
+  const [view, setView] = useState('home'); // 'home' | 'dashboard' | 'admin' | 'pricing' | 'shared' | 'history' | 'history-list' | 'verify-email' | 'reset-password' | 'leaderboard' | 'stats'
   const [historyDoc, setHistoryDoc] = useState(null);
   const [user, setUser] = useState(getStoredUser);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -61,6 +64,10 @@ export default function App() {
       setView('profile');
     } else if (path === '/community') {
       setView('community');
+    } else if (path === '/leaderboard') {
+      setView('leaderboard');
+    } else if (path === '/stats') {
+      setView('stats');
     }
   }, []);
 
@@ -136,8 +143,17 @@ export default function App() {
               onOpenDocument={handleOpenDocument}
               onOpenHistory={() => { setView('history-list'); window.history.pushState({}, '', '/history'); }}
               onOpenProfile={() => { setView('profile'); window.history.pushState({}, '', '/profile'); }}
+              onOpenLeaderboard={() => { setView('leaderboard'); window.history.pushState({}, '', '/leaderboard'); }}
+              onOpenStats={() => { setView('stats'); window.history.pushState({}, '', '/stats'); }}
               currentView={view}
             />
+          )}
+
+          {/* Announcement Banner (show on major views) */}
+          {user && ['home', 'dashboard', 'history-list', 'community'].includes(view) && (
+            <div className="max-w-7xl mx-auto px-4 pt-3">
+              <AnnouncementBanner user={user} />
+            </div>
           )}
 
           {view === 'home' && (
@@ -190,7 +206,15 @@ export default function App() {
           )}
 
           {view === 'community' && (
-            <CommunityFeed />
+            <CommunityFeed user={user} />
+          )}
+
+          {view === 'leaderboard' && (
+            <LeaderboardPage onBack={handleBackHome} />
+          )}
+
+          {view === 'stats' && (
+            <StatsPage onBack={handleBackHome} user={user} />
           )}
 
           {view === 'public' && currentDoc && (

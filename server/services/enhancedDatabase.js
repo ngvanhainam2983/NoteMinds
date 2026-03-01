@@ -458,6 +458,155 @@ export function initializeEnhancedTables() {
     console.log('  ✓ User quiz attempts table created');
 
     console.log('[Database] ✓ All enhanced tables initialized');
+
+    // ═══════════════════════════════════════════════════
+    // NEW FEATURE TABLES (v2)
+    // ═══════════════════════════════════════════════════
+
+    // ── Personal Notes / Annotations ────────────────────
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS document_notes (
+        id TEXT PRIMARY KEY,
+        document_id TEXT NOT NULL,
+        user_id INTEGER NOT NULL,
+        content TEXT NOT NULL,
+        color TEXT DEFAULT '#fbbf24',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE,
+        FOREIGN KEY(user_id) REFERENCES users(id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_doc_notes_user_doc ON document_notes(user_id, document_id);
+    `);
+    console.log('  ✓ Document notes table created');
+
+    // ── Community Likes ─────────────────────────────────
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS community_likes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        document_id TEXT NOT NULL,
+        user_id INTEGER NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE,
+        FOREIGN KEY(user_id) REFERENCES users(id),
+        UNIQUE(document_id, user_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_community_likes_doc ON community_likes(document_id);
+      CREATE INDEX IF NOT EXISTS idx_community_likes_user ON community_likes(user_id);
+    `);
+    console.log('  ✓ Community likes table created');
+
+    // ── Community Comments ──────────────────────────────
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS community_comments (
+        id TEXT PRIMARY KEY,
+        document_id TEXT NOT NULL,
+        user_id INTEGER NOT NULL,
+        content TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE,
+        FOREIGN KEY(user_id) REFERENCES users(id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_community_comments_doc ON community_comments(document_id);
+    `);
+    console.log('  ✓ Community comments table created');
+
+    // ── Announcements (System-wide) ─────────────────────
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS announcements (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        type TEXT DEFAULT 'info',
+        is_active INTEGER DEFAULT 1,
+        created_by INTEGER NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        expires_at DATETIME,
+        FOREIGN KEY(created_by) REFERENCES users(id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_announcements_active ON announcements(is_active, created_at DESC);
+    `);
+    console.log('  ✓ Announcements table created');
+
+    // ── Admin Audit Log ─────────────────────────────────
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS admin_audit_logs (
+        id TEXT PRIMARY KEY,
+        admin_id INTEGER NOT NULL,
+        action TEXT NOT NULL,
+        target_type TEXT,
+        target_id TEXT,
+        details TEXT,
+        ip_address TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(admin_id) REFERENCES users(id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_audit_admin ON admin_audit_logs(admin_id, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_audit_action ON admin_audit_logs(action, created_at DESC);
+    `);
+    console.log('  ✓ Admin audit logs table created');
+
+    // ── User Learning Goals ─────────────────────────────
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS user_goals (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL UNIQUE,
+        daily_flashcards INTEGER DEFAULT 20,
+        daily_quizzes INTEGER DEFAULT 3,
+        daily_documents INTEGER DEFAULT 2,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id)
+      );
+    `);
+    console.log('  ✓ User goals table created');
+
+    // ── User Streaks ────────────────────────────────────
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS user_streaks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL UNIQUE,
+        current_streak INTEGER DEFAULT 0,
+        longest_streak INTEGER DEFAULT 0,
+        last_activity_date TEXT,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id)
+      );
+    `);
+    console.log('  ✓ User streaks table created');
+
+    // ── Daily Activity Log (for streak/goal tracking) ───
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS daily_activity (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        activity_date TEXT NOT NULL,
+        flashcards_reviewed INTEGER DEFAULT 0,
+        quizzes_completed INTEGER DEFAULT 0,
+        documents_uploaded INTEGER DEFAULT 0,
+        chat_messages INTEGER DEFAULT 0,
+        study_minutes INTEGER DEFAULT 0,
+        FOREIGN KEY(user_id) REFERENCES users(id),
+        UNIQUE(user_id, activity_date)
+      );
+      CREATE INDEX IF NOT EXISTS idx_daily_activity_user ON daily_activity(user_id, activity_date DESC);
+    `);
+    console.log('  ✓ Daily activity table created');
+
+    // ── Announcement Read Tracking ──────────────────────
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS announcement_reads (
+        user_id INTEGER NOT NULL,
+        announcement_id TEXT NOT NULL,
+        read_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY(user_id, announcement_id),
+        FOREIGN KEY(user_id) REFERENCES users(id),
+        FOREIGN KEY(announcement_id) REFERENCES announcements(id) ON DELETE CASCADE
+      );
+    `);
+    console.log('  ✓ Announcement reads table created');
+
+    console.log('[Database] ✓ All v2 feature tables initialized');
     db.close();
     return true;
 

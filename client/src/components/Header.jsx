@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BrainCircuit, ArrowLeft, LogIn, Menu, X, History, Globe } from 'lucide-react';
+import { BrainCircuit, ArrowLeft, LogIn, Menu, X, History, Globe, Trophy, BarChart3 } from 'lucide-react';
 import UserDropdown from './UserDropdown';
 
 const NAV_ITEMS = [
@@ -7,16 +7,26 @@ const NAV_ITEMS = [
   { label: 'Tính năng', target: 'features' },
   { label: 'Bảng giá', target: 'pricing' },
   { label: 'Cộng đồng', target: 'community', icon: Globe, requireAuth: false },
+  { label: 'Xếp hạng', target: 'leaderboard', icon: Trophy, requireAuth: false },
+  { label: 'Thống kê', target: 'stats', icon: BarChart3, requireAuth: true },
   { label: 'Lịch sử', target: 'history', icon: History, requireAuth: true },
 ];
 
-export default function Header({ onBackHome, showBack, user, onLoginClick, onLogout, onOpenAdmin, onOpenPricing, onUserUpdate, onOpenDocument, onOpenHistory, onOpenProfile, currentView }) {
+export default function Header({ onBackHome, showBack, user, onLoginClick, onLogout, onOpenAdmin, onOpenPricing, onUserUpdate, onOpenDocument, onOpenHistory, onOpenProfile, onOpenLeaderboard, onOpenStats, currentView }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleNav = (target) => {
     setMobileOpen(false);
     if (target === 'history') {
       onOpenHistory?.();
+      return;
+    }
+    if (target === 'leaderboard') {
+      onOpenLeaderboard?.();
+      return;
+    }
+    if (target === 'stats') {
+      onOpenStats?.();
       return;
     }
     if (target === 'community') {
@@ -67,7 +77,10 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
           <nav className="hidden md:flex items-center gap-1">
             {NAV_ITEMS.filter(item => !item.requireAuth || user).map((item) => {
               const Icon = item.icon;
-              const isActive = (item.target === 'history' && currentView === 'history-list');
+              const isActive = (item.target === 'history' && currentView === 'history-list') ||
+                (item.target === 'community' && currentView === 'community') ||
+                (item.target === 'leaderboard' && currentView === 'leaderboard') ||
+                (item.target === 'stats' && currentView === 'stats');
               return (
                 <button
                   key={item.target}
@@ -129,7 +142,10 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
           <nav className="max-w-7xl mx-auto px-4 py-3 flex flex-col gap-1">
             {NAV_ITEMS.filter(item => !item.requireAuth || user).map((item) => {
               const Icon = item.icon;
-              const isActive = (item.target === 'history' && currentView === 'history-list');
+              const isActive = (item.target === 'history' && currentView === 'history-list') ||
+                (item.target === 'community' && currentView === 'community') ||
+                (item.target === 'leaderboard' && currentView === 'leaderboard') ||
+                (item.target === 'stats' && currentView === 'stats');
               return (
                 <button
                   key={item.target}

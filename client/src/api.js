@@ -623,4 +623,129 @@ export async function markSynced(syncId) {
 
 // ── Learning Paths (AI Recommendations) ───────────────
 
+// ═══════════════════════════════════════════════════════
+// NEW FEATURES API (v2)
+// ═══════════════════════════════════════════════════════
+
+// ── Personal Notes ────────────────────────────────────
+export async function getDocumentNotes(docId) {
+  const response = await api.get(`/documents/${docId}/notes`);
+  return response.data.notes;
+}
+export async function createNote(docId, content, color) {
+  const response = await api.post(`/documents/${docId}/notes`, { content, color });
+  return response.data.note;
+}
+export async function updateNote(noteId, content, color) {
+  const response = await api.put(`/notes/${noteId}`, { content, color });
+  return response.data.note;
+}
+export async function deleteNote(noteId) {
+  const response = await api.delete(`/notes/${noteId}`);
+  return response.data;
+}
+
+// ── Community Likes ───────────────────────────────────
+export async function likeDocument(docId) {
+  const response = await api.post(`/community/${docId}/like`);
+  return response.data;
+}
+export async function unlikeDocument(docId) {
+  const response = await api.delete(`/community/${docId}/like`);
+  return response.data;
+}
+
+// ── Community Comments ────────────────────────────────
+export async function getComments(docId) {
+  const response = await api.get(`/community/${docId}/comments`);
+  return response.data.comments;
+}
+export async function postComment(docId, content) {
+  const response = await api.post(`/community/${docId}/comments`, { content });
+  return response.data.comment;
+}
+export async function deleteComment(commentId) {
+  const response = await api.delete(`/community/comments/${commentId}`);
+  return response.data;
+}
+
+// ── Learning Goals + Streaks ──────────────────────────
+export async function getGoals() {
+  const response = await api.get('/goals');
+  return response.data;
+}
+export async function updateGoals(goals) {
+  const response = await api.put('/goals', goals);
+  return response.data;
+}
+export async function trackActivity(type) {
+  const response = await api.post('/activity/track', { type });
+  return response.data;
+}
+export async function getActivityHistory(days = 30) {
+  const response = await api.get(`/activity/history?days=${days}`);
+  return response.data.history;
+}
+
+// ── Leaderboard ───────────────────────────────────────
+export async function getLeaderboard(period = 'all') {
+  const response = await api.get(`/leaderboard?period=${period}`);
+  return response.data.leaderboard;
+}
+
+// ── Announcements ─────────────────────────────────────
+export async function getAnnouncements() {
+  const response = await api.get('/announcements');
+  return response.data.announcements;
+}
+export async function createAnnouncement(data) {
+  const response = await api.post('/announcements', data);
+  return response.data.announcement;
+}
+export async function updateAnnouncement(id, data) {
+  const response = await api.put(`/announcements/${id}`, data);
+  return response.data.announcement;
+}
+export async function deleteAnnouncement(id) {
+  const response = await api.delete(`/announcements/${id}`);
+  return response.data;
+}
+export async function markAnnouncementRead(id) {
+  const response = await api.post(`/announcements/${id}/read`);
+  return response.data;
+}
+
+// ── Admin Stats ───────────────────────────────────────
+export async function adminGetStats() {
+  const response = await api.get('/admin/stats');
+  return response.data;
+}
+
+// ── Admin Document Management ─────────────────────────
+export async function adminGetDocuments(params = {}) {
+  const qs = new URLSearchParams(params).toString();
+  const response = await api.get(`/admin/documents?${qs}`);
+  return response.data;
+}
+export async function adminDeleteDocument(docId) {
+  const response = await api.delete(`/admin/documents/${docId}`);
+  return response.data;
+}
+export async function adminToggleDocPublic(docId) {
+  const response = await api.put(`/admin/documents/${docId}/toggle-public`);
+  return response.data;
+}
+
+// ── Admin Audit Log ───────────────────────────────────
+export async function adminGetAuditLogs(page = 1, limit = 50) {
+  const response = await api.get(`/admin/audit-logs?page=${page}&limit=${limit}`);
+  return response.data;
+}
+
+// ── Export Markdown ───────────────────────────────────
+export async function exportMarkdown(docId) {
+  const response = await api.get(`/export/markdown/${docId}`);
+  return response.data;
+}
+
 export default api;
