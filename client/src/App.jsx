@@ -16,7 +16,7 @@ import LeaderboardPage from './components/LeaderboardPage';
 import StatsPage from './components/StatsPage';
 import AnnouncementBanner from './components/AnnouncementBanner';
 import OfflinePage from './components/OfflinePage';
-import { getStoredUser, logout as apiLogout, getMe, verifyEmailToken, resetPassword, getSystemSettings } from './api';
+import { getStoredUser, logout as apiLogout, getMe, verifyEmailToken, resetPassword, getSystemSettings, getDocumentHistory, getFolders } from './api';
 import { CheckCircle2, XCircle, Loader2, Lock, Eye, EyeOff, ArrowLeft, Wrench, WifiOff } from 'lucide-react';
 
 export default function App() {
@@ -44,6 +44,20 @@ export default function App() {
       window.removeEventListener('offline', goOffline);
     };
   }, []);
+
+  // Auto-cache history for offline access when user is online & logged in
+  useEffect(() => {
+    if (isOffline || !user) return;
+    const cacheHistory = async () => {
+      try {
+        const [docs, folders] = await Promise.all([getDocumentHistory(), getFolders()]);
+        localStorage.setItem('notemind_history_cache', JSON.stringify(docs || []));
+        localStorage.setItem('notemind_folders_cache', JSON.stringify(folders || []));
+        localStorage.setItem('notemind_history_cache_time', new Date().toISOString());
+      } catch { /* offline or error — skip */ }
+    };
+    cacheHistory();
+  }, [isOffline, user]);
 
   // Detect /share/:token, /history, /history/:docId, /session/:docId, or /price URL on mount
   useEffect(() => {
@@ -113,7 +127,12 @@ export default function App() {
       } else {
         setMaintenance(null);
       }
-    }).catch(() => {}).finally(() => setMaintenanceChecked(true));
+    }).catch((err) => {
+      // If fetch failed due to network, mark as offline
+      if (!navigator.onLine || (err && err.message && /network|fetch|timeout/i.test(err.message))) {
+        setIsOffline(true);
+      }
+    }).finally(() => setMaintenanceChecked(true));
   }, []);
 
   // Documents are auto-deleted after 7 days on the server — no instant cleanup needed
