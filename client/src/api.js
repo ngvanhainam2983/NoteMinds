@@ -81,15 +81,15 @@ api.interceptors.response.use(
 
 // ── Auth API ──────────────────────────────────────────
 
-export async function register(username, email, password, displayName) {
-  const response = await api.post('/auth/register', { username, email, password, displayName });
+export async function register(username, email, password, displayName, turnstileToken) {
+  const response = await api.post('/auth/register', { username, email, password, displayName, turnstileToken });
   const { token, user } = response.data;
   storeAuth(token, user);
   return { token, user };
 }
 
-export async function login(loginVal, password) {
-  const response = await api.post('/auth/login', { login: loginVal, password });
+export async function login(loginVal, password, turnstileToken) {
+  const response = await api.post('/auth/login', { login: loginVal, password, turnstileToken });
   const data = response.data;
 
   // If 2FA is required, return the flag + temp token without storing auth
@@ -131,8 +131,8 @@ export async function resendVerification(email) {
   return response.data;
 }
 
-export async function forgotPassword(email) {
-  const response = await api.post('/auth/forgot-password', { email });
+export async function forgotPassword(email, turnstileToken) {
+  const response = await api.post('/auth/forgot-password', { email, turnstileToken });
   return response.data;
 }
 

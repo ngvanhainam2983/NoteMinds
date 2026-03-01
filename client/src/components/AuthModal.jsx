@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { X, User, Mail, Lock, Eye, EyeOff, LogIn, UserPlus, Loader2, ArrowLeft, CheckCircle2, MailCheck, ShieldCheck, KeyRound, Fingerprint } from 'lucide-react';
 import { register, login, forgotPassword, resendVerification, verify2FA, verify2FARecovery, getPasskeyAuthOptions, verifyPasskeyAuth, getPasskeyLoginOptions, verifyPasskeyLogin } from '../api';
 import { startAuthentication } from '@simplewebauthn/browser';
@@ -20,6 +20,60 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
 
   // Recovery code
   const [recoveryCode, setRecoveryCode] = useState('');
+
+  // Turnstile
+  const TURNSTILE_SITE_KEY = '0x4AAAAAACCkEz_zQ397q5Sv';
+  const turnstileRef = useRef(null);
+  const turnstileWidgetId = useRef(null);
+  const turnstileToken = useRef(null);
+
+  const resetTurnstile = useCallback(() => {
+    turnstileToken.current = null;
+    if (turnstileWidgetId.current !== null && window.turnstile) {
+      try { window.turnstile.reset(turnstileWidgetId.current); } catch {}
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    // Wait for turnstile script to load, then render widget
+    const initTurnstile = () => {
+      if (!window.turnstile || !turnstileRef.current) return;
+      // Remove existing widget if any
+      if (turnstileWidgetId.current !== null) {
+        try { window.turnstile.remove(turnstileWidgetId.current); } catch {}
+        turnstileWidgetId.current = null;
+      }
+      turnstileWidgetId.current = window.turnstile.render(turnstileRef.current, {
+        sitekey: TURNSTILE_SITE_KEY,
+        callback: (token) => { turnstileToken.current = token; },
+        'expired-callback': () => { turnstileToken.current = null; },
+        'error-callback': () => { turnstileToken.current = null; },
+        theme: 'dark',
+        size: 'invisible',
+      });
+    };
+
+    // Retry until turnstile script is loaded
+    if (window.turnstile) {
+      initTurnstile();
+    } else {
+      const interval = setInterval(() => {
+        if (window.turnstile) {
+          clearInterval(interval);
+          initTurnstile();
+        }
+      }, 200);
+      return () => clearInterval(interval);
+    }
+
+    return () => {
+      if (turnstileWidgetId.current !== null && window.turnstile) {
+        try { window.turnstile.remove(turnstileWidgetId.current); } catch {}
+        turnstileWidgetId.current = null;
+      }
+    };
+  }, [isOpen]);
 
   // Form fields
   const [formData, setFormData] = useState({
@@ -80,8 +134,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
 
     try {
       let result;
+      const cfToken = turnstileToken.current || '';
       if (tab === 'login') {
-        result = await login(formData.login, formData.password);
+        result = await login(formData.login, formData.password, cfToken);
+        resetTurnstile();
 
         if (result.requires2FA) {
           setTempToken(result.tempToken);
@@ -106,17 +162,21 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
           formData.username,
           formData.email,
           formData.password,
-          formData.displayName || formData.username
+          formData.displayName || formData.username,
+          cfToken
         );
+        resetTurnstile();
         setRegisteredEmail(formData.email);
         onAuthSuccess(result.user);
         setTab('verify-notice');
       } else if (tab === 'forgot') {
-        const resp = await forgotPassword(formData.forgotEmail);
+        const resp = await forgotPassword(formData.forgotEmail, cfToken);
+        resetTurnstile();
         setSuccess(resp.message);
       }
     } catch (err) {
       setError(err.response?.data?.error || err.message || 'Đã xảy ra lỗi');
+      resetTurnstile();
     } finally {
       setLoading(false);
     }
@@ -233,6 +293,9 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
 
       {/* Modal */}
       <div className="relative w-full max-w-md bg-surface border border-line rounded-2xl shadow-2xl animate-fade-in">
+        {/* Turnstile (invisible) */}
+        <div ref={turnstileRef} className="hidden" />
+
         {/* Close button */}
         <button
           onClick={onClose}

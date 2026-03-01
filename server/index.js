@@ -53,6 +53,24 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
+// ── Cloudflare Turnstile ──
+const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || '0x4AAAAAACCkE-YqorZdo6vjcjprTWSC8lM';
+async function verifyTurnstile(token, ip) {
+  if (!TURNSTILE_SECRET || NODE_ENV === 'development') return true;
+  if (!token) return false;
+  try {
+    const resp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ secret: TURNSTILE_SECRET, response: token, remoteip: ip }),
+    });
+    const data = await resp.json();
+    return data.success === true;
+  } catch {
+    return true; // fail open if Turnstile service is down
+  }
+}
+
 // Trust proxy (nginx) for correct client IP
 app.set('trust proxy', true);
 
@@ -190,7 +208,11 @@ app.use('/api', checkBan);
 
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { username, email, password, displayName } = req.body;
+    const { username, email, password, displayName, turnstileToken } = req.body;
+    const ip = getClientIp(req);
+    if (!await verifyTurnstile(turnstileToken, ip)) {
+      return res.status(403).json({ error: 'Xác minh bảo mật thất bại. Vui lòng thử lại.' });
+    }
     if (!username || !email || !password) {
       return res.status(400).json({ error: 'Vui lòng điền đầy đủ thông tin' });
     }
@@ -264,7 +286,11 @@ app.post('/api/auth/resend-verification', async (req, res) => {
 
 app.post('/api/auth/forgot-password', async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, turnstileToken } = req.body;
+    const ip = getClientIp(req);
+    if (!await verifyTurnstile(turnstileToken, ip)) {
+      return res.status(403).json({ error: 'Xác minh bảo mật thất bại. Vui lòng thử lại.' });
+    }
     if (!email) return res.status(400).json({ error: 'Vui lòng nhập email' });
     const user = getUserByEmail(email);
     // Don't reveal if email exists or not for security
@@ -300,11 +326,14 @@ app.post('/api/auth/reset-password', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
   try {
-    const { login, password } = req.body;
+    const { login, password, turnstileToken } = req.body;
+    const ip = getClientIp(req);
+    if (!await verifyTurnstile(turnstileToken, ip)) {
+      return res.status(403).json({ error: 'Xác minh bảo mật thất bại. Vui lòng thử lại.' });
+    }
     if (!login || !password) {
       return res.status(400).json({ error: 'Vui lòng nhập tên đăng nhập/email và mật khẩu' });
     }
-    const ip = getClientIp(req);
     const result = authenticateUser(login, password, ip);
 
     // If 2FA is required, return a temp token instead of the real JWT
