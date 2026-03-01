@@ -125,9 +125,9 @@ export default function FileUpload({ onUploadComplete, user, onAuthRequired }) {
           relative border-2 border-dashed rounded-3xl p-12 text-center transition-all duration-500 cursor-pointer overflow-hidden
           ${dragActive
             ? 'border-primary-400 bg-primary-600/20 scale-[1.02] shadow-[0_0_40px_rgba(99,102,241,0.2)]'
-            : 'border-[#2e3144] bg-[#1a1d27]/80 backdrop-blur-md hover:border-primary-500/50 hover:bg-[#1a1d27] hover:shadow-2xl'
+            : 'border-line bg-surface/80 backdrop-blur-md hover:border-primary-500/50 hover:bg-surface hover:shadow-2xl'
           }
-          ${uploading ? 'pointer-events-none border-transparent bg-[#1a1d27]' : ''}
+          ${uploading ? 'pointer-events-none border-transparent bg-surface' : ''}
         `}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
@@ -158,17 +158,17 @@ export default function FileUpload({ onUploadComplete, user, onAuthRequired }) {
               <div className="absolute inset-0 rounded-2xl border border-white/5" />
               <Upload size={32} className={`text-primary-400 transition-transform duration-300 ${dragActive ? '-translate-y-2 animate-pulse' : ''}`} />
             </div>
-            <h3 className="text-xl font-bold mb-3 text-white">
+            <h3 className="text-xl font-bold mb-3 text-txt">
               Kéo thả file vào đây hoặc <span className="text-primary-400">chọn file</span>
             </h3>
-            <p className="text-sm text-[#9496a1] mb-6 font-medium">
+            <p className="text-sm text-muted mb-6 font-medium">
               Hỗ trợ PDF, DOCX, PPTX, XLSX, TXT, MD, MP3, WAV (tối đa 50MB)
             </p>
-            <div className="flex items-center justify-center gap-6 text-xs text-[#9496a1]">
-              <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1a1d27] border border-[#2e3144]">
+            <div className="flex items-center justify-center gap-6 text-xs text-muted">
+              <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-line">
                 <FileText size={14} className="text-primary-400" /> Tài liệu Text/PDF
               </span>
-              <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1a1d27] border border-[#2e3144]">
+              <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-line">
                 <Mic size={14} className="text-accent-400" /> Ghi âm bài giảng
               </span>
             </div>
@@ -181,8 +181,8 @@ export default function FileUpload({ onUploadComplete, user, onAuthRequired }) {
               <Loader2 size={32} className="text-primary-400 animate-spin relative z-10" />
               <div className="absolute inset-0 bg-primary-500/30 blur-xl rounded-full animate-pulse" />
             </div>
-            <p className="font-medium text-lg text-white">Đang tải lên... {uploadProgress}%</p>
-            <div className="w-full max-w-sm mx-auto bg-[#242736] border border-[#2e3144] rounded-full h-3 p-0.5 overflow-hidden">
+            <p className="font-medium text-lg text-txt">Đang tải lên... {uploadProgress}%</p>
+            <div className="w-full max-w-sm mx-auto bg-surface-2 border border-line rounded-full h-3 p-0.5 overflow-hidden">
               <div
                 className="bg-primary-600 h-full rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(99,102,241,0.5)] relative"
                 style={{ width: `${uploadProgress}%` }}
@@ -197,14 +197,14 @@ export default function FileUpload({ onUploadComplete, user, onAuthRequired }) {
           <div className="space-y-4 animate-in fade-in zoom-in-95 duration-700 relative z-10">
             <div className="relative w-24 h-24 mx-auto mb-4 perspective-1000">
               <div className="absolute inset-0 bg-accent-500/20 border border-accent-500/40 rounded-2xl transform rotate-6 translate-y-2 opacity-50" />
-              <div className="absolute inset-0 bg-[#1a1d27] border border-[#2e3144] shadow-2xl rounded-2xl flex items-center justify-center p-4 animate-[flip_3s_ease-in-out_infinite_alternate]">
+              <div className="absolute inset-0 bg-surface border border-line shadow-2xl rounded-2xl flex items-center justify-center p-4 animate-[flip_3s_ease-in-out_infinite_alternate]">
                 <Loader2 size={32} className="text-accent-400 animate-spin" />
               </div>
             </div>
             <p className="font-medium text-lg text-accent-400">
               Đang xử lý tài liệu<span className="loading-dots"></span>
             </p>
-            <p className="text-sm text-[#9496a1]">AI đang trích xuất và phân tích nội dung</p>
+            <p className="text-sm text-muted">AI đang trích xuất và phân tích nội dung</p>
           </div>
         )}
 
@@ -222,7 +222,7 @@ export default function FileUpload({ onUploadComplete, user, onAuthRequired }) {
           <div className="space-y-4">
             <AlertCircle size={32} className="mx-auto text-red-400" />
             <p className="font-medium text-red-400">Lỗi xử lý</p>
-            <p className="text-sm text-[#9496a1]">{error}</p>
+            <p className="text-sm text-muted">{error}</p>
             <div className="flex items-center justify-center gap-3">
               {!user && error.includes('Đăng ký') && onAuthRequired && (
                 <button

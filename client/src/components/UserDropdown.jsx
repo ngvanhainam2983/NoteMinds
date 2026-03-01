@@ -31,7 +31,7 @@ export default function UserDropdown({ user, onLogout, onOpenAdmin, onOpenPricin
         {/* User button */}
         <button
           onClick={() => setOpen(!open)}
-          className="flex items-center gap-2 bg-[#242736] hover:bg-[#2e3144] px-3 py-1.5 rounded-full transition-colors"
+          className="flex items-center gap-2 bg-surface-2 hover:bg-line px-3 py-1.5 rounded-full transition-colors"
         >
           <User size={14} className="text-primary-400" />
           <span className="text-sm font-medium max-w-[120px] truncate">
@@ -45,16 +45,16 @@ export default function UserDropdown({ user, onLogout, onOpenAdmin, onOpenPricin
               {planBadge} {user.planLabel}
             </span>
           )}
-          <ChevronDown size={14} className={`text-[#9496a1] transition-transform ${open ? 'rotate-180' : ''}`} />
+          <ChevronDown size={14} className={`text-muted transition-transform ${open ? 'rotate-180' : ''}`} />
         </button>
 
         {/* Dropdown menu */}
         {open && (
-          <div className="absolute right-0 top-full mt-2 w-56 bg-[#1a1d27] border border-[#2e3144] rounded-xl shadow-2xl overflow-hidden z-50 animate-fade-in">
+          <div className="absolute right-0 top-full mt-2 w-56 bg-surface border border-line rounded-xl shadow-2xl overflow-hidden z-50 animate-fade-in">
             {/* User info header */}
-            <div className="px-4 py-3 border-b border-[#2e3144]">
+            <div className="px-4 py-3 border-b border-line">
               <p className="text-sm font-medium truncate">{user.displayName || user.username}</p>
-              <p className="text-xs text-[#9496a1] truncate">{user.email}</p>
+              <p className="text-xs text-muted truncate">{user.email}</p>
               <div className="flex items-center gap-1.5 mt-1">
                 <span
                   className="text-xs px-2 py-0.5 rounded-full font-medium"
@@ -94,7 +94,7 @@ export default function UserDropdown({ user, onLogout, onOpenAdmin, onOpenPricin
                   accent
                 />
               )}
-              <div className="border-t border-[#2e3144] my-1" />
+              <div className="border-t border-line my-1" />
               <DropdownItem
                 icon={<LogOut size={15} />}
                 label="Đăng xuất"
@@ -128,7 +128,7 @@ export default function UserDropdown({ user, onLogout, onOpenAdmin, onOpenPricin
 }
 
 function DropdownItem({ icon, label, onClick, accent, danger }) {
-  let colorClass = 'text-[#e4e5e9] hover:bg-[#242736]';
+  let colorClass = 'text-txt hover:bg-surface-2';
   if (accent) colorClass = 'text-primary-400 hover:bg-primary-600/10';
   if (danger) colorClass = 'text-red-400 hover:bg-red-500/10';
 
@@ -158,7 +158,7 @@ function HistoryModal({ onClose, onOpenDocument }) {
   const isExpired = (doc) => !!doc.deleted_at;
 
   const statusIcon = (doc) => {
-    if (isExpired(doc)) return <Clock size={14} className="text-[#555]" />;
+    if (isExpired(doc)) return <Clock size={14} className="text-muted/60" />;
     if (doc.status === 'ready') return <CheckCircle2 size={14} className="text-emerald-400" />;
     if (doc.status === 'error') return <AlertTriangle size={14} className="text-red-400" />;
     return <Loader2 size={14} className="text-yellow-400 animate-spin" />;
@@ -195,13 +195,13 @@ function HistoryModal({ onClose, onOpenDocument }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-lg max-h-[80vh] flex flex-col bg-[#1a1d27] border border-[#2e3144] rounded-2xl shadow-2xl animate-fade-in">
+      <div className="relative w-full max-w-lg max-h-[80vh] flex flex-col bg-surface border border-line rounded-2xl shadow-2xl animate-fade-in">
         <div className="flex items-center justify-between px-6 pt-5 pb-3">
           <div className="flex items-center gap-2">
             <History size={20} className="text-primary-400" />
             <h2 className="text-lg font-bold font-display">Lịch sử tài liệu</h2>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[#242736] text-[#9496a1] hover:text-white">
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-surface-2 text-muted hover:text-txt">
             <X size={18} />
           </button>
         </div>
@@ -220,21 +220,21 @@ function HistoryModal({ onClose, onOpenDocument }) {
                   <div key={doc.id}
                     onClick={() => onOpenDocument?.(doc)}
                     className={`flex items-start gap-3 rounded-xl px-4 py-3 transition-colors border cursor-pointer ${expired
-                      ? 'bg-[#0f1117]/50 border-[#1e2030] opacity-60 hover:opacity-80 hover:border-[#3e4154]'
-                      : 'bg-[#0f1117] border-[#2e3144] hover:border-primary-500/30'
+                      ? 'bg-bg/50 border-line opacity-60 hover:opacity-80 hover:border-line'
+                      : 'bg-bg border-line hover:border-primary-500/30'
                       }`}>
                     <FileText size={18} className={`shrink-0 mt-0.5 ${expired ? 'text-[#444]' : 'text-primary-400'}`} />
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium truncate ${expired ? 'text-[#555] line-through' : ''}`}>
+                      <p className={`text-sm font-medium truncate ${expired ? 'text-muted/60 line-through' : ''}`}>
                         {doc.original_name || 'Tài liệu không tên'}
                       </p>
                       <div className="flex items-center gap-3 mt-1">
-                        <span className={`flex items-center gap-1 text-xs ${expired ? 'text-[#555]' : 'text-[#9496a1]'}`}>
+                        <span className={`flex items-center gap-1 text-xs ${expired ? 'text-muted/60' : 'text-muted'}`}>
                           {statusIcon(doc)}
                           {statusLabel(doc)}
                         </span>
                         {doc.text_length > 0 && !expired && (
-                          <span className="text-xs text-[#9496a1]">
+                          <span className="text-xs text-muted">
                             {(doc.text_length / 1000).toFixed(1)}k ký tự
                           </span>
                         )}
@@ -248,7 +248,7 @@ function HistoryModal({ onClose, onOpenDocument }) {
                         <Clock size={11} className="text-[#666]" />
                         <span className="text-[11px] text-[#666]">{formatDate(doc.created_at)}</span>
                         {expired && (
-                          <span className="text-[10px] text-[#555] ml-2">• Đã xoá {formatDate(doc.deleted_at)}</span>
+                          <span className="text-[10px] text-muted/60 ml-2">• Đã xoá {formatDate(doc.deleted_at)}</span>
                         )}
                       </div>
                     </div>
@@ -258,8 +258,8 @@ function HistoryModal({ onClose, onOpenDocument }) {
             </div>
           ) : (
             <div className="text-center py-12">
-              <FileText size={40} className="text-[#2e3144] mx-auto mb-3" />
-              <p className="text-sm text-[#9496a1]">Chưa có tài liệu nào</p>
+              <FileText size={40} className="text-line mx-auto mb-3" />
+              <p className="text-sm text-muted">Chưa có tài liệu nào</p>
               <p className="text-xs text-[#666] mt-1">Upload tài liệu để bắt đầu</p>
             </div>
           )}

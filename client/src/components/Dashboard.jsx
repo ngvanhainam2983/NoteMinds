@@ -256,14 +256,14 @@ export default function Dashboard({ doc, user }) {
       />
 
       {/* Document info bar */}
-      <div className="tour-doc-info flex items-center gap-3 mb-4 bg-[#1a1d27] border border-[#2e3144] rounded-xl px-5 py-3">
+      <div className="tour-doc-info flex items-center gap-3 mb-4 bg-surface border border-line rounded-xl px-5 py-3">
         <FileText size={18} className="text-primary-400 shrink-0" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium truncate">
             {docDetails.fileName}
             {docDetails.isLocked && <span className="ml-2 px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 text-[10px] border border-red-500/20">Đã xóa gốc</span>}
           </p>
-          <p className="text-xs text-[#9496a1]">
+          <p className="text-xs text-muted">
             {docDetails.textLength ? `${(docDetails.textLength / 1000).toFixed(1)}k ký tự` : 'Đã xử lý'}
           </p>
         </div>
@@ -280,7 +280,7 @@ export default function Dashboard({ doc, user }) {
           disabled={isTogglingPublic}
           className={`flex items-center gap-1.5 px-3 py-1.5 text-xs border rounded-lg transition-colors ${isPublic
             ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
-            : 'bg-[#242736] border-[#2e3144] hover:bg-[#2e3144] text-[#9496a1]'
+            : 'bg-surface-2 border-line hover:bg-line text-muted'
             } disabled:opacity-50`}
           title={isPublic ? "Đang công khai" : "Chỉ mình tôi"}
         >
@@ -293,7 +293,7 @@ export default function Dashboard({ doc, user }) {
           onClick={() => setShowPomodoro(!showPomodoro)}
           className={`flex items-center gap-1.5 px-3 py-1.5 text-xs border rounded-lg transition-colors ${showPomodoro
             ? 'bg-primary-500/10 border-primary-500/30 text-primary-400'
-            : 'bg-[#242736] border-[#2e3144] hover:bg-[#2e3144]'
+            : 'bg-surface-2 border-line hover:bg-line'
             }`}
           title="Focus Mode (Pomodoro)"
         >
@@ -313,7 +313,7 @@ export default function Dashboard({ doc, user }) {
           <span className="hidden sm:inline">{isDownloading ? 'Đang tải...' : 'Tải file gốc'}</span>
         </button>
 
-        <div className="w-px h-6 bg-[#2e3144] mx-1 hidden sm:block"></div>
+        <div className="w-px h-6 bg-line mx-1 hidden sm:block"></div>
 
         {[
           { icon: Search, label: 'Tìm kiếm', onClick: () => setShowSearch(true) },
@@ -325,7 +325,7 @@ export default function Dashboard({ doc, user }) {
           <button
             key={i}
             onClick={btn.onClick}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-[#1a1d27] border border-[#2e3144] rounded-lg text-[#9496a1] hover:text-white hover:border-primary-500/40 transition-all"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-surface border border-line rounded-lg text-muted hover:text-txt hover:border-primary-500/40 transition-all"
           >
             <btn.icon size={14} />
             <span className="hidden sm:inline">{btn.label}</span>
@@ -355,7 +355,7 @@ export default function Dashboard({ doc, user }) {
       {showPomodoro && <PomodoroTimer onClose={() => setShowPomodoro(false)} />}
 
       {/* Tabs */}
-      <div className="tour-tabs flex gap-2 mb-6 bg-[#1a1d27] border border-[#2e3144] rounded-xl p-1.5">
+      <div className="tour-tabs flex gap-2 mb-6 bg-surface border border-line rounded-xl p-1.5">
         {TABS.map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -367,7 +367,7 @@ export default function Dashboard({ doc, user }) {
                 flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
                 ${isActive
                   ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/25'
-                  : 'text-[#9496a1] hover:text-white hover:bg-[#242736]'
+                  : 'text-muted hover:text-txt hover:bg-surface-2'
                 }
               `}
             >
@@ -379,7 +379,7 @@ export default function Dashboard({ doc, user }) {
       </div>
 
       {/* Tab content */}
-      <div className="bg-[#1a1d27] border border-[#2e3144] rounded-2xl min-h-[500px] overflow-hidden">
+      <div className="bg-surface border border-line rounded-2xl min-h-[500px] overflow-hidden">
         {activeTab === 'mindmap' && (
           <MindmapView
             data={mindmapData}
@@ -409,13 +409,13 @@ export default function Dashboard({ doc, user }) {
 
       {/* Floating Chatbox */}
       <div className={`fixed bottom-6 right-6 z-40 transition-all duration-300 ${showChat ? 'w-[400px] h-[600px] max-w-[calc(100vw-3rem)] max-h-[calc(100vh-6rem)] opacity-100 translate-y-0' : 'w-14 h-14 opacity-0 pointer-events-none translate-y-10'}`}>
-        <div className="w-full h-full bg-[#1a1d27] border border-[#2e3144] shadow-2xl rounded-2xl flex flex-col overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 bg-[#242736] border-b border-[#2e3144]">
+        <div className="w-full h-full bg-surface border border-line shadow-2xl rounded-2xl flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 bg-surface-2 border-b border-line">
             <div className="flex items-center gap-2">
               <MessageCircle size={18} className="text-primary-400" />
               <span className="font-semibold text-sm">Hỏi đáp với A.I</span>
             </div>
-            <button onClick={() => setShowChat(false)} className="text-[#9496a1] hover:text-white transition-colors">
+            <button onClick={() => setShowChat(false)} className="text-muted hover:text-txt transition-colors">
               <XCircle size={20} />
             </button>
           </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BrainCircuit, ArrowLeft, LogIn, Menu, X, Palette, CheckCircle2, History, Globe } from 'lucide-react';
+import { BrainCircuit, ArrowLeft, LogIn, Menu, X, Palette, CheckCircle2, History, Globe, Sun, Moon, Monitor } from 'lucide-react';
 import UserDropdown from './UserDropdown';
 import { useTheme, THEMES } from '../ThemeContext';
 
@@ -14,7 +14,15 @@ const NAV_ITEMS = [
 export default function Header({ onBackHome, showBack, user, onLoginClick, onLogout, onOpenAdmin, onOpenPricing, onUserUpdate, onOpenDocument, onOpenHistory, onOpenProfile, currentView }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [themePicker, setThemePicker] = useState(false);
-  const { theme: currentTheme, setTheme } = useTheme();
+  const { theme: currentTheme, setTheme, mode, setMode } = useTheme();
+
+  const MODE_CYCLE = ['light', 'dark', 'auto'];
+  const MODE_ICON = { light: Sun, dark: Moon, auto: Monitor };
+  const MODE_LABEL = { light: 'Sáng', dark: 'Tối', auto: 'Hệ thống' };
+  const cycleMode = () => {
+    const idx = MODE_CYCLE.indexOf(mode);
+    setMode(MODE_CYCLE[(idx + 1) % MODE_CYCLE.length]);
+  };
 
   const handleNav = (target) => {
     setMobileOpen(false);
@@ -49,7 +57,7 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
           {showBack && (
             <button
               onClick={onBackHome}
-              className="p-2 rounded-lg hover:bg-[#242736] transition-colors mr-2"
+              className="p-2 rounded-lg hover:bg-surface-2 transition-colors mr-2"
               title="Về trang chủ"
             >
               <ArrowLeft size={20} />
@@ -77,7 +85,7 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
                   onClick={() => handleNav(item.target)}
                   className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
                     ? 'text-primary-400 bg-primary-600/10'
-                    : 'text-[#9496a1] hover:text-white hover:bg-[#242736]'
+                    : 'text-muted hover:text-txt hover:bg-surface-2'
                     }`}
                 >
                   {Icon && <Icon size={15} />}
@@ -90,11 +98,25 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
 
         {/* Right: Actions */}
         <div className="flex items-center gap-3">
+          {/* Light / Dark mode toggle */}
+          {(() => {
+            const ModeIcon = MODE_ICON[mode];
+            return (
+              <button
+                onClick={cycleMode}
+                className="p-2 rounded-lg hover:bg-surface-2 transition-colors text-muted hover:text-primary-400"
+                title={`Chế độ: ${MODE_LABEL[mode]}`}
+              >
+                <ModeIcon size={18} />
+              </button>
+            );
+          })()}
+
           {/* Theme picker button */}
           <div className="relative">
             <button
               onClick={() => setThemePicker(!themePicker)}
-              className="p-2 rounded-lg hover:bg-[#242736] transition-colors text-[#9496a1] hover:text-primary-400"
+              className="p-2 rounded-lg hover:bg-surface-2 transition-colors text-muted hover:text-primary-400"
               title="Đổi giao diện"
             >
               <Palette size={18} />
@@ -102,8 +124,8 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
             {themePicker && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setThemePicker(false)} />
-                <div className="absolute right-0 top-full mt-2 z-50 bg-[#1a1d27] border border-[#2e3144] rounded-xl p-3 shadow-2xl w-52 animate-fade-in">
-                  <p className="text-[10px] text-[#9496a1] mb-2 font-medium uppercase tracking-wider">Giao diện</p>
+                <div className="absolute right-0 top-full mt-2 z-50 bg-surface border border-line rounded-xl p-3 shadow-2xl w-52 animate-fade-in">
+                  <p className="text-[10px] text-muted mb-2 font-medium uppercase tracking-wider">Giao diện</p>
                   <div className="grid grid-cols-2 gap-1.5">
                     {Object.entries(THEMES).map(([key, t]) => (
                       <button
@@ -111,7 +133,7 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
                         onClick={() => { setTheme(key); setThemePicker(false); }}
                         className={`flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition-all ${currentTheme === key
                           ? 'bg-primary-600/15 text-primary-400 ring-1 ring-primary-500/40'
-                          : 'text-[#9496a1] hover:bg-[#242736] hover:text-white'
+                          : 'text-muted hover:bg-surface-2 hover:text-txt'
                           }`}
                       >
                         <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: t.primary['500'] }} />
@@ -124,7 +146,7 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
             )}
           </div>
 
-          <span className="hidden lg:inline text-xs text-[#9496a1] bg-[#242736] px-3 py-1.5 rounded-full">
+          <span className="hidden lg:inline text-xs text-muted bg-surface-2 px-3 py-1.5 rounded-full">
             Bài dự thi của đội Đèn Giao Thông
           </span>
 
@@ -152,7 +174,7 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
           {!showBack && (
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden p-2 rounded-lg hover:bg-[#242736] transition-colors"
+              className="md:hidden p-2 rounded-lg hover:bg-surface-2 transition-colors"
             >
               {mobileOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
@@ -162,7 +184,7 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
 
       {/* Mobile nav dropdown */}
       {mobileOpen && !showBack && (
-        <div className="md:hidden border-t border-[#2e3144] bg-[#1a1d27]/95 backdrop-blur-lg animate-fade-in">
+        <div className="md:hidden border-t border-line bg-surface/95 backdrop-blur-lg animate-fade-in">
           <nav className="max-w-7xl mx-auto px-4 py-3 flex flex-col gap-1">
             {NAV_ITEMS.filter(item => !item.requireAuth || user).map((item) => {
               const Icon = item.icon;
@@ -173,7 +195,7 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
                   onClick={() => handleNav(item.target)}
                   className={`flex items-center gap-1.5 text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive
                     ? 'text-primary-400 bg-primary-600/10'
-                    : 'text-[#9496a1] hover:text-white hover:bg-[#242736]'
+                    : 'text-muted hover:text-txt hover:bg-surface-2'
                     }`}
                 >
                   {Icon && <Icon size={15} />}

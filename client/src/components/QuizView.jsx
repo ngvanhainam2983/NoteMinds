@@ -79,22 +79,22 @@ export default function QuizView({ data, loading, error, onGenerate }) {
     // --- Loading & Error States ---
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[500px] h-full gap-8 relative overflow-hidden bg-[#1a1d27]">
+            <div className="flex flex-col items-center justify-center min-h-[500px] h-full gap-8 relative overflow-hidden bg-surface">
                 {/* Quiz Skeleton */}
-                <div className="w-full max-w-2xl bg-[#242736] border border-[#2e3144] rounded-3xl p-8 relative overflow-hidden mt-8 opacity-60 pointer-events-none">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-[#2e3144]">
+                <div className="w-full max-w-2xl bg-surface-2 border border-line rounded-3xl p-8 relative overflow-hidden mt-8 opacity-60 pointer-events-none">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-line">
                         <div className="h-full bg-primary-600/50 w-1/3 animate-pulse" />
                     </div>
                     {/* Skeleton Question Title */}
                     <div className="flex items-center gap-4 mb-8 mt-2">
-                        <div className="w-16 h-8 bg-[#2e3144] rounded-lg animate-pulse" />
-                        <div className="flex-1 h-6 bg-[#2e3144] rounded-full animate-pulse delay-75" />
+                        <div className="w-16 h-8 bg-line rounded-lg animate-pulse" />
+                        <div className="flex-1 h-6 bg-line rounded-full animate-pulse delay-75" />
                     </div>
                     {/* Skeleton Options */}
                     <div className="space-y-4">
                         {[1, 2, 3, 4].map((i) => (
-                            <div key={i} className="w-full h-16 bg-[#1a1d27] border border-[#2e3144] rounded-2xl flex items-center px-6 animate-pulse" style={{ animationDelay: `${i * 100}ms` }}>
-                                <div className="w-3/4 h-4 bg-[#2e3144] rounded-full" />
+                            <div key={i} className="w-full h-16 bg-surface border border-line rounded-2xl flex items-center px-6 animate-pulse" style={{ animationDelay: `${i * 100}ms` }}>
+                                <div className="w-3/4 h-4 bg-line rounded-full" />
                             </div>
                         ))}
                     </div>
@@ -108,7 +108,7 @@ export default function QuizView({ data, loading, error, onGenerate }) {
                     <p className="font-medium bg-clip-text text-transparent bg-gradient-to-r from-primary-400 to-primary-600 transition-all duration-500 text-center w-72 min-h-[40px] flex items-center justify-center">
                         {loadingText}
                     </p>
-                    <div className="w-48 bg-[#2e3144] h-1 rounded-full mt-4 overflow-hidden">
+                    <div className="w-48 bg-line h-1 rounded-full mt-4 overflow-hidden">
                         <div className="h-full bg-primary-500 rounded-full w-1/3 animate-[slide_2s_ease-in-out_infinite_alternate]" />
                     </div>
                 </div>
@@ -119,8 +119,8 @@ export default function QuizView({ data, loading, error, onGenerate }) {
     if (error || !data?.questions) {
         return (
             <div className="flex flex-col items-center justify-center h-[500px] gap-4 animate-fade-in">
-                {error ? <AlertCircle size={40} className="text-red-400" /> : <Presentation size={48} className="text-[#2e3144]" />}
-                <p className={error ? "text-red-400" : "text-[#9496a1]"}>{error ? "Lỗi tạo bài tập" : "Chưa có bài kiểm tra"}</p>
+                {error ? <AlertCircle size={40} className="text-red-400" /> : <Presentation size={48} className="text-line" />}
+                <p className={error ? "text-red-400" : "text-muted"}>{error ? "Lỗi tạo bài tập" : "Chưa có bài kiểm tra"}</p>
                 <button onClick={onGenerate} className="flex items-center gap-2 px-6 py-2 bg-primary-600 rounded-xl hover:bg-primary-700 transition-all shadow-lg hover:shadow-primary-600/20 active:scale-95">
                     <RefreshCw size={14} /> {error ? "Thử lại" : "Tạo Bài Kiểm Tra"}
                 </button>
@@ -134,7 +134,7 @@ export default function QuizView({ data, loading, error, onGenerate }) {
     // Final Summary View
     if (viewingSummary) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[500px] gap-6 max-w-lg mx-auto p-8 bg-[#1a1d27] rounded-3xl border border-[#2e3144] animate-in fade-in zoom-in duration-500 shadow-2xl relative overflow-hidden">
+            <div className="flex flex-col items-center justify-center min-h-[500px] gap-6 max-w-lg mx-auto p-8 bg-surface rounded-3xl border border-line animate-in fade-in zoom-in duration-500 shadow-2xl relative overflow-hidden">
                 {percent === 100 && <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent pointer-events-none" />}
                 <div className="relative">
                     <svg className="w-32 h-32 transform -rotate-90 drop-shadow-lg">
@@ -153,14 +153,14 @@ export default function QuizView({ data, loading, error, onGenerate }) {
                 </div>
 
                 <div className="text-center animate-in slide-in-from-bottom-4 duration-500 delay-150">
-                    <h3 className="text-2xl font-semibold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white to-[#9496a1]">
+                    <h3 className="text-2xl font-semibold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white to-muted">
                         {percent === 100 ? 'Tuyệt đỉnh! 🏆' : percent >= 80 ? 'Xuất sắc! 🎉' : percent >= 50 ? 'Khá Tốt! 👍' : 'Cần cố gắng hơn 💪'}
                     </h3>
-                    <p className="text-[#9496a1]">{data.title}</p>
+                    <p className="text-muted">{data.title}</p>
                 </div>
 
                 <div className="flex gap-4 w-full mt-4 animate-in slide-in-from-bottom-4 duration-500 delay-300">
-                    <button onClick={() => setViewingSummary(false)} className="flex-1 py-3 px-4 rounded-xl border border-[#2e3144] hover:bg-[#2e3144]/50 hover:text-white transition-all font-medium active:scale-95">
+                    <button onClick={() => setViewingSummary(false)} className="flex-1 py-3 px-4 rounded-xl border border-line hover:bg-line/50 hover:text-txt transition-all font-medium active:scale-95">
                         Xem lại đáp án
                     </button>
                     <button onClick={resetQuiz} className="flex-1 py-3 px-4 rounded-xl bg-primary-600 hover:bg-primary-700 transition-all font-medium shadow-lg hover:shadow-primary-600/20 active:scale-95">
@@ -196,7 +196,7 @@ export default function QuizView({ data, loading, error, onGenerate }) {
                                         : 'bg-red-500/20 text-red-400 border border-red-500/40')
                                     : selectedAnswers[idx] !== undefined
                                         ? 'bg-primary-600/20 text-primary-400 border border-primary-500/30'
-                                        : 'bg-[#242736] text-[#9496a1] border border-transparent hover:bg-[#2e3144]'
+                                        : 'bg-surface-2 text-muted border border-transparent hover:bg-line'
                                 }`}
                         >
                             {idx + 1}
@@ -207,8 +207,8 @@ export default function QuizView({ data, loading, error, onGenerate }) {
 
             {/* Question Card */}
             <div className="flex-1 overflow-y-auto pb-20">
-                <div className="bg-[#1a1d27] rounded-3xl p-8 border border-[#2e3144] shadow-xl relative overflow-hidden min-h-[400px] transition-all duration-300 animate-in fade-in slide-in-from-bottom-4">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-[#2e3144]">
+                <div className="bg-surface rounded-3xl p-8 border border-line shadow-xl relative overflow-hidden min-h-[400px] transition-all duration-300 animate-in fade-in slide-in-from-bottom-4">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-line">
                         <div className="h-full bg-gradient-to-r from-primary-600 to-primary-400 transition-all duration-500 ease-out shadow-[0_0_10px_rgba(99,102,241,0.5)]" style={{ width: `${((currentQuestionIdx + 1) / qLen) * 100}%` }} />
                     </div>
 
@@ -224,11 +224,11 @@ export default function QuizView({ data, loading, error, onGenerate }) {
 
                             let btnStyle = "w-full text-left p-5 rounded-2xl border-2 transition-all flex items-center justify-between ";
                             if (!showResults) {
-                                btnStyle += isSelected ? "bg-primary-600/10 border-primary-500 text-white" : "bg-[#242736] border-transparent hover:border-[#2e3144] text-[#e4e5e9]";
+                                btnStyle += isSelected ? "bg-primary-600/10 border-primary-500 text-txt" : "bg-surface-2 border-transparent hover:border-line text-txt";
                             } else {
                                 if (isCorrect) btnStyle += "bg-emerald-500/10 border-emerald-500/50 text-emerald-100";
                                 else if (isSelected) btnStyle += "bg-red-500/10 border-red-500/50 text-red-100";
-                                else btnStyle += "bg-[#242736] border-transparent opacity-50";
+                                else btnStyle += "bg-surface-2 border-transparent opacity-50";
                             }
 
                             return (
@@ -246,7 +246,7 @@ export default function QuizView({ data, loading, error, onGenerate }) {
                             <h4 className={`font-bold text-sm uppercase tracking-wider mb-2 ${selectedOptionIndex === currentQuestion.correctAnswerIndex ? 'text-emerald-400' : 'text-red-400'}`}>
                                 Giải thích:
                             </h4>
-                            <p className="text-sm leading-relaxed text-[#9496a1] italic">
+                            <p className="text-sm leading-relaxed text-muted italic">
                                 {currentQuestion.explanation}
                             </p>
                         </div>
@@ -258,7 +258,7 @@ export default function QuizView({ data, loading, error, onGenerate }) {
                     <button
                         onClick={() => setCurrentQuestionIdx(p => Math.max(0, p - 1))}
                         disabled={currentQuestionIdx === 0}
-                        className="px-5 py-3 rounded-xl font-medium disabled:opacity-20 hover:bg-[#2e3144] transition-colors flex items-center gap-2"
+                        className="px-5 py-3 rounded-xl font-medium disabled:opacity-20 hover:bg-line transition-colors flex items-center gap-2"
                     >
                         <ChevronLeft size={18} /> Câu trước
                     </button>
@@ -287,7 +287,7 @@ export default function QuizView({ data, loading, error, onGenerate }) {
                         currentQuestionIdx === qLen - 1 ? (
                             <button
                                 onClick={() => setViewingSummary(true)}
-                                className="px-8 py-3 bg-[#242736] border border-[#2e3144] rounded-xl font-medium hover:bg-[#2e3144] transition-all"
+                                className="px-8 py-3 bg-surface-2 border border-line rounded-xl font-medium hover:bg-line transition-all"
                             >
                                 Xem tổng kết điểm
                             </button>

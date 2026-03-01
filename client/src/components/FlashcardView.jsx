@@ -43,21 +43,21 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId 
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[500px] h-full gap-8 relative overflow-hidden bg-[#1a1d27]">
+      <div className="flex flex-col items-center justify-center min-h-[500px] h-full gap-8 relative overflow-hidden bg-surface">
         {/* Flashcard Skeleton Animation */}
         <div className="relative w-64 h-80 perspective-1000 mt-8">
           {/* Back card 3 */}
-          <div className="absolute inset-0 bg-[#242736] border border-[#2e3144] rounded-2xl transform rotate-6 translate-y-4 opacity-30 pointer-events-none" />
+          <div className="absolute inset-0 bg-surface-2 border border-line rounded-2xl transform rotate-6 translate-y-4 opacity-30 pointer-events-none" />
           {/* Back card 2 */}
-          <div className="absolute inset-0 bg-[#242736] border border-[#2e3144] rounded-2xl transform -rotate-3 translate-y-2 opacity-60 pointer-events-none" />
+          <div className="absolute inset-0 bg-surface-2 border border-line rounded-2xl transform -rotate-3 translate-y-2 opacity-60 pointer-events-none" />
           {/* Front card */}
-          <div className="absolute inset-0 bg-[#1a1d27] border border-[#2e3144] shadow-2xl rounded-2xl flex flex-col items-center justify-center p-6 animate-[flip_3s_ease-in-out_infinite_alternate]">
+          <div className="absolute inset-0 bg-surface border border-line shadow-2xl rounded-2xl flex flex-col items-center justify-center p-6 animate-[flip_3s_ease-in-out_infinite_alternate]">
             <div className="w-12 h-12 rounded-full bg-accent-500/20 flex items-center justify-center mb-6">
               <Loader2 size={24} className="text-accent-400 animate-spin" />
             </div>
-            <div className="w-full h-4 bg-[#2e3144] rounded-full animate-pulse mb-3" />
-            <div className="w-3/4 h-4 bg-[#2e3144] rounded-full animate-pulse mb-6" />
-            <div className="w-1/2 h-2 bg-[#2e3144] rounded-full animate-pulse opacity-50" />
+            <div className="w-full h-4 bg-line rounded-full animate-pulse mb-3" />
+            <div className="w-3/4 h-4 bg-line rounded-full animate-pulse mb-6" />
+            <div className="w-1/2 h-2 bg-line rounded-full animate-pulse opacity-50" />
           </div>
         </div>
 
@@ -66,7 +66,7 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId 
           <p className="font-medium bg-clip-text text-transparent bg-gradient-to-r from-accent-400 to-accent-600 transition-all duration-500 text-center w-72 min-h-[40px] flex items-center justify-center">
             {loadingText}
           </p>
-          <div className="w-48 bg-[#2e3144] h-1 rounded-full mt-4 overflow-hidden">
+          <div className="w-48 bg-line h-1 rounded-full mt-4 overflow-hidden">
             <div className="h-full bg-accent-500 rounded-full w-1/3 animate-[slide_2s_ease-in-out_infinite_alternate]" />
           </div>
         </div>
@@ -79,7 +79,7 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId 
       <div className="flex flex-col items-center justify-center h-[500px] gap-4">
         <AlertCircle size={40} className="text-red-400" />
         <p className="text-red-400">Lỗi tạo Flashcard</p>
-        <p className="text-sm text-[#9496a1] max-w-md text-center">{error}</p>
+        <p className="text-sm text-muted max-w-md text-center">{error}</p>
         <button
           onClick={onGenerate}
           className="flex items-center gap-2 px-4 py-2 bg-primary-600 rounded-lg text-sm hover:bg-primary-700 transition-colors"
@@ -93,8 +93,8 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId 
   if (!data) {
     return (
       <div className="flex flex-col items-center justify-center h-[500px] gap-4">
-        <CreditCard size={48} className="text-[#2e3144]" />
-        <p className="text-[#9496a1]">Chưa có Flashcard</p>
+        <CreditCard size={48} className="text-line" />
+        <p className="text-muted">Chưa có Flashcard</p>
         <button
           onClick={onGenerate}
           className="px-6 py-2.5 bg-accent-600 rounded-xl text-sm font-medium hover:bg-accent-700 transition-colors shadow-lg shadow-accent-600/25"
@@ -190,29 +190,29 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId 
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="font-semibold">{data.title || 'Flashcards'}</h3>
-          <p className="text-xs text-[#9496a1] mt-1">{total} thẻ ghi nhớ</p>
+          <p className="text-xs text-muted mt-1">{total} thẻ ghi nhớ</p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setViewMode(viewMode === 'card' ? 'list' : 'card')}
-            className="px-3 py-1.5 text-xs bg-[#242736] border border-[#2e3144] rounded-lg hover:bg-[#2e3144] transition-colors"
+            className="px-3 py-1.5 text-xs bg-surface-2 border border-line rounded-lg hover:bg-line transition-colors"
           >
             {viewMode === 'card' ? 'Xem danh sách' : 'Xem thẻ'}
           </button>
           <div className="relative group">
-            <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[#242736] border border-[#2e3144] rounded-lg hover:bg-[#2e3144] transition-colors">
+            <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-surface-2 border border-line rounded-lg hover:bg-line transition-colors">
               <Download size={12} /> Xuất
             </button>
-            <div className="absolute right-0 top-full mt-1 bg-[#242736] border border-[#2e3144] rounded-lg overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 min-w-[140px]">
+            <div className="absolute right-0 top-full mt-1 bg-surface-2 border border-line rounded-lg overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 min-w-[140px]">
               <button
                 onClick={exportAnki}
-                className="w-full px-4 py-2 text-xs text-left hover:bg-[#2e3144] transition-colors"
+                className="w-full px-4 py-2 text-xs text-left hover:bg-line transition-colors"
               >
                 Anki (.txt)
               </button>
               <button
                 onClick={exportQuizlet}
-                className="w-full px-4 py-2 text-xs text-left hover:bg-[#2e3144] transition-colors"
+                className="w-full px-4 py-2 text-xs text-left hover:bg-line transition-colors"
               >
                 Quizlet (.txt)
               </button>
@@ -231,13 +231,13 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId 
           >
             <div className="flip-card-inner">
               {/* Front - Question */}
-              <div className="flip-card-front bg-gradient-to-br from-[#242736] to-[#1a1d27] border border-[#2e3144] rounded-2xl p-8 flex flex-col items-center justify-center relative">
+              <div className="flip-card-front bg-gradient-to-br from-surface-2 to-surface border border-line rounded-2xl p-8 flex flex-col items-center justify-center relative">
                 <span className="text-xs text-accent-400 font-medium mb-4 flex items-center gap-1">
                   <Tag size={12} /> {currentCard?.tag || 'Câu hỏi'}
                 </span>
                 <button
                   onClick={(e) => speakText(e, currentCard?.question || '')}
-                  className="absolute top-4 right-4 p-2 text-[#9496a1] hover:text-white bg-[#2e3144]/50 hover:bg-[#2e3144] rounded-full transition-colors"
+                  className="absolute top-4 right-4 p-2 text-muted hover:text-txt bg-line/50 hover:bg-line rounded-full transition-colors"
                   title="Đọc câu hỏi"
                 >
                   <Volume2 size={16} />
@@ -245,14 +245,14 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId 
                 <div className="text-lg font-medium text-center leading-relaxed">
                   <MarkdownRenderer content={currentCard?.question || ''} />
                 </div>
-                <span className="text-xs text-[#9496a1] mt-6">Nhấn để xem đáp án</span>
+                <span className="text-xs text-muted mt-6">Nhấn để xem đáp án</span>
               </div>
               {/* Back - Answer */}
-              <div className="flip-card-back bg-gradient-to-br from-primary-600/20 to-[#1a1d27] border border-primary-500/30 rounded-2xl p-8 flex flex-col items-center justify-center relative">
+              <div className="flip-card-back bg-gradient-to-br from-primary-600/20 to-surface border border-primary-500/30 rounded-2xl p-8 flex flex-col items-center justify-center relative">
                 <span className="text-xs text-primary-400 font-medium mb-4">Đáp án</span>
                 <button
                   onClick={(e) => speakText(e, currentCard?.answer || '')}
-                  className="absolute top-4 right-4 p-2 text-primary-400 hover:text-white bg-primary-600/20 hover:bg-primary-600/40 rounded-full transition-colors"
+                  className="absolute top-4 right-4 p-2 text-primary-400 hover:text-txt bg-primary-600/20 hover:bg-primary-600/40 rounded-full transition-colors"
                   title="Đọc đáp án"
                 >
                   <Volume2 size={16} />
@@ -260,7 +260,7 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId 
                 <div className="text-base text-center leading-relaxed">
                   <MarkdownRenderer content={currentCard?.answer || ''} />
                 </div>
-                <span className="text-xs text-[#9496a1] mt-6">Nhấn để xem câu hỏi</span>
+                <span className="text-xs text-muted mt-6">Nhấn để xem câu hỏi</span>
               </div>
             </div>
           </div>
@@ -274,7 +274,7 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId 
                 </div>
               ) : (
                 <div>
-                  <p className="text-xs text-[#9496a1] text-center mb-2">Bạn nhớ tốt đến đâu?</p>
+                  <p className="text-xs text-muted text-center mb-2">Bạn nhớ tốt đến đâu?</p>
                   <div className="grid grid-cols-6 gap-1.5">
                     {SR_GRADES.map(g => (
                       <button
@@ -296,16 +296,16 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId 
           <div className="flex items-center gap-4">
             <button
               onClick={goPrev}
-              className="p-3 bg-[#242736] border border-[#2e3144] rounded-xl hover:bg-[#2e3144] transition-colors"
+              className="p-3 bg-surface-2 border border-line rounded-xl hover:bg-line transition-colors"
             >
               <ChevronLeft size={20} />
             </button>
-            <span className="text-sm text-[#9496a1] min-w-[60px] text-center">
+            <span className="text-sm text-muted min-w-[60px] text-center">
               {currentIndex + 1} / {total}
             </span>
             <button
               onClick={goNext}
-              className="p-3 bg-[#242736] border border-[#2e3144] rounded-xl hover:bg-[#2e3144] transition-colors"
+              className="p-3 bg-surface-2 border border-line rounded-xl hover:bg-line transition-colors"
             >
               <ChevronRight size={20} />
             </button>
@@ -317,7 +317,7 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId 
               <button
                 key={i}
                 onClick={() => { setCurrentIndex(i); setFlipped(false); }}
-                className={`w-2 h-2 rounded-full transition-all ${i === currentIndex ? 'bg-primary-400 scale-125' : 'bg-[#2e3144] hover:bg-[#9496a1]'
+                className={`w-2 h-2 rounded-full transition-all ${i === currentIndex ? 'bg-primary-400 scale-125' : 'bg-line hover:bg-muted'
                   }`}
               />
             ))}
@@ -329,18 +329,18 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId 
           {cards.map((card, i) => (
             <div
               key={card.id || i}
-              className="bg-[#242736] border border-[#2e3144] rounded-xl p-4 hover:border-primary-500/30 transition-colors"
+              className="bg-surface-2 border border-line rounded-xl p-4 hover:border-primary-500/30 transition-colors"
             >
               <div className="flex items-start justify-between gap-3 mb-2">
                 <span className="text-xs font-medium text-accent-400 shrink-0">#{i + 1}</span>
                 {card.tag && (
-                  <span className="text-xs text-[#9496a1] bg-[#1a1d27] px-2 py-0.5 rounded">
+                  <span className="text-xs text-muted bg-surface px-2 py-0.5 rounded">
                     {card.tag}
                   </span>
                 )}
               </div>
               <div className="text-sm font-medium mb-2"><MarkdownRenderer content={card.question} /></div>
-              <div className="text-sm text-[#9496a1] leading-relaxed"><MarkdownRenderer content={card.answer} /></div>
+              <div className="text-sm text-muted leading-relaxed"><MarkdownRenderer content={card.answer} /></div>
             </div>
           ))}
         </div>

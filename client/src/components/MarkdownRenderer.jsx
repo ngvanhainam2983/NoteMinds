@@ -18,10 +18,10 @@ export default function MarkdownRenderer({ content, className = '' }) {
       remarkPlugins={[remarkGfm]}
       components={{
         // Headings
-        h1: ({ children }) => <h1 className="text-xl font-bold mb-3 mt-4 text-[#e4e5e9]">{children}</h1>,
-        h2: ({ children }) => <h2 className="text-lg font-bold mb-2 mt-3 text-[#e4e5e9]">{children}</h2>,
-        h3: ({ children }) => <h3 className="text-base font-semibold mb-2 mt-3 text-[#e4e5e9]">{children}</h3>,
-        h4: ({ children }) => <h4 className="text-sm font-semibold mb-1.5 mt-2 text-[#e4e5e9]">{children}</h4>,
+        h1: ({ children }) => <h1 className="text-xl font-bold mb-3 mt-4 text-txt">{children}</h1>,
+        h2: ({ children }) => <h2 className="text-lg font-bold mb-2 mt-3 text-txt">{children}</h2>,
+        h3: ({ children }) => <h3 className="text-base font-semibold mb-2 mt-3 text-txt">{children}</h3>,
+        h4: ({ children }) => <h4 className="text-sm font-semibold mb-1.5 mt-2 text-txt">{children}</h4>,
 
         // Paragraph - skip empty ones
         p: ({ children }) => {
@@ -45,14 +45,14 @@ export default function MarkdownRenderer({ content, className = '' }) {
             || String(children).includes('\n');
           if (!isBlock) {
             return (
-              <code className="bg-[#1a1d27] text-primary-300 px-1.5 py-0.5 rounded text-[13px] font-mono">
+              <code className="bg-surface text-primary-300 px-1.5 py-0.5 rounded text-[13px] font-mono">
                 {children}
               </code>
             );
           }
           return (
-            <pre className="bg-[#0f1117] border border-[#2e3144] rounded-lg p-3 mb-2 overflow-x-auto">
-              <code className="text-[13px] font-mono text-[#e4e5e9] leading-relaxed">
+            <pre className="bg-bg border border-line rounded-lg p-3 mb-2 overflow-x-auto">
+              <code className="text-[13px] font-mono text-txt leading-relaxed">
                 {children}
               </code>
             </pre>
@@ -61,7 +61,7 @@ export default function MarkdownRenderer({ content, className = '' }) {
 
         // Blockquote
         blockquote: ({ children }) => (
-          <blockquote className="border-l-3 border-primary-500 pl-3 my-2 text-[#9496a1] italic">
+          <blockquote className="border-l-3 border-primary-500 pl-3 my-2 text-muted italic">
             {children}
           </blockquote>
         ),
@@ -72,12 +72,12 @@ export default function MarkdownRenderer({ content, className = '' }) {
             <table className="w-full text-sm border-collapse">{children}</table>
           </div>
         ),
-        thead: ({ children }) => <thead className="bg-[#1a1d27]">{children}</thead>,
+        thead: ({ children }) => <thead className="bg-surface">{children}</thead>,
         th: ({ children }) => (
-          <th className="border border-[#2e3144] px-3 py-1.5 text-left font-semibold text-[#e4e5e9]">{children}</th>
+          <th className="border border-line px-3 py-1.5 text-left font-semibold text-txt">{children}</th>
         ),
         td: ({ children }) => (
-          <td className="border border-[#2e3144] px-3 py-1.5 text-[#9496a1]">{children}</td>
+          <td className="border border-line px-3 py-1.5 text-muted">{children}</td>
         ),
 
         // Links
@@ -88,11 +88,11 @@ export default function MarkdownRenderer({ content, className = '' }) {
         ),
 
         // Horizontal rule
-        hr: () => <hr className="border-[#2e3144] my-3" />,
+        hr: () => <hr className="border-line my-3" />,
 
         // Strong / Em
-        strong: ({ children }) => <strong className="font-semibold text-[#e4e5e9]">{children}</strong>,
-        em: ({ children }) => <em className="italic text-[#b8bac4]">{children}</em>,
+        strong: ({ children }) => <strong className="font-semibold text-txt">{children}</strong>,
+        em: ({ children }) => <em className="italic text-muted">{children}</em>,
       }}
     >
       {cleaned}

@@ -14,7 +14,7 @@ export default function Hero() {
       </div>
 
       <div className="relative max-w-4xl mx-auto px-4 pt-20 pb-8 text-center z-10">
-        <div className="inline-flex items-center gap-2 bg-[#1a1d27]/80 backdrop-blur-md border border-[#2e3144] rounded-full px-4 py-2 mb-8 animate-in fade-in slide-in-from-top-4 duration-700 shadow-xl shadow-primary-900/20">
+        <div className="inline-flex items-center gap-2 bg-surface/80 backdrop-blur-md border border-line rounded-full px-4 py-2 mb-8 animate-in fade-in slide-in-from-top-4 duration-700 shadow-xl shadow-primary-900/20">
           <div className="w-2 h-2 rounded-full bg-primary-400 animate-pulse" />
           <span className="text-sm font-medium text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-accent-400">Trợ lý học tập AI tự động 100%</span>
         </div>
@@ -28,11 +28,11 @@ export default function Hero() {
           <br />chỉ trong vài phút
         </h1>
 
-        <p className="text-base sm:text-lg text-[#9496a1] max-w-2xl mx-auto mb-10 animate-in slide-in-from-bottom-6 fade-in duration-700 delay-300">
+        <p className="text-base sm:text-lg text-muted max-w-2xl mx-auto mb-10 animate-in slide-in-from-bottom-6 fade-in duration-700 delay-300">
           Upload bài giảng PDF hoặc file dạng text — NoteMinds sẽ tự động tạo
-          <strong className="text-white font-medium"> Sơ đồ tư duy</strong>,{' '}
-          <strong className="text-white font-medium">Flashcard</strong> và cho phép bạn{' '}
-          <strong className="text-white font-medium">hỏi đáp trực tiếp</strong> với tài liệu một cách chuẩn xác.
+          <strong className="text-txt font-medium"> Sơ đồ tư duy</strong>,{' '}
+          <strong className="text-txt font-medium">Flashcard</strong> và cho phép bạn{' '}
+          <strong className="text-txt font-medium">hỏi đáp trực tiếp</strong> với tài liệu một cách chuẩn xác.
         </p>
 
       </div>

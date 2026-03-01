@@ -150,10 +150,10 @@ export default function SharedDocViewer({ shareToken, onBack }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0f1117] flex items-center justify-center">
+      <div className="min-h-screen bg-bg flex items-center justify-center">
         <div className="text-center">
           <Loader2 size={32} className="text-primary-400 animate-spin mx-auto mb-4" />
-          <p className="text-[#9496a1] text-sm">Đang tải tài liệu chia sẻ...</p>
+          <p className="text-muted text-sm">Đang tải tài liệu chia sẻ...</p>
         </div>
       </div>
     );
@@ -161,13 +161,13 @@ export default function SharedDocViewer({ shareToken, onBack }) {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#0f1117] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-bg flex items-center justify-center p-4">
         <div className="max-w-md mx-auto text-center">
           <div className="w-16 h-16 bg-red-500/10 border border-red-500/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <AlertCircle size={32} className="text-red-400" />
           </div>
           <h2 className="text-xl font-bold mb-2">Link không hợp lệ</h2>
-          <p className="text-[#9496a1] text-sm mb-6">{error}</p>
+          <p className="text-muted text-sm mb-6">{error}</p>
           <button
             onClick={onBack}
             className="flex items-center gap-2 mx-auto px-5 py-2.5 bg-primary-600 hover:bg-primary-700 rounded-lg text-sm font-medium transition-colors"
@@ -187,25 +187,25 @@ export default function SharedDocViewer({ shareToken, onBack }) {
   const ViewOnlyEmpty = ({ icon: Icon, label }) => (
     <div className="flex flex-col items-center justify-center h-[500px] gap-4">
       <div className="relative">
-        <Icon size={48} className="text-[#2e3144]" />
-        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#1a1d27] border border-[#2e3144] rounded-full flex items-center justify-center">
-          <Lock size={12} className="text-[#9496a1]" />
+        <Icon size={48} className="text-line" />
+        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-surface border border-line rounded-full flex items-center justify-center">
+          <Lock size={12} className="text-muted" />
         </div>
       </div>
-      <p className="text-[#9496a1]">{label}</p>
-      <p className="text-xs text-[#9496a1]/60 max-w-xs text-center">
+      <p className="text-muted">{label}</p>
+      <p className="text-xs text-muted/60 max-w-xs text-center">
         Người chia sẻ chưa tạo nội dung này. Bạn đang ở chế độ chỉ xem.
       </p>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#0f1117]">
+    <div className="min-h-screen bg-bg">
       {/* Header */}
       <header className="sticky top-0 z-50 glass">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-2 rounded-lg hover:bg-[#242736] transition-colors" title="Về trang chủ">
+            <button onClick={onBack} className="p-2 rounded-lg hover:bg-surface-2 transition-colors" title="Về trang chủ">
               <ArrowLeft size={18} />
             </button>
             <div className="flex items-center gap-2">
@@ -223,7 +223,7 @@ export default function SharedDocViewer({ shareToken, onBack }) {
               {permInfo.label}
             </span>
             {shareInfo?.expiresAt && (
-              <span className="flex items-center gap-1 text-[10px] text-[#9496a1]">
+              <span className="flex items-center gap-1 text-[10px] text-muted">
                 <Clock size={11} />
                 Hết hạn: {new Date(shareInfo.expiresAt).toLocaleDateString('vi')}
               </span>
@@ -235,22 +235,22 @@ export default function SharedDocViewer({ shareToken, onBack }) {
       {/* Main content — Dashboard-like layout */}
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Document info bar */}
-        <div className="flex items-center gap-3 mb-4 bg-[#1a1d27] border border-[#2e3144] rounded-xl px-5 py-3">
+        <div className="flex items-center gap-3 mb-4 bg-surface border border-line rounded-xl px-5 py-3">
           <FileText size={18} className="text-primary-400 shrink-0" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium truncate">
               {content?.fileName || shareInfo?.documentName || 'Tài liệu được chia sẻ'}
             </p>
-            <p className="text-xs text-[#9496a1]">
+            <p className="text-xs text-muted">
               {content?.text ? `${(content.text.length / 1000).toFixed(1)}k ký tự` : 'Đã xử lý'}
               {' • '}Tài liệu được chia sẻ
               {shareInfo?.shareType && ` • ${permInfo.label}`}
             </p>
           </div>
           {/* Share link display */}
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-[#242736] border border-[#2e3144] rounded-lg">
-            <Link2 size={12} className="text-[#9496a1]" />
-            <span className="text-[10px] text-[#9496a1] truncate max-w-[200px]">
+          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-surface-2 border border-line rounded-lg">
+            <Link2 size={12} className="text-muted" />
+            <span className="text-[10px] text-muted truncate max-w-[200px]">
               {window.location.origin}/share/{shareToken.slice(0, 12)}...
             </span>
           </div>
@@ -267,7 +267,7 @@ export default function SharedDocViewer({ shareToken, onBack }) {
         )}
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6 bg-[#1a1d27] border border-[#2e3144] rounded-xl p-1.5">
+        <div className="flex gap-2 mb-6 bg-surface border border-line rounded-xl p-1.5">
           {TABS.map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -283,7 +283,7 @@ export default function SharedDocViewer({ shareToken, onBack }) {
                   flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 relative
                   ${isActive
                     ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/25'
-                    : 'text-[#9496a1] hover:text-white hover:bg-[#242736]'
+                    : 'text-muted hover:text-txt hover:bg-surface-2'
                   }
                 `}
               >
@@ -298,7 +298,7 @@ export default function SharedDocViewer({ shareToken, onBack }) {
         </div>
 
         {/* Tab content */}
-        <div className="bg-[#1a1d27] border border-[#2e3144] rounded-2xl min-h-[500px] overflow-hidden">
+        <div className="bg-surface border border-line rounded-2xl min-h-[500px] overflow-hidden">
           {activeTab === 'mindmap' && (
             isViewOnly && !mindmapData ? (
               <ViewOnlyEmpty icon={Map} label="Chưa có sơ đồ tư duy" />

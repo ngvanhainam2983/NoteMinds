@@ -7,6 +7,14 @@ export default {
   theme: {
     extend: {
       colors: {
+        /* Semantic surface / text tokens driven by CSS variables */
+        bg: 'var(--color-bg)',
+        surface: 'var(--color-surface)',
+        'surface-2': 'var(--color-surface-2)',
+        line: 'var(--color-border)',
+        txt: 'var(--color-text)',
+        muted: 'var(--color-text-secondary)',
+
         primary: {
           50:  'var(--color-primary-50)',
           100: 'var(--color-primary-100)',

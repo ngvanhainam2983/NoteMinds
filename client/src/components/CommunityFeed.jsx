@@ -37,17 +37,17 @@ export default function CommunityFeed() {
                         <Globe className="text-primary-400" size={32} />
                         Cộng đồng
                     </h1>
-                    <p className="text-[#9496a1]">Khám phá các tài liệu, flashcards và sơ đồ tư duy được chia sẻ công khai.</p>
+                    <p className="text-muted">Khám phá các tài liệu, flashcards và sơ đồ tư duy được chia sẻ công khai.</p>
                 </div>
 
                 <div className="relative w-full md:w-72">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9496a1]" size={18} />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={18} />
                     <input
                         type="text"
                         placeholder="Tìm kiếm tài liệu..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-[#1a1d27] border border-[#2e3144] rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-primary-500 transition-colors"
+                        className="w-full bg-surface border border-line rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-primary-500 transition-colors"
                     />
                 </div>
             </div>
@@ -59,22 +59,22 @@ export default function CommunityFeed() {
             )}
 
             {loading ? (
-                <div className="flex flex-col items-center justify-center py-20 text-[#9496a1]">
+                <div className="flex flex-col items-center justify-center py-20 text-muted">
                     <Loader2 size={32} className="animate-spin mb-4 text-primary-500" />
                     <p>Đang tải tài liệu cộng đồng...</p>
                 </div>
             ) : filteredDocs.length === 0 ? (
-                <div className="bg-[#1a1d27] border border-[#2e3144] rounded-xl p-12 text-center flex flex-col items-center">
-                    <Globe size={48} className="text-[#2e3144] mb-4" />
+                <div className="bg-surface border border-line rounded-xl p-12 text-center flex flex-col items-center">
+                    <Globe size={48} className="text-line mb-4" />
                     <h3 className="text-lg font-medium mb-1">Chưa có tài liệu nào</h3>
-                    <p className="text-[#9496a1] text-sm">Chưa có ai chia sẻ tài liệu công khai, hoặc không tìm thấy kết quả phù hợp.</p>
+                    <p className="text-muted text-sm">Chưa có ai chia sẻ tài liệu công khai, hoặc không tìm thấy kết quả phù hợp.</p>
                 </div>
             ) : (
                 <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6">
                     {filteredDocs.map(doc => (
                         <div
                             key={doc.id}
-                            className="bg-[#1a1d27] border border-[#2e3144] rounded-2xl p-6 hover:border-primary-500/50 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-primary-500/10 transition-all cursor-pointer group flex flex-col break-inside-avoid mb-6"
+                            className="bg-surface border border-line rounded-2xl p-6 hover:border-primary-500/50 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-primary-500/10 transition-all cursor-pointer group flex flex-col break-inside-avoid mb-6"
                             onClick={() => {
                                 window.history.pushState({}, '', `/public/${doc.id}`);
                                 window.dispatchEvent(new Event('popstate')); // Quick hack to trigger App.jsx re-render or we can just location.href
@@ -82,14 +82,14 @@ export default function CommunityFeed() {
                             }}
                         >
                             <div className="flex items-start gap-3 mb-4">
-                                <div className="p-3 bg-primary-500/10 rounded-xl text-primary-400 mt-0.5 group-hover:scale-110 group-hover:bg-primary-500 group-hover:text-white transition-all shadow-sm">
+                                <div className="p-3 bg-primary-500/10 rounded-xl text-primary-400 mt-0.5 group-hover:scale-110 group-hover:bg-primary-500 group-hover:text-txt transition-all shadow-sm">
                                     <FileText size={22} />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <h3 className="font-semibold text-[16px] leading-tight mb-1.5 group-hover:text-primary-400 transition-colors" title={doc.title}>
                                         {doc.title}
                                     </h3>
-                                    <p className="text-xs text-[#9496a1] flex items-center gap-1.5">
+                                    <p className="text-xs text-muted flex items-center gap-1.5">
                                         <span className="w-5 h-5 rounded-full bg-gradient-to-tr from-primary-500 to-accent-500 flex items-center justify-center text-[10px] text-white font-bold opacity-90 shadow-sm">
                                             {doc.author.charAt(0).toUpperCase()}
                                         </span>
@@ -98,12 +98,12 @@ export default function CommunityFeed() {
                                 </div>
                             </div>
 
-                            <div className="mt-2 pt-4 border-t border-[#2e3144] flex items-center justify-between text-xs text-[#64748b]">
+                            <div className="mt-2 pt-4 border-t border-line flex items-center justify-between text-xs text-muted">
                                 <div className="flex items-center gap-1.5 font-medium">
                                     <Calendar size={13} />
                                     {new Date(doc.created_at).toLocaleDateString('vi-VN')}
                                 </div>
-                                <span className="px-2.5 py-1 bg-[#242736] rounded-md border border-[#2e3144] font-medium tracking-wide">
+                                <span className="px-2.5 py-1 bg-surface-2 rounded-md border border-line font-medium tracking-wide">
                                     Công khai
                                 </span>
                             </div>

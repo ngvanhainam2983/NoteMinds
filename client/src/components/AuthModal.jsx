@@ -212,11 +212,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md bg-[#1a1d27] border border-[#2e3144] rounded-2xl shadow-2xl animate-fade-in">
+      <div className="relative w-full max-w-md bg-surface border border-line rounded-2xl shadow-2xl animate-fade-in">
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-[#242736] transition-colors text-[#9496a1] hover:text-white"
+          className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-surface-2 transition-colors text-muted hover:text-txt"
         >
           <X size={18} />
         </button>
@@ -226,7 +226,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
           <div className="px-6 py-8">
             <button
               onClick={() => switchTab('login')}
-              className="flex items-center gap-1 text-sm text-[#9496a1] hover:text-white transition-colors mb-4"
+              className="flex items-center gap-1 text-sm text-muted hover:text-txt transition-colors mb-4"
             >
               <ArrowLeft size={14} /> Quay lại đăng nhập
             </button>
@@ -236,7 +236,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                 <ShieldCheck size={32} className="text-primary-400" />
               </div>
               <h2 className="text-xl font-bold mb-1">Xác thực hai bước</h2>
-              <p className="text-sm text-[#9496a1]">
+              <p className="text-sm text-muted">
                 {totpEnabled ? 'Nhập mã 6 chữ số từ ứng dụng xác thực của bạn' : 'Sử dụng passkey để xác thực'}
               </p>
             </div>
@@ -269,9 +269,9 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
 
                 {totpEnabled && (
                   <div className="flex items-center gap-3 my-4">
-                    <div className="flex-1 h-px bg-[#2e3144]" />
-                    <span className="text-xs text-[#9496a1]">hoặc nhập mã OTP</span>
-                    <div className="flex-1 h-px bg-[#2e3144]" />
+                    <div className="flex-1 h-px bg-line" />
+                    <span className="text-xs text-muted">hoặc nhập mã OTP</span>
+                    <div className="flex-1 h-px bg-line" />
                   </div>
                 )}
               </>
@@ -291,7 +291,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                       value={digit}
                       onChange={(e) => handleOtpChange(i, e.target.value)}
                       onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                      className="w-12 h-14 text-center text-xl font-bold bg-[#0f1117] border border-[#2e3144] rounded-xl focus:outline-none focus:border-primary-500 transition-colors"
+                      className="w-12 h-14 text-center text-xl font-bold bg-bg border border-line rounded-xl focus:outline-none focus:border-primary-500 transition-colors"
                       autoFocus={i === 0 && !passkeyEnabled}
                     />
                   ))}
@@ -334,7 +334,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
           <div className="px-6 py-8">
             <button
               onClick={() => { setTab('2fa-verify'); setError(''); setOtpDigits(['', '', '', '', '', '']); }}
-              className="flex items-center gap-1 text-sm text-[#9496a1] hover:text-white transition-colors mb-4"
+              className="flex items-center gap-1 text-sm text-muted hover:text-txt transition-colors mb-4"
             >
               <ArrowLeft size={14} /> Quay lại nhập mã OTP
             </button>
@@ -344,7 +344,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                 <KeyRound size={32} className="text-amber-400" />
               </div>
               <h2 className="text-xl font-bold mb-1">Mã khôi phục</h2>
-              <p className="text-sm text-[#9496a1]">
+              <p className="text-sm text-muted">
                 Nhập một trong các mã khôi phục bạn đã lưu khi bật 2FA
               </p>
             </div>
@@ -361,7 +361,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                 value={recoveryCode}
                 onChange={(e) => { setRecoveryCode(e.target.value); setError(''); }}
                 placeholder="Nhập mã khôi phục (VD: a1b2c3d4)"
-                className="w-full bg-[#0f1117] border border-[#2e3144] rounded-xl px-4 py-3 text-sm text-center font-mono tracking-wider focus:outline-none focus:border-primary-500 transition-colors placeholder:text-[#9496a1]/50"
+                className="w-full bg-bg border border-line rounded-xl px-4 py-3 text-sm text-center font-mono tracking-wider focus:outline-none focus:border-primary-500 transition-colors placeholder:text-muted/50"
                 autoFocus
               />
             </div>
@@ -383,7 +383,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
               )}
             </button>
 
-            <p className="mt-3 text-xs text-[#9496a1] text-center">
+            <p className="mt-3 text-xs text-muted text-center">
               ⚠️ Mỗi mã khôi phục chỉ sử dụng được một lần
             </p>
           </div>
@@ -396,7 +396,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
               <MailCheck size={32} className="text-primary-400" />
             </div>
             <h2 className="text-xl font-bold mb-2">Kiểm tra email của bạn!</h2>
-            <p className="text-sm text-[#9496a1] mb-4 leading-relaxed">
+            <p className="text-sm text-muted mb-4 leading-relaxed">
               Chúng tôi đã gửi email xác minh đến <strong className="text-primary-400">{registeredEmail}</strong>.
               Vui lòng kiểm tra hộp thư (bao gồm thư rác) và nhấn vào link xác minh.
             </p>
@@ -413,14 +413,14 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
             <button
               onClick={handleResendVerification}
               disabled={loading}
-              className="w-full py-2.5 bg-[#242736] hover:bg-[#2e3144] rounded-xl text-sm font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full py-2.5 bg-surface-2 hover:bg-line rounded-xl text-sm font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
               Gửi lại email xác minh
             </button>
             <button
               onClick={onClose}
-              className="mt-3 text-sm text-[#9496a1] hover:text-white transition-colors"
+              className="mt-3 text-sm text-muted hover:text-txt transition-colors"
             >
               Đóng
             </button>
@@ -433,12 +433,12 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
             <div className="px-6 pt-6 pb-4">
               <button
                 onClick={() => switchTab('login')}
-                className="flex items-center gap-1 text-sm text-[#9496a1] hover:text-white transition-colors mb-3"
+                className="flex items-center gap-1 text-sm text-muted hover:text-txt transition-colors mb-3"
               >
                 <ArrowLeft size={14} /> Quay lại đăng nhập
               </button>
               <h2 className="text-xl font-bold font-display">Quên mật khẩu</h2>
-              <p className="text-sm text-[#9496a1] mt-1">
+              <p className="text-sm text-muted mt-1">
                 Nhập email để nhận link đặt lại mật khẩu
               </p>
             </div>
@@ -493,7 +493,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
               <h2 className="text-xl font-bold font-display text-center">
                 {tab === 'login' ? 'Đăng nhập' : 'Đăng ký tài khoản'}
               </h2>
-              <p className="text-sm text-[#9496a1] text-center mt-1">
+              <p className="text-sm text-muted text-center mt-1">
                 {tab === 'login'
                   ? 'Đăng nhập để có 5 lượt upload/ngày'
                   : 'Tạo tài khoản miễn phí để sử dụng nhiều hơn'}
@@ -501,12 +501,12 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
             </div>
 
             {/* Tabs */}
-            <div className="flex mx-6 mb-4 bg-[#0f1117] rounded-lg p-1">
+            <div className="flex mx-6 mb-4 bg-bg rounded-lg p-1">
               <button
                 onClick={() => switchTab('login')}
                 className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-all ${tab === 'login'
                   ? 'bg-primary-600 text-white shadow-lg'
-                  : 'text-[#9496a1] hover:text-white'
+                  : 'text-muted hover:text-txt'
                   }`}
               >
                 <LogIn size={15} /> Đăng nhập
@@ -515,7 +515,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                 onClick={() => switchTab('register')}
                 className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-all ${tab === 'register'
                   ? 'bg-primary-600 text-white shadow-lg'
-                  : 'text-[#9496a1] hover:text-white'
+                  : 'text-muted hover:text-txt'
                   }`}
               >
                 <UserPlus size={15} /> Đăng ký
@@ -552,7 +552,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="text-[#9496a1] hover:text-white transition-colors"
+                        className="text-muted hover:text-txt transition-colors"
                       >
                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
@@ -602,7 +602,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="text-[#9496a1] hover:text-white transition-colors"
+                        className="text-muted hover:text-txt transition-colors"
                       >
                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
@@ -650,10 +650,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
 function InputField({ icon, suffix, ...props }) {
   return (
     <div className="relative flex items-center">
-      <span className="absolute left-3 text-[#9496a1]">{icon}</span>
+      <span className="absolute left-3 text-muted">{icon}</span>
       <input
         {...props}
-        className="w-full bg-[#0f1117] border border-[#2e3144] rounded-xl pl-10 pr-10 py-2.5 text-sm focus:outline-none focus:border-primary-500/50 transition-colors placeholder:text-[#9496a1]/50"
+        className="w-full bg-bg border border-line rounded-xl pl-10 pr-10 py-2.5 text-sm focus:outline-none focus:border-primary-500/50 transition-colors placeholder:text-muted/50"
       />
       {suffix && <span className="absolute right-3">{suffix}</span>}
     </div>

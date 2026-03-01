@@ -203,35 +203,35 @@ export default function MindmapView({ data, loading, error, onGenerate }) {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[500px] h-full gap-8 relative overflow-hidden bg-[#1a1d27]">
+      <div className="flex flex-col items-center justify-center min-h-[500px] h-full gap-8 relative overflow-hidden bg-surface">
         {/* Skeleton Graph Structure */}
         <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none">
           {/* Center Root */}
-          <div className="w-48 h-16 bg-[#2e3144] rounded-2xl animate-pulse relative z-10 shadow-[0_0_30px_rgba(99,102,241,0.2)]" />
+          <div className="w-48 h-16 bg-line rounded-2xl animate-pulse relative z-10 shadow-[0_0_30px_rgba(99,102,241,0.2)]" />
 
           {/* Left Branch */}
-          <div className="absolute w-[200px] h-1 bg-gradient-to-l from-[#2e3144] to-transparent top-1/2 -ml-[200px] -translate-y-1/2" />
-          <div className="absolute -ml-[300px] -translate-y-1/2 w-32 h-10 bg-[#242736] rounded-xl animate-pulse delay-100" />
+          <div className="absolute w-[200px] h-1 bg-gradient-to-l from-line to-transparent top-1/2 -ml-[200px] -translate-y-1/2" />
+          <div className="absolute -ml-[300px] -translate-y-1/2 w-32 h-10 bg-surface-2 rounded-xl animate-pulse delay-100" />
 
           {/* Right Branch */}
-          <div className="absolute w-[200px] h-1 bg-gradient-to-r from-[#2e3144] to-transparent top-1/2 ml-[200px] -translate-y-1/2" />
-          <div className="absolute ml-[300px] -translate-y-1/2 w-32 h-10 bg-[#242736] rounded-xl animate-pulse delay-200" />
+          <div className="absolute w-[200px] h-1 bg-gradient-to-r from-line to-transparent top-1/2 ml-[200px] -translate-y-1/2" />
+          <div className="absolute ml-[300px] -translate-y-1/2 w-32 h-10 bg-surface-2 rounded-xl animate-pulse delay-200" />
 
           {/* Top Left Branch */}
           <svg className="absolute w-full h-full opacity-50" style={{ transform: 'translate(-150px, -100px)' }}>
             <path d="M 150 100 Q 50 100 50 0" fill="transparent" stroke="#2e3144" strokeWidth="2" />
           </svg>
-          <div className="absolute -translate-x-[150px] -translate-y-[100px] w-28 h-8 bg-[#242736] rounded-xl animate-pulse delay-300" />
+          <div className="absolute -translate-x-[150px] -translate-y-[100px] w-28 h-8 bg-surface-2 rounded-xl animate-pulse delay-300" />
 
           {/* Bottom Right Branch */}
           <svg className="absolute w-full h-full opacity-50" style={{ transform: 'translate(150px, 100px)' }}>
             <path d="M -150 -100 Q -50 -100 -50 0" fill="transparent" stroke="#2e3144" strokeWidth="2" />
           </svg>
-          <div className="absolute translate-x-[150px] translate-y-[100px] w-28 h-8 bg-[#242736] rounded-xl animate-pulse delay-150" />
+          <div className="absolute translate-x-[150px] translate-y-[100px] w-28 h-8 bg-surface-2 rounded-xl animate-pulse delay-150" />
         </div>
 
         {/* Foreground Content */}
-        <div className="relative z-20 flex flex-col items-center bg-[#1a1d27]/80 backdrop-blur-md px-8 py-6 rounded-3xl border border-[#2e3144] shadow-xl animate-in zoom-in duration-500">
+        <div className="relative z-20 flex flex-col items-center bg-surface/80 backdrop-blur-md px-8 py-6 rounded-3xl border border-line shadow-xl animate-in zoom-in duration-500">
           <div className="relative">
             <Loader2 size={40} className="text-primary-400 animate-spin" />
             <div className="absolute inset-0 bg-primary-400/20 rounded-full blur-xl animate-pulse" />
@@ -239,7 +239,7 @@ export default function MindmapView({ data, loading, error, onGenerate }) {
           <p className="mt-4 font-medium bg-clip-text text-transparent bg-gradient-to-r from-primary-400 to-primary-600 transition-all duration-500 text-center w-64 min-h-[40px] flex items-center justify-center">
             {loadingText}
           </p>
-          <div className="w-full bg-[#2e3144] h-1 rounded-full mt-4 overflow-hidden">
+          <div className="w-full bg-line h-1 rounded-full mt-4 overflow-hidden">
             <div className="h-full bg-primary-500 rounded-full w-1/3 animate-[slide_2s_ease-in-out_infinite_alternate]" />
           </div>
         </div>
@@ -252,7 +252,7 @@ export default function MindmapView({ data, loading, error, onGenerate }) {
       <div className="flex flex-col items-center justify-center h-[500px] gap-4">
         <AlertCircle size={40} className="text-red-400" />
         <p className="text-red-400">Lỗi tạo sơ đồ tư duy</p>
-        <p className="text-sm text-[#9496a1] max-w-md text-center">{error}</p>
+        <p className="text-sm text-muted max-w-md text-center">{error}</p>
         <button
           onClick={onGenerate}
           className="flex items-center gap-2 px-4 py-2 bg-primary-600 rounded-lg text-sm hover:bg-primary-700 transition-colors"
@@ -266,8 +266,8 @@ export default function MindmapView({ data, loading, error, onGenerate }) {
   if (!data) {
     return (
       <div className="flex flex-col items-center justify-center h-[500px] gap-4">
-        <Map size={48} className="text-[#2e3144]" />
-        <p className="text-[#9496a1]">Chưa có sơ đồ tư duy</p>
+        <Map size={48} className="text-line" />
+        <p className="text-muted">Chưa có sơ đồ tư duy</p>
         <button
           onClick={onGenerate}
           className="px-6 py-2.5 bg-primary-600 rounded-xl text-sm font-medium hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/25"
@@ -280,9 +280,9 @@ export default function MindmapView({ data, loading, error, onGenerate }) {
 
   return (
     <div className="h-[600px] w-full">
-      <div className="px-4 py-3 border-b border-[#2e3144] flex items-center justify-between">
+      <div className="px-4 py-3 border-b border-line flex items-center justify-between">
         <h3 className="font-semibold text-sm">{data.title || 'Sơ đồ tư duy'}</h3>
-        <span className="text-xs text-[#9496a1]">Kéo để di chuyển • Cuộn để zoom</span>
+        <span className="text-xs text-muted">Kéo để di chuyển • Cuộn để zoom</span>
       </div>
       <div style={{ height: 'calc(100% - 48px)' }}>
         <ReactFlow

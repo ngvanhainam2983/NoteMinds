@@ -50,10 +50,10 @@ export default function PublicDocViewer({ documentId, onBack }) {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#0f1117] flex items-center justify-center">
+            <div className="min-h-screen bg-bg flex items-center justify-center">
                 <div className="text-center">
                     <Loader2 size={32} className="text-primary-400 animate-spin mx-auto mb-4" />
-                    <p className="text-[#9496a1] text-sm">Đang tải tài liệu công khai...</p>
+                    <p className="text-muted text-sm">Đang tải tài liệu công khai...</p>
                 </div>
             </div>
         );
@@ -61,13 +61,13 @@ export default function PublicDocViewer({ documentId, onBack }) {
 
     if (error) {
         return (
-            <div className="min-h-screen bg-[#0f1117] flex items-center justify-center p-4">
+            <div className="min-h-screen bg-bg flex items-center justify-center p-4">
                 <div className="max-w-md mx-auto text-center">
                     <div className="w-16 h-16 bg-red-500/10 border border-red-500/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
                         <AlertCircle size={32} className="text-red-400" />
                     </div>
                     <h2 className="text-xl font-bold mb-2">Không thể tải tài liệu</h2>
-                    <p className="text-[#9496a1] text-sm mb-6">{error}</p>
+                    <p className="text-muted text-sm mb-6">{error}</p>
                     <button
                         onClick={onBack}
                         className="flex items-center gap-2 mx-auto px-5 py-2.5 bg-primary-600 hover:bg-primary-700 rounded-lg text-sm font-medium transition-colors"
@@ -83,24 +83,24 @@ export default function PublicDocViewer({ documentId, onBack }) {
     const ViewOnlyEmpty = ({ icon: Icon, label }) => (
         <div className="flex flex-col items-center justify-center h-[500px] gap-4">
             <div className="relative">
-                <Icon size={48} className="text-[#2e3144]" />
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#1a1d27] border border-[#2e3144] rounded-full flex items-center justify-center">
-                    <Lock size={12} className="text-[#9496a1]" />
+                <Icon size={48} className="text-line" />
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-surface border border-line rounded-full flex items-center justify-center">
+                    <Lock size={12} className="text-muted" />
                 </div>
             </div>
-            <p className="text-[#9496a1]">{label}</p>
-            <p className="text-xs text-[#9496a1]/60 max-w-xs text-center">
+            <p className="text-muted">{label}</p>
+            <p className="text-xs text-muted/60 max-w-xs text-center">
                 Tác giả chưa tạo hoặc tính năng này không khả dụng ở chế độ xem công khai.
             </p>
         </div>
     );
 
     return (
-        <div className="min-h-screen bg-[#0f1117] animate-fade-in">
-            <header className="sticky top-0 z-50 glass border-b border-[#2e3144]">
+        <div className="min-h-screen bg-bg animate-fade-in">
+            <header className="sticky top-0 z-50 glass border-b border-line">
                 <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <button onClick={onBack} className="p-2 rounded-lg hover:bg-[#242736] transition-colors" title="Quay lại">
+                        <button onClick={onBack} className="p-2 rounded-lg hover:bg-surface-2 transition-colors" title="Quay lại">
                             <ArrowLeft size={18} />
                         </button>
                         <div className="flex items-center gap-2">
@@ -122,19 +122,19 @@ export default function PublicDocViewer({ documentId, onBack }) {
             </header>
 
             <div className="max-w-6xl mx-auto px-4 py-8">
-                <div className="flex items-center gap-3 mb-6 bg-[#1a1d27] border border-[#2e3144] rounded-xl px-5 py-4">
+                <div className="flex items-center gap-3 mb-6 bg-surface border border-line rounded-xl px-5 py-4">
                     <FileText size={24} className="text-primary-400 shrink-0" />
                     <div className="min-w-0 flex-1">
-                        <p className="text-lg font-bold truncate text-white">
+                        <p className="text-lg font-bold truncate text-txt">
                             {content?.fileName || 'Tài liệu công khai'}
                         </p>
-                        <p className="text-sm text-[#9496a1] mt-1">
+                        <p className="text-sm text-muted mt-1">
                             Được chia sẻ trên Cộng Đồng NoteMinds
                         </p>
                     </div>
                 </div>
 
-                <div className="flex gap-2 mb-6 bg-[#1a1d27] border border-[#2e3144] rounded-xl p-1.5 overflow-x-auto hide-scrollbar">
+                <div className="flex gap-2 mb-6 bg-surface border border-line rounded-xl p-1.5 overflow-x-auto hide-scrollbar">
                     {TABS.map(tab => {
                         const Icon = tab.icon;
                         const isActive = activeTab === tab.id;
@@ -149,7 +149,7 @@ export default function PublicDocViewer({ documentId, onBack }) {
                   flex-1 flex items-center justify-center gap-2 min-w-[140px] px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 relative
                   ${isActive
                                         ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/25'
-                                        : 'text-[#9496a1] hover:text-white hover:bg-[#242736]'
+                                        : 'text-muted hover:text-txt hover:bg-surface-2'
                                     }
                 `}
                             >
@@ -163,7 +163,7 @@ export default function PublicDocViewer({ documentId, onBack }) {
                     })}
                 </div>
 
-                <div className="bg-[#1a1d27] border border-[#2e3144] rounded-2xl min-h-[500px] overflow-hidden">
+                <div className="bg-surface border border-line rounded-2xl min-h-[500px] overflow-hidden">
                     {activeTab === 'mindmap' && (
                         !mindmapData ? (
                             <ViewOnlyEmpty icon={Map} label="Chưa có sơ đồ tư duy" />

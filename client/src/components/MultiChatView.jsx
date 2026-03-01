@@ -66,23 +66,23 @@ export default function MultiChatView({ selectedDocs, onBack }) {
     };
 
     return (
-        <div className="flex flex-col h-[calc(100vh-100px)] max-w-5xl mx-auto bg-[#1a1d27] border border-[#2e3144] rounded-2xl overflow-hidden shadow-lg shadow-black/20 m-4">
+        <div className="flex flex-col h-[calc(100vh-100px)] max-w-5xl mx-auto bg-surface border border-line rounded-2xl overflow-hidden shadow-lg shadow-black/20 m-4">
             {/* Header */}
-            <div className="flex items-center gap-4 px-6 py-4 border-b border-[#2e3144] bg-[#0f1117]/50 shrink-0">
+            <div className="flex items-center gap-4 px-6 py-4 border-b border-line bg-bg/50 shrink-0">
                 <button
                     onClick={onBack}
-                    className="p-2 hover:bg-[#242736] rounded-xl text-[#9496a1] hover:text-white transition-colors"
+                    className="p-2 hover:bg-surface-2 rounded-xl text-muted hover:text-txt transition-colors"
                 >
                     <ArrowLeft size={20} />
                 </button>
                 <div>
-                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-txt flex items-center gap-2">
                         <MessageSquare size={20} className="text-primary-400" />
                         Chat Đa Tài Liệu
                     </h2>
-                    <p className="text-xs text-[#9496a1] mt-0.5 flex flex-wrap gap-x-3 gap-y-1">
+                    <p className="text-xs text-muted mt-0.5 flex flex-wrap gap-x-3 gap-y-1">
                         Đang phân tích {selectedDocs.length} tài liệu:
-                        <span className="text-[#e4e5e9] truncate max-w-md" title={selectedDocs.map(d => d.original_name).join(', ')}>
+                        <span className="text-txt truncate max-w-md" title={selectedDocs.map(d => d.original_name).join(', ')}>
                             {selectedDocs.map(d => d.original_name).join(', ')}
                         </span>
                     </p>
@@ -93,7 +93,7 @@ export default function MultiChatView({ selectedDocs, onBack }) {
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 scroll-smooth">
                 {messages.map((msg, idx) => (
                     <div key={idx} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-primary-600/20 text-primary-400' : 'bg-[#e4e5e9] text-[#1a1d27]'
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-primary-600/20 text-primary-400' : 'bg-txt text-bg'
                             }`}>
                             {msg.role === 'user' ? <User size={16} /> : <Bot size={18} />}
                         </div>
@@ -101,14 +101,14 @@ export default function MultiChatView({ selectedDocs, onBack }) {
                         <div className={`
               max-w-[85%] rounded-2xl px-5 py-3.5 text-sm leading-relaxed relative group shadow-sm
               ${msg.role === 'user'
-                                ? 'bg-primary-600/10 text-[#e4e5e9] border border-primary-500/20 rounded-tr-sm whitespace-pre-wrap'
-                                : 'bg-[#242736] text-[#e4e5e9] border border-[#2e3144] rounded-tl-sm pr-12'
+                                ? 'bg-primary-600/10 text-txt border border-primary-500/20 rounded-tr-sm whitespace-pre-wrap'
+                                : 'bg-surface-2 text-txt border border-line rounded-tl-sm pr-12'
                             }
             `}>
                             {msg.role === 'assistant' && (
                                 <button
                                     onClick={() => speakText(msg.content)}
-                                    className="absolute top-2 right-2 p-1.5 text-[#555] hover:text-primary-400 bg-[#1a1d27] rounded-md opacity-0 group-hover:opacity-100 transition-all border border-[#2e3144] shadow-md"
+                                    className="absolute top-2 right-2 p-1.5 text-muted/60 hover:text-primary-400 bg-surface rounded-md opacity-0 group-hover:opacity-100 transition-all border border-line shadow-md"
                                     title="Đọc văn bản"
                                 >
                                     <Volume2 size={14} />
@@ -121,12 +121,12 @@ export default function MultiChatView({ selectedDocs, onBack }) {
 
                 {isLoading && (
                     <div className="flex gap-4">
-                        <div className="w-8 h-8 rounded-xl bg-[#e4e5e9] text-[#1a1d27] flex items-center justify-center shrink-0">
+                        <div className="w-8 h-8 rounded-xl bg-txt text-bg flex items-center justify-center shrink-0">
                             <Bot size={18} />
                         </div>
-                        <div className="bg-[#242736] border border-[#2e3144] rounded-2xl rounded-tl-sm px-6 py-4 flex items-center gap-2">
+                        <div className="bg-surface-2 border border-line rounded-2xl rounded-tl-sm px-6 py-4 flex items-center gap-2">
                             <Loader2 size={16} className="animate-spin text-primary-400" />
-                            <span className="text-sm font-medium text-[#9496a1]">Đang tổng hợp thông tin từ {selectedDocs.length} tài liệu...</span>
+                            <span className="text-sm font-medium text-muted">Đang tổng hợp thông tin từ {selectedDocs.length} tài liệu...</span>
                         </div>
                     </div>
                 )}
@@ -134,14 +134,14 @@ export default function MultiChatView({ selectedDocs, onBack }) {
             </div>
 
             {/* Input Area */}
-            <div className="p-4 bg-[#0f1117]/80 border-t border-[#2e3144] shrink-0">
-                <div className="max-w-4xl mx-auto relative flex items-end gap-2 bg-[#1a1d27] border border-[#2e3144] rounded-2xl p-2 focus-within:border-primary-500/50 focus-within:ring-1 focus-within:ring-primary-500/50 transition-all shadow-inner">
+            <div className="p-4 bg-bg/80 border-t border-line shrink-0">
+                <div className="max-w-4xl mx-auto relative flex items-end gap-2 bg-surface border border-line rounded-2xl p-2 focus-within:border-primary-500/50 focus-within:ring-1 focus-within:ring-primary-500/50 transition-all shadow-inner">
                     <textarea
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder="Đặt câu hỏi so sánh, tổng hợp nội dung..."
-                        className="flex-1 max-h-32 min-h-[44px] bg-transparent resize-none text-sm text-white placeholder-[#555] p-3 focus:outline-none"
+                        className="flex-1 max-h-32 min-h-[44px] bg-transparent resize-none text-sm text-txt placeholder-muted/60 p-3 focus:outline-none"
                         rows={1}
                     />
                     <button
@@ -152,7 +152,7 @@ export default function MultiChatView({ selectedDocs, onBack }) {
                         {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} className="ml-0.5" />}
                     </button>
                 </div>
-                <p className="text-center text-[10px] text-[#555] mt-2 font-medium">
+                <p className="text-center text-[10px] text-muted/60 mt-2 font-medium">
                     NoteMinds có thể mắc lỗi khi tổng hợp nhiều tài liệu dài. Hãy kiểm tra lại thông tin quan trọng.
                 </p>
             </div>

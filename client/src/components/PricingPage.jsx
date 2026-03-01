@@ -12,8 +12,8 @@ const PLANS = [
     price: 'Miễn phí',
     priceNote: 'mãi mãi',
     color: '#9496a1',
-    bg: 'from-[#1a1d27] to-[#1a1d27]',
-    border: 'border-[#2e3144]',
+    bg: 'from-surface to-surface',
+    border: 'border-line',
     popular: false,
     features: [
       '5 lượt upload / ngày',
@@ -34,7 +34,7 @@ const PLANS = [
     price: '49.000₫',
     priceNote: '/ tháng',
     color: '#fbbf24',
-    bg: 'from-yellow-600/10 to-[#1a1d27]',
+    bg: 'from-yellow-600/10 to-surface',
     border: 'border-yellow-500/30',
     popular: false,
     features: [
@@ -54,7 +54,7 @@ const PLANS = [
     price: '99.000₫',
     priceNote: '/ tháng',
     color: '#818cf8',
-    bg: 'from-indigo-600/10 to-[#1a1d27]',
+    bg: 'from-indigo-600/10 to-surface',
     border: 'border-indigo-500/30',
     popular: true,
     features: [
@@ -75,7 +75,7 @@ const PLANS = [
     price: '199.000₫',
     priceNote: '/ tháng',
     color: 'var(--color-primary-500)',
-    bg: 'from-primary-600/10 to-[#1a1d27]',
+    bg: 'from-primary-600/10 to-surface',
     border: 'border-primary-500/30',
     popular: false,
     features: [
@@ -113,13 +113,13 @@ export default function PricingPage({ user, onLoginClick }) {
           <h2 className="text-3xl font-bold font-display mb-4">
             Bảng giá <span className="gradient-text">NoteMinds</span>
           </h2>
-          <p className="text-[#9496a1]">Chọn gói phù hợp để tăng hiệu suất học tập</p>
+          <p className="text-muted">Chọn gói phù hợp để tăng hiệu suất học tập</p>
         </div>
 
         {/* Current plan badge */}
         {user && (
           <div className="mb-8 flex items-center justify-center gap-2">
-            <span className="text-sm text-[#9496a1]">Gói hiện tại:</span>
+            <span className="text-sm text-muted">Gói hiện tại:</span>
             <span
               className="px-3 py-1 rounded-full text-sm font-semibold"
               style={{
@@ -142,7 +142,7 @@ export default function PricingPage({ user, onLoginClick }) {
             return (
               <div
                 key={plan.key}
-                className={`relative bg-gradient-to-b ${plan.bg} border ${plan.popular ? plan.border : 'border-[#2e3144]'} rounded-2xl p-5 flex flex-col transition-all hover:scale-[1.02] hover:shadow-xl ${isCurrent ? 'ring-2 ring-primary-500/50' : ''}`}
+                className={`relative bg-gradient-to-b ${plan.bg} border ${plan.popular ? plan.border : 'border-line'} rounded-2xl p-5 flex flex-col transition-all hover:scale-[1.02] hover:shadow-xl ${isCurrent ? 'ring-2 ring-primary-500/50' : ''}`}
               >
                 {plan.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-indigo-600 text-white text-xs font-bold rounded-full flex items-center gap-1">
@@ -164,7 +164,7 @@ export default function PricingPage({ user, onLoginClick }) {
                   </div>
                   <div className="flex items-baseline gap-1">
                     <span className="text-2xl font-bold">{plan.price}</span>
-                    <span className="text-xs text-[#9496a1]">{plan.priceNote}</span>
+                    <span className="text-xs text-muted">{plan.priceNote}</span>
                   </div>
                 </div>
 
@@ -173,7 +173,7 @@ export default function PricingPage({ user, onLoginClick }) {
                   {plan.features.map((feat, i) => (
                     <div key={i} className="flex items-start gap-2 text-sm">
                       <Check size={15} className="shrink-0 mt-0.5" style={{ color: plan.color }} />
-                      <span className="text-[#c8c9ce]">{feat}</span>
+                      <span className="text-muted">{feat}</span>
                     </div>
                   ))}
                   {plan.limitations.map((lim, i) => (
@@ -189,12 +189,12 @@ export default function PricingPage({ user, onLoginClick }) {
                   onClick={() => handleSelectPlan(plan.key)}
                   disabled={isCurrent}
                   className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all ${isCurrent
-                      ? 'bg-[#242736] text-[#9496a1] cursor-default'
+                      ? 'bg-surface-2 text-muted cursor-default'
                       : isDowngrade
-                        ? 'bg-[#242736] text-[#9496a1] hover:bg-[#2e3144]'
+                        ? 'bg-surface-2 text-muted hover:bg-line'
                         : plan.popular
                           ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/25'
-                          : 'bg-[#242736] hover:bg-[#2e3144] text-white'
+                          : 'bg-surface-2 hover:bg-line text-txt'
                     }`}
                 >
                   {isCurrent ? '✓ Đang sử dụng' : !user ? 'Đăng nhập để mua' : isDowngrade ? 'Hạ gói' : 'Nâng cấp'}
@@ -231,13 +231,13 @@ export default function PricingPage({ user, onLoginClick }) {
 function FaqItem({ q, a }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="bg-[#1a1d27] border border-[#2e3144] rounded-xl overflow-hidden">
+    <div className="bg-surface border border-line rounded-xl overflow-hidden">
       <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between px-5 py-3.5 text-left">
         <span className="text-sm font-medium">{q}</span>
-        <span className={`text-[#9496a1] transition-transform ${open ? 'rotate-180' : ''}`}>▾</span>
+        <span className={`text-muted transition-transform ${open ? 'rotate-180' : ''}`}>▾</span>
       </button>
       {open && (
-        <div className="px-5 pb-4 text-sm text-[#9496a1] border-t border-[#2e3144] pt-3 animate-fade-in">
+        <div className="px-5 pb-4 text-sm text-muted border-t border-line pt-3 animate-fade-in">
           {a}
         </div>
       )}
@@ -254,39 +254,39 @@ function ContactModal({ plan, currentPlan, onClose }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-sm bg-[#1a1d27] border border-[#2e3144] rounded-2xl shadow-2xl animate-fade-in p-6 text-center">
+      <div className="relative w-full max-w-sm bg-surface border border-line rounded-2xl shadow-2xl animate-fade-in p-6 text-center">
         <div className="text-4xl mb-3">{plan.badge}</div>
         <h3 className="text-lg font-bold mb-1">
           {isDowngrade ? `Hạ xuống gói ${plan.name}` : `Nâng cấp gói ${plan.name}`}
         </h3>
-        <p className="text-[#9496a1] text-sm mb-4">{plan.price} {plan.priceNote}</p>
+        <p className="text-muted text-sm mb-4">{plan.price} {plan.priceNote}</p>
 
         {isDowngrade ? (
-          <div className="bg-[#0f1117] rounded-xl p-4 mb-4 text-left space-y-2">
+          <div className="bg-bg rounded-xl p-4 mb-4 text-left space-y-2">
             <p className="text-sm font-medium text-yellow-400">Lưu ý khi hạ gói:</p>
-            <p className="text-xs text-[#9496a1]">• Gói hiện tại sẽ được sử dụng đến hết thời hạn đã thanh toán</p>
-            <p className="text-xs text-[#9496a1]">• Sau khi hết hạn, tài khoản sẽ tự động chuyển sang gói {plan.name}</p>
-            <p className="text-xs text-[#9496a1]">• Vui lòng liên hệ admin để yêu cầu hạ gói</p>
-            <div className="border-t border-[#2e3144] pt-2 mt-2">
-              <p className="text-xs text-[#9496a1]">Liên hệ qua <strong className="text-white">Zalo/Telegram</strong> hoặc email admin để được hỗ trợ</p>
+            <p className="text-xs text-muted">• Gói hiện tại sẽ được sử dụng đến hết thời hạn đã thanh toán</p>
+            <p className="text-xs text-muted">• Sau khi hết hạn, tài khoản sẽ tự động chuyển sang gói {plan.name}</p>
+            <p className="text-xs text-muted">• Vui lòng liên hệ admin để yêu cầu hạ gói</p>
+            <div className="border-t border-line pt-2 mt-2">
+              <p className="text-xs text-muted">Liên hệ qua <strong className="text-txt">Zalo/Telegram</strong> hoặc email admin để được hỗ trợ</p>
             </div>
           </div>
         ) : (
-          <div className="bg-[#0f1117] rounded-xl p-4 mb-4 text-left space-y-2">
+          <div className="bg-bg rounded-xl p-4 mb-4 text-left space-y-2">
             <p className="text-sm font-medium text-primary-400">Hướng dẫn thanh toán:</p>
-            <p className="text-xs text-[#9496a1]">1. Chuyển khoản <strong className="text-white">{plan.price}</strong> đến tài khoản bên dưới</p>
-            <p className="text-xs text-[#9496a1]">2. Nội dung chuyển khoản: <strong className="text-white font-mono">NOTEMIND [username]</strong></p>
-            <p className="text-xs text-[#9496a1]">3. Admin sẽ kích hoạt gói trong vòng 5 phút</p>
+            <p className="text-xs text-muted">1. Chuyển khoản <strong className="text-txt">{plan.price}</strong> đến tài khoản bên dưới</p>
+            <p className="text-xs text-muted">2. Nội dung chuyển khoản: <strong className="text-txt font-mono">NOTEMIND [username]</strong></p>
+            <p className="text-xs text-muted">3. Admin sẽ kích hoạt gói trong vòng 5 phút</p>
 
-            <div className="border-t border-[#2e3144] pt-2 mt-2">
-              <p className="text-xs text-[#9496a1]">Ngân hàng: <strong className="text-white">MB Bank</strong></p>
-              <p className="text-xs text-[#9496a1]">STK: <strong className="text-white font-mono">0123456789</strong></p>
-              <p className="text-xs text-[#9496a1]">Tên: <strong className="text-white">NGUYEN VAN A</strong></p>
+            <div className="border-t border-line pt-2 mt-2">
+              <p className="text-xs text-muted">Ngân hàng: <strong className="text-txt">MB Bank</strong></p>
+              <p className="text-xs text-muted">STK: <strong className="text-txt font-mono">0123456789</strong></p>
+              <p className="text-xs text-muted">Tên: <strong className="text-txt">NGUYEN VAN A</strong></p>
             </div>
           </div>
         )}
 
-        <p className="text-xs text-[#9496a1] mb-4">
+        <p className="text-xs text-muted mb-4">
           Hoặc liên hệ qua Zalo/Telegram để được hỗ trợ nhanh nhất
         </p>
 

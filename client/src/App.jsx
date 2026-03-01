@@ -119,7 +119,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0f1117]">
+    <div className="min-h-screen bg-bg">
       {view === 'shared' && shareToken ? (
         <SharedDocViewer shareToken={shareToken} onBack={handleBackHome} />
       ) : (
@@ -238,7 +238,7 @@ function Features() {
       <h2 className="text-3xl font-bold text-center mb-4 font-display">
         Tính năng <span className="gradient-text">nổi bật</span>
       </h2>
-      <p className="text-center text-[#9496a1] mb-12 max-w-2xl mx-auto">
+      <p className="text-center text-muted mb-12 max-w-2xl mx-auto">
         NoteMinds sử dụng NoteMindAI để tự động hóa khâu chuẩn bị tài liệu,
         giúp bạn tập trung 100% vào việc hiểu và ghi nhớ
       </p>
@@ -246,18 +246,18 @@ function Features() {
         {features.map((f, i) => (
           <div
             key={i}
-            className="group relative bg-[#1a1d27] border border-[#2e3144] rounded-3xl p-8 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl overflow-hidden"
+            className="group relative bg-surface border border-line rounded-3xl p-8 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl overflow-hidden"
           >
             {/* Glowing Hover Border & Background */}
             <div className="absolute inset-0 bg-gradient-to-br from-primary-600/5 to-accent-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="absolute inset-0 border-2 border-transparent group-hover:border-primary-500/20 rounded-3xl transition-colors duration-500" />
 
             <div className="relative z-10">
-              <div className="w-14 h-14 bg-gradient-to-tr from-[#242736] to-[#2e3144] border border-[#3f435c] rounded-2xl flex items-center justify-center text-2xl mb-6 shadow-inner group-hover:scale-110 transition-transform duration-500">
+              <div className="w-14 h-14 bg-gradient-to-tr from-surface-2 to-line border border-line rounded-2xl flex items-center justify-center text-2xl mb-6 shadow-inner group-hover:scale-110 transition-transform duration-500">
                 {f.icon}
               </div>
               <h3 className="text-xl font-bold mb-3 group-hover:text-primary-400 transition-colors duration-300">{f.title}</h3>
-              <p className="text-[15px] text-[#9496a1] leading-relaxed group-hover:text-[#aab0c8] transition-colors">{f.desc}</p>
+              <p className="text-[15px] text-muted leading-relaxed group-hover:text-txt transition-colors">{f.desc}</p>
             </div>
           </div>
         ))}
@@ -305,7 +305,7 @@ function WhySection() {
       <h2 className="text-3xl font-bold text-center mb-4 font-display">
         Tại sao chọn <span className="gradient-text">NoteMinds</span>?
       </h2>
-      <p className="text-center text-[#9496a1] mb-12 max-w-2xl mx-auto">
+      <p className="text-center text-muted mb-12 max-w-2xl mx-auto">
         NoteMinds không chỉ là công cụ tóm tắt — đây là trợ lý học tập AI toàn diện,
         giúp bạn biến mọi tài liệu thành kiến thức thực sự
       </p>
@@ -313,7 +313,7 @@ function WhySection() {
         {reasons.map((r, i) => (
           <div
             key={i}
-            className="group relative bg-[#1a1d27] border border-[#2e3144] rounded-3xl p-8 hover:-translate-y-2 transition-all duration-500 overflow-hidden"
+            className="group relative bg-surface border border-line rounded-3xl p-8 hover:-translate-y-2 transition-all duration-500 overflow-hidden"
           >
             {/* Dynamic gradient background on hover */}
             <div className="absolute inset-0 bg-gradient-to-tr from-primary-900/10 via-transparent to-accent-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -322,11 +322,11 @@ function WhySection() {
             <div className="absolute -inset-0.5 bg-gradient-to-r from-primary-500/0 via-primary-500/10 to-accent-500/0 opacity-0 group-hover:opacity-100 blur-sm transition-all duration-500 rounded-3xl" />
 
             <div className="relative z-10">
-              <div className="w-16 h-16 bg-gradient-to-br from-[#242736] to-[#2e3144] border border-[#3f435c] rounded-2xl flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition-transform duration-500 shadow-xl shadow-black/20">
+              <div className="w-16 h-16 bg-gradient-to-br from-surface-2 to-line border border-line rounded-2xl flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition-transform duration-500 shadow-xl shadow-black/20">
                 <span className="group-hover:animate-bounce-subtle inline-block">{r.icon}</span>
               </div>
               <h3 className="text-xl font-bold mb-3 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-primary-400 group-hover:to-accent-400 transition-all duration-300">{r.title}</h3>
-              <p className="text-[15px] text-[#9496a1] leading-relaxed group-hover:text-[#aab0c8] transition-colors">{r.desc}</p>
+              <p className="text-[15px] text-muted leading-relaxed group-hover:text-txt transition-colors">{r.desc}</p>
             </div>
           </div>
         ))}
@@ -353,13 +353,13 @@ function VerifyEmailPage({ token, onGoHome }) {
   }, [token]);
 
   return (
-    <div className="min-h-screen bg-[#0f1117] flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-[#1a1d27] border border-[#2e3144] rounded-2xl p-8 text-center">
+    <div className="min-h-screen bg-bg flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-surface border border-line rounded-2xl p-8 text-center">
         {status === 'loading' && (
           <>
             <Loader2 size={48} className="mx-auto mb-4 text-primary-400 animate-spin" />
             <h2 className="text-xl font-bold mb-2">Đang xác minh email...</h2>
-            <p className="text-sm text-[#9496a1]">Vui lòng đợi...</p>
+            <p className="text-sm text-muted">Vui lòng đợi...</p>
           </>
         )}
         {status === 'success' && (
@@ -368,7 +368,7 @@ function VerifyEmailPage({ token, onGoHome }) {
               <CheckCircle2 size={32} className="text-green-400" />
             </div>
             <h2 className="text-xl font-bold mb-2">Xác minh thành công!</h2>
-            <p className="text-sm text-[#9496a1] mb-6">{message}</p>
+            <p className="text-sm text-muted mb-6">{message}</p>
             <button
               onClick={onGoHome}
               className="px-6 py-2.5 bg-primary-600 hover:bg-primary-700 rounded-xl text-sm font-semibold transition-colors"
@@ -386,7 +386,7 @@ function VerifyEmailPage({ token, onGoHome }) {
             <p className="text-sm text-red-400 mb-6">{message}</p>
             <button
               onClick={onGoHome}
-              className="px-6 py-2.5 bg-[#242736] hover:bg-[#2e3144] rounded-xl text-sm font-medium transition-colors"
+              className="px-6 py-2.5 bg-surface-2 hover:bg-line rounded-xl text-sm font-medium transition-colors"
             >
               Về trang chủ
             </button>
@@ -428,13 +428,13 @@ function ResetPasswordPage({ token, onGoHome }) {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-[#0f1117] flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-[#1a1d27] border border-[#2e3144] rounded-2xl p-8 text-center">
+      <div className="min-h-screen bg-bg flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-surface border border-line rounded-2xl p-8 text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center">
             <CheckCircle2 size={32} className="text-green-400" />
           </div>
           <h2 className="text-xl font-bold mb-2">Đặt lại mật khẩu thành công!</h2>
-          <p className="text-sm text-[#9496a1] mb-6">Bạn có thể đăng nhập với mật khẩu mới.</p>
+          <p className="text-sm text-muted mb-6">Bạn có thể đăng nhập với mật khẩu mới.</p>
           <button
             onClick={onGoHome}
             className="px-6 py-2.5 bg-primary-600 hover:bg-primary-700 rounded-xl text-sm font-semibold transition-colors"
@@ -447,16 +447,16 @@ function ResetPasswordPage({ token, onGoHome }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f1117] flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-[#1a1d27] border border-[#2e3144] rounded-2xl p-8">
+    <div className="min-h-screen bg-bg flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-surface border border-line rounded-2xl p-8">
         <button
           onClick={onGoHome}
-          className="flex items-center gap-1 text-sm text-[#9496a1] hover:text-white transition-colors mb-4"
+          className="flex items-center gap-1 text-sm text-muted hover:text-txt transition-colors mb-4"
         >
           <ArrowLeft size={14} /> Về trang chủ
         </button>
         <h2 className="text-xl font-bold mb-1">Đặt lại mật khẩu</h2>
-        <p className="text-sm text-[#9496a1] mb-6">Nhập mật khẩu mới cho tài khoản của bạn</p>
+        <p className="text-sm text-muted mb-6">Nhập mật khẩu mới cho tài khoản của bạn</p>
 
         {error && (
           <div className="mb-4 px-4 py-2.5 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-400">
@@ -466,31 +466,31 @@ function ResetPasswordPage({ token, onGoHome }) {
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="relative flex items-center">
-            <span className="absolute left-3 text-[#9496a1]"><Lock size={16} /></span>
+            <span className="absolute left-3 text-muted"><Lock size={16} /></span>
             <input
               type={showPw ? 'text' : 'password'}
               placeholder="Mật khẩu mới (ít nhất 6 ký tự)"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full bg-[#0f1117] border border-[#2e3144] rounded-xl pl-10 pr-10 py-2.5 text-sm focus:outline-none focus:border-primary-500/50 transition-colors placeholder:text-[#9496a1]/50"
+              className="w-full bg-bg border border-line rounded-xl pl-10 pr-10 py-2.5 text-sm focus:outline-none focus:border-primary-500/50 transition-colors placeholder:text-muted/50"
               autoFocus
             />
             <button
               type="button"
               onClick={() => setShowPw(!showPw)}
-              className="absolute right-3 text-[#9496a1] hover:text-white transition-colors"
+              className="absolute right-3 text-muted hover:text-txt transition-colors"
             >
               {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
           <div className="relative flex items-center">
-            <span className="absolute left-3 text-[#9496a1]"><Lock size={16} /></span>
+            <span className="absolute left-3 text-muted"><Lock size={16} /></span>
             <input
               type={showPw ? 'text' : 'password'}
               placeholder="Xác nhận mật khẩu mới"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full bg-[#0f1117] border border-[#2e3144] rounded-xl pl-10 pr-10 py-2.5 text-sm focus:outline-none focus:border-primary-500/50 transition-colors placeholder:text-[#9496a1]/50"
+              className="w-full bg-bg border border-line rounded-xl pl-10 pr-10 py-2.5 text-sm focus:outline-none focus:border-primary-500/50 transition-colors placeholder:text-muted/50"
             />
           </div>
           <button

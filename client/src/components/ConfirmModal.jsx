@@ -52,17 +52,17 @@ export default function ConfirmModal({
   return createPortal(
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !loading && onCancel?.()} />
-      <div className="relative w-full max-w-sm bg-[#1a1d27] border border-[#2e3144] rounded-2xl shadow-2xl animate-fade-in p-6">
+      <div className="relative w-full max-w-sm bg-surface border border-line rounded-2xl shadow-2xl animate-fade-in p-6">
         <div className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-4 ${colors.bg} ${colors.border} border`}>
           <Icon size={22} className={colors.icon} />
         </div>
         <h3 className="text-center text-lg font-bold font-display mb-2">{title}</h3>
-        <p className="text-center text-sm text-[#9496a1] mb-6 leading-relaxed">{message}</p>
+        <p className="text-center text-sm text-muted mb-6 leading-relaxed">{message}</p>
         <div className="flex gap-3">
           <button
             onClick={() => !loading && onCancel?.()}
             disabled={loading}
-            className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-[#242736] hover:bg-[#2e3144] transition-colors disabled:opacity-50"
+            className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-surface-2 hover:bg-line transition-colors disabled:opacity-50"
           >
             {cancelLabel}
           </button>

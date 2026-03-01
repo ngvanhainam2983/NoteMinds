@@ -19,15 +19,15 @@ function Modal({ isOpen, onClose, title, icon: Icon, children, wide }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
-        className={`relative bg-[#1a1d27] border border-[#2e3144] rounded-2xl shadow-2xl w-full ${wide ? 'max-w-3xl' : 'max-w-lg'} max-h-[85vh] flex flex-col`}
+        className={`relative bg-surface border border-line rounded-2xl shadow-2xl w-full ${wide ? 'max-w-3xl' : 'max-w-lg'} max-h-[85vh] flex flex-col`}
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#2e3144]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-line">
           <div className="flex items-center gap-3">
             {Icon && <Icon size={20} className="text-primary-400" />}
             <h3 className="text-lg font-semibold">{title}</h3>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-[#2e3144] rounded-lg transition-colors">
+          <button onClick={onClose} className="p-1.5 hover:bg-line rounded-lg transition-colors">
             <X size={18} />
           </button>
         </div>
@@ -67,7 +67,7 @@ export function SearchModal({ isOpen, onClose }) {
           onChange={e => setQuery(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSearch()}
           placeholder="Tìm tài liệu, hội thoại..."
-          className="flex-1 bg-[#0f1117] border border-[#2e3144] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary-500"
+          className="flex-1 bg-bg border border-line rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary-500"
           autoFocus
         />
         <button
@@ -82,37 +82,37 @@ export function SearchModal({ isOpen, onClose }) {
         <div className="space-y-3">
           {results.documents?.length > 0 && (
             <div>
-              <h4 className="text-sm font-medium text-[#9496a1] mb-2 flex items-center gap-2">
+              <h4 className="text-sm font-medium text-muted mb-2 flex items-center gap-2">
                 <FileText size={14} /> Tài liệu ({results.documents.length})
               </h4>
               {results.documents.map((doc, i) => (
-                <div key={i} className="bg-[#0f1117] border border-[#2e3144] rounded-lg p-3 mb-2">
+                <div key={i} className="bg-bg border border-line rounded-lg p-3 mb-2">
                   <p className="text-sm font-medium">{doc.title || doc.filename}</p>
-                  {doc.excerpt && <p className="text-xs text-[#9496a1] mt-1 line-clamp-2">{doc.excerpt}</p>}
+                  {doc.excerpt && <p className="text-xs text-muted mt-1 line-clamp-2">{doc.excerpt}</p>}
                 </div>
               ))}
             </div>
           )}
           {results.conversations?.length > 0 && (
             <div>
-              <h4 className="text-sm font-medium text-[#9496a1] mb-2 flex items-center gap-2">
+              <h4 className="text-sm font-medium text-muted mb-2 flex items-center gap-2">
                 <MessageSquare size={14} /> Hội thoại ({results.conversations.length})
               </h4>
               {results.conversations.map((conv, i) => (
-                <div key={i} className="bg-[#0f1117] border border-[#2e3144] rounded-lg p-3 mb-2">
+                <div key={i} className="bg-bg border border-line rounded-lg p-3 mb-2">
                   <p className="text-sm font-medium">{conv.title || 'Hội thoại'}</p>
-                  {conv.excerpt && <p className="text-xs text-[#9496a1] mt-1 line-clamp-2">{conv.excerpt}</p>}
+                  {conv.excerpt && <p className="text-xs text-muted mt-1 line-clamp-2">{conv.excerpt}</p>}
                 </div>
               ))}
             </div>
           )}
           {(!results.documents?.length && !results.conversations?.length) && (
-            <p className="text-center text-[#9496a1] text-sm py-8">Không tìm thấy kết quả cho "{query}"</p>
+            <p className="text-center text-muted text-sm py-8">Không tìm thấy kết quả cho "{query}"</p>
           )}
         </div>
       )}
       {!results && !loading && (
-        <p className="text-center text-[#9496a1] text-sm py-8">Nhập từ khóa để tìm kiếm trong tài liệu và hội thoại</p>
+        <p className="text-center text-muted text-sm py-8">Nhập từ khóa để tìm kiếm trong tài liệu và hội thoại</p>
       )}
     </Modal>
   );
@@ -147,7 +147,7 @@ export function AnalyticsModal({ isOpen, onClose }) {
           <button
             key={d}
             onClick={() => setDays(d)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${days === d ? 'bg-primary-600 text-white' : 'bg-[#0f1117] border border-[#2e3144] text-[#9496a1] hover:text-white'
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${days === d ? 'bg-primary-600 text-white' : 'bg-bg border border-line text-muted hover:text-txt'
               }`}
           >
             {d} ngày
@@ -162,10 +162,10 @@ export function AnalyticsModal({ isOpen, onClose }) {
         <div className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {statCards.map((s, i) => (
-              <div key={i} className="bg-[#0f1117] border border-[#2e3144] rounded-xl p-4 text-center">
+              <div key={i} className="bg-bg border border-line rounded-xl p-4 text-center">
                 <s.icon size={20} className={`${s.color} mx-auto mb-2`} />
                 <p className="text-2xl font-bold">{s.value}</p>
-                <p className="text-xs text-[#9496a1] mt-1">{s.label}</p>
+                <p className="text-xs text-muted mt-1">{s.label}</p>
               </div>
             ))}
           </div>
@@ -176,7 +176,7 @@ export function AnalyticsModal({ isOpen, onClose }) {
               </h4>
               <div className="space-y-2">
                 {analytics.topDocuments.map((doc, i) => (
-                  <div key={i} className="flex items-center justify-between bg-[#0f1117] border border-[#2e3144] rounded-lg px-4 py-2.5">
+                  <div key={i} className="flex items-center justify-between bg-bg border border-line rounded-lg px-4 py-2.5">
                     <span className="text-sm truncate">{doc.title || doc.filename}</span>
                     <span className="text-xs text-primary-400 font-medium">{doc.interactions} lượt</span>
                   </div>
@@ -189,7 +189,7 @@ export function AnalyticsModal({ isOpen, onClose }) {
               <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
                 <Clock size={14} className="text-blue-400" /> Hoạt động theo ngày
               </h4>
-              <div className="flex items-end gap-1 h-32 bg-[#0f1117] border border-[#2e3144] rounded-xl p-4">
+              <div className="flex items-end gap-1 h-32 bg-bg border border-line rounded-xl p-4">
                 {analytics.weeklyActivity.map((day, i) => {
                   const max = Math.max(...analytics.weeklyActivity.map(d => d.interactions || d.count || 0), 1);
                   const val = day.interactions || day.count || 0;
@@ -197,7 +197,7 @@ export function AnalyticsModal({ isOpen, onClose }) {
                   return (
                     <div key={i} className="flex-1 flex flex-col items-center gap-1">
                       <div className="w-full bg-primary-600/60 rounded-t" style={{ height: `${height}%` }} title={`${val} hoạt động`} />
-                      <span className="text-[10px] text-[#9496a1]">{(day.day || '').slice(0, 2)}</span>
+                      <span className="text-[10px] text-muted">{(day.day || '').slice(0, 2)}</span>
                     </div>
                   );
                 })}
@@ -206,7 +206,7 @@ export function AnalyticsModal({ isOpen, onClose }) {
           )}
         </div>
       ) : (
-        <p className="text-center text-[#9496a1] text-sm py-8">Chưa có dữ liệu phân tích</p>
+        <p className="text-center text-muted text-sm py-8">Chưa có dữ liệu phân tích</p>
       )}
     </Modal>
   );
@@ -277,7 +277,7 @@ export function ShareModal({ isOpen, onClose, documentId }) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Chia sẻ tài liệu" icon={Share2}>
       {documentId && (
-        <div className="bg-[#0f1117] border border-[#2e3144] rounded-xl p-4 mb-6">
+        <div className="bg-bg border border-line rounded-xl p-4 mb-6">
           <p className="text-sm font-medium mb-3">Tạo link chia sẻ mới</p>
 
           {/* Permission selector */}
@@ -288,7 +288,7 @@ export function ShareModal({ isOpen, onClose, documentId }) {
                 onClick={() => setShareType(perm.value)}
                 className={`flex flex-col items-center gap-1 px-2 py-2.5 rounded-lg border text-xs font-medium transition-all ${shareType === perm.value
                   ? 'border-primary-500/50 bg-primary-600/10 text-primary-400'
-                  : 'border-[#2e3144] text-[#9496a1] hover:border-[#3e4154] hover:text-white'
+                  : 'border-line text-muted hover:border-line hover:text-txt'
                   }`}
               >
                 <span className="text-base">{perm.icon}</span>
@@ -304,7 +304,7 @@ export function ShareModal({ isOpen, onClose, documentId }) {
             <select
               value={expiresIn}
               onChange={e => setExpiresIn(Number(e.target.value))}
-              className="bg-[#1a1d27] border border-[#2e3144] rounded-lg px-3 py-2 text-sm focus:outline-none"
+              className="bg-surface border border-line rounded-lg px-3 py-2 text-sm focus:outline-none"
             >
               <option value={1}>1 ngày</option>
               <option value={7}>7 ngày</option>
@@ -325,24 +325,24 @@ export function ShareModal({ isOpen, onClose, documentId }) {
         <div className="flex justify-center py-8"><Loader2 size={24} className="text-primary-400 animate-spin" /></div>
       ) : shares.length > 0 ? (
         <div className="space-y-2">
-          <p className="text-sm text-[#9496a1] mb-3">Các link đã tạo</p>
+          <p className="text-sm text-muted mb-3">Các link đã tạo</p>
           {shares.map(s => {
             const badge = PERMISSION_BADGE[s.share_type] || PERMISSION_BADGE.view;
             const shareUrl = `${window.location.origin}/share/${s.share_token}`;
             return (
-              <div key={s.id} className="bg-[#0f1117] border border-[#2e3144] rounded-lg px-3 py-2.5">
+              <div key={s.id} className="bg-bg border border-line rounded-lg px-3 py-2.5">
                 <div className="flex items-center gap-2">
                   <ExternalLink size={14} className="text-primary-400 shrink-0" />
-                  <span className="text-xs truncate flex-1 text-[#c8c9cf]" title={shareUrl}>
+                  <span className="text-xs truncate flex-1 text-muted" title={shareUrl}>
                     {shareUrl.length > 50 ? shareUrl.slice(0, 50) + '...' : shareUrl}
                   </span>
                   <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${badge.color}`}>
                     {badge.label}
                   </span>
-                  <span className="text-[10px] text-[#9496a1]">
+                  <span className="text-[10px] text-muted">
                     {s.expires_at ? new Date(s.expires_at).toLocaleDateString('vi') : '∞'}
                   </span>
-                  <button onClick={() => copyLink(s.share_token)} className="p-1 hover:bg-[#2e3144] rounded transition-colors">
+                  <button onClick={() => copyLink(s.share_token)} className="p-1 hover:bg-line rounded transition-colors">
                     {copied === s.share_token ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
                   </button>
                   <button onClick={() => handleDelete(s.id)} className="p-1 hover:bg-red-500/20 rounded transition-colors">
@@ -359,7 +359,7 @@ export function ShareModal({ isOpen, onClose, documentId }) {
           })}
         </div>
       ) : (
-        <p className="text-center text-[#9496a1] text-sm py-8">Chưa có link chia sẻ nào</p>
+        <p className="text-center text-muted text-sm py-8">Chưa có link chia sẻ nào</p>
       )}
     </Modal>
   );
@@ -426,7 +426,7 @@ export function TagsModal({ isOpen, onClose, documentId }) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Quản lý nhãn" icon={Tag}>
       {/* Create new tag */}
-      <div className="bg-[#0f1117] border border-[#2e3144] rounded-xl p-4 mb-6">
+      <div className="bg-bg border border-line rounded-xl p-4 mb-6">
         <p className="text-sm font-medium mb-3">Tạo nhãn mới</p>
         <div className="flex gap-2 mb-3">
           <input
@@ -435,7 +435,7 @@ export function TagsModal({ isOpen, onClose, documentId }) {
             onChange={e => setNewTagName(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleCreateTag()}
             placeholder="Tên nhãn..."
-            className="flex-1 bg-[#1a1d27] border border-[#2e3144] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary-500"
+            className="flex-1 bg-surface border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary-500"
           />
           <button
             onClick={handleCreateTag}
@@ -462,7 +462,7 @@ export function TagsModal({ isOpen, onClose, documentId }) {
         <div className="flex justify-center py-6"><Loader2 size={24} className="text-primary-400 animate-spin" /></div>
       ) : allTags.length > 0 ? (
         <div className="space-y-2">
-          <p className="text-sm text-[#9496a1] mb-2">
+          <p className="text-sm text-muted mb-2">
             {documentId ? 'Nhấn để gắn/gỡ nhãn cho tài liệu' : 'Tất cả nhãn của bạn'}
           </p>
           <div className="flex flex-wrap gap-2">
@@ -485,7 +485,7 @@ export function TagsModal({ isOpen, onClose, documentId }) {
           </div>
         </div>
       ) : (
-        <p className="text-center text-[#9496a1] text-sm py-8">Chưa có nhãn nào. Tạo nhãn mới ở trên!</p>
+        <p className="text-center text-muted text-sm py-8">Chưa có nhãn nào. Tạo nhãn mới ở trên!</p>
       )}
     </Modal>
   );
@@ -527,14 +527,14 @@ export function PreferencesModal({ isOpen, onClose }) {
       ) : (
         <div className="space-y-4">
           {toggleItems.map(item => (
-            <div key={item.key} className="flex items-center justify-between bg-[#0f1117] border border-[#2e3144] rounded-xl px-4 py-3">
+            <div key={item.key} className="flex items-center justify-between bg-bg border border-line rounded-xl px-4 py-3">
               <div>
                 <p className="text-sm font-medium">{item.label}</p>
-                <p className="text-xs text-[#9496a1]">{item.desc}</p>
+                <p className="text-xs text-muted">{item.desc}</p>
               </div>
               <button
                 onClick={() => handleChange(item.key, !prefs[item.key])}
-                className={`w-11 h-6 rounded-full transition-colors relative ${prefs[item.key] ? 'bg-primary-600' : 'bg-[#2e3144]'
+                className={`w-11 h-6 rounded-full transition-colors relative ${prefs[item.key] ? 'bg-primary-600' : 'bg-line'
                   }`}
               >
                 <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${prefs[item.key] ? 'translate-x-5' : 'translate-x-0.5'
@@ -583,7 +583,7 @@ export function FavoriteButton({ documentId }) {
     <button
       onClick={toggle}
       disabled={loading}
-      className={`p-2 rounded-lg transition-all ${isFav ? 'text-amber-400 bg-amber-400/10' : 'text-[#9496a1] hover:text-amber-400 hover:bg-amber-400/10'
+      className={`p-2 rounded-lg transition-all ${isFav ? 'text-amber-400 bg-amber-400/10' : 'text-muted hover:text-amber-400 hover:bg-amber-400/10'
         }`}
       title={isFav ? 'Bỏ yêu thích' : 'Yêu thích'}
     >
@@ -646,7 +646,7 @@ export function ExportButton({ documentId, type = 'flashcards' }) {
     <button
       onClick={handleExport}
       disabled={loading}
-      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[#242736] border border-[#2e3144] rounded-lg hover:bg-[#2e3144] transition-colors disabled:opacity-50 ${isMindmap ? 'text-indigo-400' : ''}`}
+      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs bg-surface-2 border border-line rounded-lg hover:bg-line transition-colors disabled:opacity-50 ${isMindmap ? 'text-indigo-400' : ''}`}
       title={isMindmap ? "Xuất PNG" : "Xuất CSV"}
     >
       {loading ? <Loader2 size={12} className="animate-spin" /> : isMindmap ? <ImageIcon size={12} /> : <Download size={12} />}

@@ -160,22 +160,22 @@ export default function AdminPanel({ onBack }) {
   const bannedUsers = users.filter((u) => u.isBanned).length;
 
   return (
-    <div className="min-h-screen bg-[#0f1117]">
+    <div className="min-h-screen bg-bg">
       <div className="max-w-6xl mx-auto px-4 py-6">
         {/* Top bar */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-2 rounded-lg bg-[#1a1d27] hover:bg-[#242736] transition-colors">
+            <button onClick={onBack} className="p-2 rounded-lg bg-surface hover:bg-surface-2 transition-colors">
               <ArrowLeft size={18} />
             </button>
             <div>
               <h1 className="text-xl font-bold font-display flex items-center gap-2">
                 <Shield size={20} className="text-primary-400" /> Bảng điều khiển Admin
               </h1>
-              <p className="text-xs text-[#9496a1]">Quản lý người dùng, gói dịch vụ & bảo mật</p>
+              <p className="text-xs text-muted">Quản lý người dùng, gói dịch vụ & bảo mật</p>
             </div>
           </div>
-          <button onClick={load} disabled={loading} className="p-2 rounded-lg bg-[#1a1d27] hover:bg-[#242736] transition-colors" title="Làm mới">
+          <button onClick={load} disabled={loading} className="p-2 rounded-lg bg-surface hover:bg-surface-2 transition-colors" title="Làm mới">
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           </button>
         </div>
@@ -191,7 +191,7 @@ export default function AdminPanel({ onBack }) {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-4 bg-[#1a1d27] p-1 rounded-xl w-fit">
+        <div className="flex gap-1 mb-4 bg-surface p-1 rounded-xl w-fit">
           <TabBtn active={tab === 'users'} onClick={() => setTab('users')} icon={<Users size={14} />} label={`Người dùng (${totalUsers})`} />
           <TabBtn active={tab === 'ips'} onClick={() => setTab('ips')} icon={<Globe size={14} />} label={`IP bị chặn (${bannedIps.length})`} />
         </div>
@@ -199,12 +199,12 @@ export default function AdminPanel({ onBack }) {
         {tab === 'users' && (
           <>
             <div className="relative mb-4">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9496a1]" />
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
               <input
                 placeholder="Tìm user, email hoặc IP..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-[#1a1d27] border border-[#2e3144] rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary-500/50"
+                className="w-full bg-surface border border-line rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary-500/50"
               />
             </div>
 
@@ -213,11 +213,11 @@ export default function AdminPanel({ onBack }) {
                 <Loader2 size={28} className="animate-spin text-primary-400" />
               </div>
             ) : (
-              <div className="bg-[#1a1d27] border border-[#2e3144] rounded-xl overflow-hidden">
+              <div className="bg-surface border border-line rounded-xl overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-[#2e3144] text-[#9496a1] text-xs uppercase tracking-wider">
+                      <tr className="border-b border-line text-muted text-xs uppercase tracking-wider">
                         <th className="text-left py-3 px-4">User</th>
                         <th className="text-left py-3 px-4">Gói</th>
                         <th className="text-left py-3 px-4">Quyền</th>
@@ -239,7 +239,7 @@ export default function AdminPanel({ onBack }) {
                       ))}
                       {filtered.length === 0 && (
                         <tr>
-                          <td colSpan={5} className="text-center py-8 text-[#9496a1]">
+                          <td colSpan={5} className="text-center py-8 text-muted">
                             <Users size={28} className="mx-auto mb-2 opacity-50" />
                             <p>Không tìm thấy user</p>
                           </td>
@@ -279,10 +279,10 @@ export default function AdminPanel({ onBack }) {
 
 function StatCard({ icon, label, value, color }) {
   return (
-    <div className="bg-[#1a1d27] border border-[#2e3144] rounded-xl p-3">
+    <div className="bg-surface border border-line rounded-xl p-3">
       <div className="flex items-center gap-2 mb-1">
         <span style={{ color }}>{icon}</span>
-        <span className="text-xs text-[#9496a1]">{label}</span>
+        <span className="text-xs text-muted">{label}</span>
       </div>
       <p className="text-xl font-bold" style={{ color }}>{value}</p>
     </div>
@@ -293,7 +293,7 @@ function TabBtn({ active, onClick, icon, label }) {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${active ? 'bg-primary-600 text-white' : 'text-[#9496a1] hover:text-white hover:bg-[#242736]'}`}
+      className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${active ? 'bg-primary-600 text-white' : 'text-muted hover:text-txt hover:bg-surface-2'}`}
     >
       {icon} {label}
     </button>
@@ -313,7 +313,7 @@ function UserRow({ user, onSetPlan, onSetRole, onBan, onUnban, onBanIp }) {
 
   return (
     <>
-      <tr className={`border-b border-[#2e3144] last:border-b-0 transition-colors ${user.isBanned ? 'bg-red-500/5' : 'hover:bg-[#242736]/50'}`}>
+      <tr className={`border-b border-line last:border-b-0 transition-colors ${user.isBanned ? 'bg-red-500/5' : 'hover:bg-surface-2/50'}`}>
         <td className="py-3 px-4">
           <div className="flex items-center gap-3">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${user.isBanned ? 'bg-red-500/20 text-red-400' : 'bg-primary-600/20 text-primary-400'}`}>
@@ -329,7 +329,7 @@ function UserRow({ user, onSetPlan, onSetRole, onBan, onUnban, onBanIp }) {
                   <span className="px-1.5 py-0.5 bg-red-500/20 text-red-400 text-[10px] rounded-md font-bold shrink-0">BỊ KHÓA</span>
                 )}
               </p>
-              <p className="text-xs text-[#9496a1] truncate">@{user.username} · {user.email}</p>
+              <p className="text-xs text-muted truncate">@{user.username} · {user.email}</p>
             </div>
           </div>
         </td>
@@ -338,7 +338,7 @@ function UserRow({ user, onSetPlan, onSetRole, onBan, onUnban, onBanIp }) {
           <select
             value={user.plan}
             onChange={(e) => onSetPlan(user.id, e.target.value)}
-            className="bg-[#0f1117] border border-[#2e3144] rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-primary-500/50 cursor-pointer"
+            className="bg-bg border border-line rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-primary-500/50 cursor-pointer"
             style={{ color: style.color }}
           >
             {Object.entries(PLAN_STYLES).map(([key, { badge, label }]) => (
@@ -351,7 +351,7 @@ function UserRow({ user, onSetPlan, onSetRole, onBan, onUnban, onBanIp }) {
           <select
             value={user.role}
             onChange={(e) => onSetRole(user.id, e.target.value)}
-            className="bg-[#0f1117] border border-[#2e3144] rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-primary-500/50 cursor-pointer"
+            className="bg-bg border border-line rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-primary-500/50 cursor-pointer"
           >
             <option value="user">User</option>
             <option value="admin">Admin</option>
@@ -361,12 +361,12 @@ function UserRow({ user, onSetPlan, onSetRole, onBan, onUnban, onBanIp }) {
         <td className="py-3 px-4 hidden lg:table-cell">
           <div className="space-y-0.5">
             {user.lastIp && (
-              <div className="flex items-center gap-1.5 text-xs text-[#9496a1]">
+              <div className="flex items-center gap-1.5 text-xs text-muted">
                 <Wifi size={11} />
                 <span className="font-mono">{user.lastIp}</span>
                 <button
                   onClick={() => onBanIp(user.lastIp, `Liên kết với user @${user.username}`)}
-                  className="p-0.5 rounded hover:bg-red-500/20 text-[#9496a1] hover:text-red-400 transition-colors"
+                  className="p-0.5 rounded hover:bg-red-500/20 text-muted hover:text-red-400 transition-colors"
                   title="Chặn IP này"
                 >
                   <Ban size={11} />
@@ -380,7 +380,7 @@ function UserRow({ user, onSetPlan, onSetRole, onBan, onUnban, onBanIp }) {
               </div>
             )}
             {!user.lastIp && !user.lastLoginAt && (
-              <span className="text-xs text-[#555]">Chưa đăng nhập</span>
+              <span className="text-xs text-muted/60">Chưa đăng nhập</span>
             )}
           </div>
         </td>
@@ -411,13 +411,13 @@ function UserRow({ user, onSetPlan, onSetRole, onBan, onUnban, onBanIp }) {
                 value={banReason}
                 onChange={(e) => setBanReason(e.target.value)}
                 placeholder="Lý do khóa (tuỳ chọn)..."
-                className="flex-1 bg-[#0f1117] border border-red-500/30 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-red-500/50"
+                className="flex-1 bg-bg border border-red-500/30 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-red-500/50"
                 onKeyDown={(e) => e.key === 'Enter' && confirmBan()}
               />
               <button onClick={confirmBan} className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-xs font-medium transition-colors">
                 Xác nhận khóa
               </button>
-              <button onClick={() => setShowBanInput(false)} className="px-3 py-1.5 rounded-lg bg-[#242736] hover:bg-[#2e3144] text-xs transition-colors">
+              <button onClick={() => setShowBanInput(false)} className="px-3 py-1.5 rounded-lg bg-surface-2 hover:bg-line text-xs transition-colors">
                 Hủy
               </button>
             </div>
@@ -441,7 +441,7 @@ function IpBanPanel({ bannedIps, onBanIp, onUnbanIp, loading }) {
 
   return (
     <div className="space-y-4">
-      <div className="bg-[#1a1d27] border border-[#2e3144] rounded-xl p-4">
+      <div className="bg-surface border border-line rounded-xl p-4">
         <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
           <Plus size={14} className="text-primary-400" /> Chặn IP mới
         </h3>
@@ -450,13 +450,13 @@ function IpBanPanel({ bannedIps, onBanIp, onUnbanIp, loading }) {
             value={newIp}
             onChange={(e) => setNewIp(e.target.value)}
             placeholder="Nhập địa chỉ IP (vd: 192.168.1.100)"
-            className="flex-1 bg-[#0f1117] border border-[#2e3144] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary-500/50 font-mono"
+            className="flex-1 bg-bg border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary-500/50 font-mono"
           />
           <input
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="Lý do (tuỳ chọn)"
-            className="flex-1 bg-[#0f1117] border border-[#2e3144] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary-500/50"
+            className="flex-1 bg-bg border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary-500/50"
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
           />
           <button
@@ -469,20 +469,20 @@ function IpBanPanel({ bannedIps, onBanIp, onUnbanIp, loading }) {
         </div>
       </div>
 
-      <div className="bg-[#1a1d27] border border-[#2e3144] rounded-xl overflow-hidden">
+      <div className="bg-surface border border-line rounded-xl overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center h-32">
             <Loader2 size={24} className="animate-spin text-primary-400" />
           </div>
         ) : bannedIps.length === 0 ? (
-          <div className="text-center py-10 text-[#9496a1]">
+          <div className="text-center py-10 text-muted">
             <ShieldCheck size={32} className="mx-auto mb-2 opacity-50" />
             <p className="text-sm">Chưa có IP nào bị chặn</p>
           </div>
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#2e3144] text-[#9496a1] text-xs uppercase tracking-wider">
+              <tr className="border-b border-line text-muted text-xs uppercase tracking-wider">
                 <th className="text-left py-3 px-4">IP</th>
                 <th className="text-left py-3 px-4">Lý do</th>
                 <th className="text-left py-3 px-4 hidden sm:table-cell">Ngày chặn</th>
@@ -491,13 +491,13 @@ function IpBanPanel({ bannedIps, onBanIp, onUnbanIp, loading }) {
             </thead>
             <tbody>
               {bannedIps.map((b) => (
-                <tr key={b.id} className="border-b border-[#2e3144] last:border-b-0 hover:bg-[#242736]/50">
+                <tr key={b.id} className="border-b border-line last:border-b-0 hover:bg-surface-2/50">
                   <td className="py-3 px-4 font-mono text-red-400">
                     <div className="flex items-center gap-2">
                       <Globe size={14} /> {b.ip_address}
                     </div>
                   </td>
-                  <td className="py-3 px-4 text-[#9496a1]">{b.reason || '—'}</td>
+                  <td className="py-3 px-4 text-muted">{b.reason || '—'}</td>
                   <td className="py-3 px-4 text-xs text-[#666] hidden sm:table-cell">
                     {b.created_at ? new Date(b.created_at).toLocaleString('vi-VN') : '—'}
                   </td>
