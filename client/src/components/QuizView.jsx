@@ -366,7 +366,7 @@ export default function QuizView({ data, loading, error, onGenerate }) {
                     </div>
 
                     {/* Explanation */}
-                    {showResult && currentQ.explanation && (
+                    {(submitted || isReview) && currentQ.explanation && (
                         <div className={`mt-5 p-4 rounded-xl border text-sm ${selectedOpt === currentQ.correctAnswerIndex ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-amber-500/5 border-amber-500/20'}`}>
                             <div className="flex items-center gap-2 mb-2">
                                 <Sparkles size={14} className={selectedOpt === currentQ.correctAnswerIndex ? 'text-emerald-400' : 'text-amber-400'} />
