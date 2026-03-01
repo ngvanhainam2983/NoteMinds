@@ -206,6 +206,19 @@ export async function verifyPasskeyAuth(tempToken, passkeyResponse) {
   return { token, user };
 }
 
+// Discoverable passkey login (no username/password needed)
+export async function getPasskeyLoginOptions() {
+  const response = await api.post('/auth/passkey/login-options');
+  return response.data;
+}
+
+export async function verifyPasskeyLogin(passkeyResponse) {
+  const response = await api.post('/auth/passkey/login-verify', { response: passkeyResponse });
+  const { token, user } = response.data;
+  storeAuth(token, user);
+  return { token, user };
+}
+
 export async function getPasskeyList() {
   const response = await api.get('/auth/passkey/list');
   return response.data;

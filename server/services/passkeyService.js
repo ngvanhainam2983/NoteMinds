@@ -280,3 +280,62 @@ export function hasPasskeys(userId) {
     const count = db.prepare('SELECT COUNT(*) as count FROM passkeys WHERE user_id = ?').get(userId);
     return count.count > 0;
 }
+
+// ── Discoverable (usernameless) Passkey Login ──
+
+export async function generateDiscoverableAuthOptions() {
+    const options = await generateAuthenticationOptions({
+        rpID: getRpId(),
+        allowCredentials: [], // empty = discoverable / resident key
+        userVerification: 'preferred',
+    });
+
+    // Store challenge with a special placeholder userId
+    saveChallenge('__discoverable__', options.challenge, 'discoverable');
+
+    return options;
+}
+
+export async function verifyDiscoverableAuth(response) {
+    const expectedChallenge = getChallenge('__discoverable__', 'discoverable');
+    if (!expectedChallenge) throw new Error('Phiên xác thực đã hết hạn. Vui lòng thử lại.');
+
+    // Find the passkey + its owner by credential ID
+    const passkeyRow = db.prepare('SELECT * FROM passkeys WHERE id = ?').get(response.id);
+    if (!passkeyRow) throw new Error('Passkey không tìm thấy. Vui lòng đăng nhập bằng tài khoản/mật khẩu.');
+
+    const matchingPasskey = {
+        id: passkeyRow.id,
+        publicKey: passkeyRow.public_key,
+        counter: passkeyRow.counter,
+        transports: passkeyRow.transports ? JSON.parse(passkeyRow.transports) : undefined,
+    };
+
+    let verification;
+    try {
+        verification = await verifyAuthenticationResponse({
+            response,
+            expectedChallenge,
+            expectedOrigin: getOrigins(),
+            expectedRPID: getRpId(),
+            credential: {
+                id: matchingPasskey.id,
+                publicKey: matchingPasskey.publicKey,
+                counter: matchingPasskey.counter,
+                transports: matchingPasskey.transports,
+            },
+        });
+    } catch (error) {
+        throw new Error('Xác thực passkey thất bại: ' + error.message);
+    }
+
+    deleteChallenge('__discoverable__', 'discoverable');
+
+    if (!verification.verified) {
+        throw new Error('Xác thực passkey thất bại');
+    }
+
+    updatePasskeyCounter(response.id, verification.authenticationInfo.newCounter);
+
+    return { verified: true, userId: passkeyRow.user_id };
+}

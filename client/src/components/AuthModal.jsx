@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { X, User, Mail, Lock, Eye, EyeOff, LogIn, UserPlus, Loader2, ArrowLeft, CheckCircle2, MailCheck, ShieldCheck, KeyRound, Fingerprint } from 'lucide-react';
-import { register, login, forgotPassword, resendVerification, verify2FA, verify2FARecovery, getPasskeyAuthOptions, verifyPasskeyAuth } from '../api';
+import { register, login, forgotPassword, resendVerification, verify2FA, verify2FARecovery, getPasskeyAuthOptions, verifyPasskeyAuth, getPasskeyLoginOptions, verifyPasskeyLogin } from '../api';
 import { startAuthentication } from '@simplewebauthn/browser';
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab = 'login' }) {
@@ -157,6 +157,26 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
         setError('Xác thực passkey bị hủy');
       } else {
         setError(err.response?.data?.error || err.message || 'Xác thực passkey thất bại');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasskeyLogin = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const options = await getPasskeyLoginOptions();
+      const authResponse = await startAuthentication({ optionsJSON: options });
+      const result = await verifyPasskeyLogin(authResponse);
+      onAuthSuccess(result.user);
+      onClose();
+    } catch (err) {
+      if (err.name === 'NotAllowedError') {
+        setError('Xác thực passkey bị hủy');
+      } else {
+        setError(err.response?.data?.error || err.message || 'Đăng nhập passkey thất bại');
       }
     } finally {
       setLoading(false);
@@ -639,6 +659,33 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                   </>
                 )}
               </button>
+
+              {tab === 'login' && (
+                <>
+                  <div className="flex items-center gap-3 mt-4">
+                    <div className="flex-1 h-px bg-line" />
+                    <span className="text-xs text-muted">hoặc</span>
+                    <div className="flex-1 h-px bg-line" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handlePasskeyLogin}
+                    disabled={loading}
+                    className="w-full py-3 mt-3 bg-surface-2 border border-line hover:bg-line rounded-xl text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        Đang xác thực...
+                      </>
+                    ) : (
+                      <>
+                        <Fingerprint size={18} /> Đăng nhập bằng Passkey
+                      </>
+                    )}
+                  </button>
+                </>
+              )}
             </form>
           </>
         )}

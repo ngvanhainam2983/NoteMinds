@@ -30,6 +30,7 @@ import {
 import {
   generatePasskeyRegistrationOptions, verifyPasskeyRegistration,
   generatePasskeyAuthenticationOptions, verifyPasskeyAuthentication,
+  generateDiscoverableAuthOptions, verifyDiscoverableAuth,
   getPasskeyList, removePasskey, renamePasskey,
 } from './services/passkeyService.js';
 import { decryptMiddleware } from './middleware/encryptionMiddleware.js';
@@ -440,6 +441,35 @@ app.post('/api/auth/passkey/register-verify', requireAuth, async (req, res) => {
     res.json(result);
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+// Discoverable passkey login (no username/password needed)
+app.post('/api/auth/passkey/login-options', async (req, res) => {
+  try {
+    const options = await generateDiscoverableAuthOptions();
+    res.json(options);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/auth/passkey/login-verify', async (req, res) => {
+  try {
+    const { response } = req.body;
+    if (!response) return res.status(400).json({ error: 'Missing passkey response' });
+    const result = await verifyDiscoverableAuth(response);
+    if (result.verified) {
+      const user = getUserById(result.userId);
+      if (!user) return res.status(401).json({ error: 'Tài khoản không tồn tại' });
+      if (user.is_banned) return res.status(403).json({ error: 'Tài khoản đã bị khóa' });
+      const token = generateToken(user);
+      res.json({ user, token });
+    } else {
+      res.status(401).json({ error: 'Xác thực passkey thất bại' });
+    }
+  } catch (err) {
+    res.status(401).json({ error: err.message });
   }
 });
 
