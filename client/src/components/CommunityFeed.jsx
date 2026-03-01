@@ -194,16 +194,38 @@ export default function CommunityFeed({ user }) {
                                             {doc.title}
                                         </h3>
                                         <p className="text-xs text-muted flex items-center gap-1.5">
-                                            {doc.author_avatar ? (
-                                                <img
-                                                    src={doc.author_avatar.startsWith('http') ? doc.author_avatar : `${API_URL}${doc.author_avatar}`}
-                                                    alt=""
-                                                    className="w-5 h-5 rounded-full object-cover ring-1 ring-primary-500/30"
-                                                />
-                                            ) : (
-                                                <span className="w-5 h-5 rounded-full bg-gradient-to-tr from-primary-500 to-accent-500 flex items-center justify-center text-[10px] text-white font-bold opacity-90 shadow-sm">
-                                                    {doc.author.charAt(0).toUpperCase()}
+                                            {doc.author_username ? (
+                                                <span
+                                                    className="cursor-pointer"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        window.location.href = `/profile/@${doc.author_username}`;
+                                                    }}
+                                                >
+                                                    {doc.author_avatar ? (
+                                                        <img
+                                                            src={doc.author_avatar.startsWith('http') ? doc.author_avatar : `${API_URL}${doc.author_avatar}`}
+                                                            alt=""
+                                                            className="w-5 h-5 rounded-full object-cover ring-1 ring-primary-500/30 hover:ring-primary-400 transition-all"
+                                                        />
+                                                    ) : (
+                                                        <span className="w-5 h-5 rounded-full bg-gradient-to-tr from-primary-500 to-accent-500 flex items-center justify-center text-[10px] text-white font-bold opacity-90 shadow-sm hover:opacity-100 transition-all">
+                                                            {doc.author.charAt(0).toUpperCase()}
+                                                        </span>
+                                                    )}
                                                 </span>
+                                            ) : (
+                                                doc.author_avatar ? (
+                                                    <img
+                                                        src={doc.author_avatar.startsWith('http') ? doc.author_avatar : `${API_URL}${doc.author_avatar}`}
+                                                        alt=""
+                                                        className="w-5 h-5 rounded-full object-cover ring-1 ring-primary-500/30"
+                                                    />
+                                                ) : (
+                                                    <span className="w-5 h-5 rounded-full bg-gradient-to-tr from-primary-500 to-accent-500 flex items-center justify-center text-[10px] text-white font-bold opacity-90 shadow-sm">
+                                                        {doc.author.charAt(0).toUpperCase()}
+                                                    </span>
+                                                )
                                             )}
                                             {doc.author_username ? (
                                                 <span
@@ -265,12 +287,18 @@ export default function CommunityFeed({ user }) {
                                     )}
                                     {comments.map(c => (
                                         <div key={c.id} className="flex items-start gap-2 group/comment">
-                                            <span className="w-6 h-6 rounded-full bg-gradient-to-tr from-primary-500 to-accent-500 flex items-center justify-center text-[9px] text-white font-bold shrink-0 mt-0.5">
+                                            <span
+                                                className="w-6 h-6 rounded-full bg-gradient-to-tr from-primary-500 to-accent-500 flex items-center justify-center text-[9px] text-white font-bold shrink-0 mt-0.5 cursor-pointer hover:opacity-80 transition-opacity"
+                                                onClick={() => c.username && (window.location.href = `/profile/@${c.username}`)}
+                                            >
                                                 {(c.username || '?').charAt(0).toUpperCase()}
                                             </span>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-xs font-semibold">{c.display_name || c.username}</span>
+                                                    <span
+                                                        className={`text-xs font-semibold ${c.username ? 'cursor-pointer hover:text-primary-400 transition-colors' : ''}`}
+                                                        onClick={() => c.username && (window.location.href = `/profile/@${c.username}`)}
+                                                    >{c.display_name || c.username}</span>
                                                     <span className="text-[10px] text-muted">{new Date(c.created_at).toLocaleDateString('vi-VN')}</span>
                                                 </div>
                                                 <p className="text-xs text-muted mt-0.5">{c.content}</p>
