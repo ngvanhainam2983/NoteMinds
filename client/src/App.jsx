@@ -17,7 +17,7 @@ import StatsPage from './components/StatsPage';
 import AnnouncementBanner from './components/AnnouncementBanner';
 import OfflinePage from './components/OfflinePage';
 import { getStoredUser, logout as apiLogout, getMe, verifyEmailToken, resetPassword, getSystemSettings } from './api';
-import { CheckCircle2, XCircle, Loader2, Lock, Eye, EyeOff, ArrowLeft, Wrench } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, Lock, Eye, EyeOff, ArrowLeft, Wrench, WifiOff } from 'lucide-react';
 
 export default function App() {
   const [currentDoc, setCurrentDoc] = useState(null);
@@ -166,20 +166,62 @@ export default function App() {
     return <div className="min-h-screen bg-bg" />;
   }
 
-  // Show offline page when no network
+  // Show offline UI when no network
   if (isOffline) {
+    const offlineEnabled = (() => { try { return localStorage.getItem('notemind_offline_page_enabled') === 'true'; } catch { return false; } })();
+    if (offlineEnabled) {
+      return (
+        <OfflinePage
+          onBack={null}
+          onRetry={() => {
+            if (navigator.onLine) setIsOffline(false);
+            else window.location.reload();
+          }}
+          onDisable={() => {
+            try { localStorage.removeItem('notemind_offline_page_enabled'); } catch {}
+            setIsOffline(prev => !prev);
+            setTimeout(() => setIsOffline(true), 0);
+          }}
+        />
+      );
+    }
+    // Simple offline banner
     return (
-      <OfflinePage
-        onBack={null}
-        onRetry={() => {
-          // Force re-check connectivity
-          if (navigator.onLine) {
-            setIsOffline(false);
-          } else {
-            window.location.reload();
-          }
-        }}
-      />
+      <div className="min-h-screen bg-bg flex items-center justify-center p-4">
+        <div className="w-full max-w-md text-center">
+          <div className="bg-surface border border-line rounded-2xl p-10 space-y-6">
+            <div className="w-20 h-20 mx-auto bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-center">
+              <WifiOff size={36} className="text-amber-400" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-extrabold tracking-tight mb-2">Bạn đang offline</h1>
+              <p className="text-muted text-sm leading-relaxed">Không có kết nối mạng. Hãy kiểm tra lại kết nối và thử lại.</p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => { if (navigator.onLine) setIsOffline(false); else window.location.reload(); }}
+                className="w-full py-2.5 rounded-xl bg-primary-600 hover:bg-primary-500 text-white text-sm font-semibold transition-colors"
+              >
+                Thử kết nối lại
+              </button>
+              <button
+                onClick={() => {
+                  try { localStorage.setItem('notemind_offline_page_enabled', 'true'); } catch {}
+                  setIsOffline(prev => !prev); // force re-render
+                  setTimeout(() => setIsOffline(true), 0);
+                }}
+                className="w-full py-2.5 rounded-xl bg-surface-2 hover:bg-line border border-line text-txt text-sm font-medium transition-colors"
+              >
+                Xem lịch sử đã lưu
+              </button>
+            </div>
+            <div className="flex items-center justify-center gap-2 text-xs text-muted">
+              <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
+              Đang chờ kết nối mạng
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 

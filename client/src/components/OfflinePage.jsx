@@ -25,7 +25,7 @@ const statusIcon = (doc) => {
   return <Loader2 size={12} className="text-amber-400" />;
 };
 
-export default function OfflinePage({ onBack, onRetry }) {
+export default function OfflinePage({ onBack, onRetry, onDisable }) {
   const [search, setSearch] = useState('');
 
   // Load cached data from localStorage
@@ -92,14 +92,27 @@ export default function OfflinePage({ onBack, onRetry }) {
               </div>
             </div>
           </div>
-          {onRetry && (
-            <button
-              onClick={onRetry}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-primary-400 hover:bg-primary-600/10 border border-primary-500/20 transition-colors"
-            >
-              <RefreshCw size={13} />
-              Thử kết nối lại
-            </button>
+          {(onRetry || onDisable) && (
+            <div className="flex items-center gap-2">
+              {onDisable && (
+                <button
+                  onClick={onDisable}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted hover:text-txt hover:bg-surface border border-line transition-colors"
+                >
+                  <ArrowLeft size={13} />
+                  Quay lại
+                </button>
+              )}
+              {onRetry && (
+                <button
+                  onClick={onRetry}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-primary-400 hover:bg-primary-600/10 border border-primary-500/20 transition-colors"
+                >
+                  <RefreshCw size={13} />
+                  Thử kết nối lại
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>
