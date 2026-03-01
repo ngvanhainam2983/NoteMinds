@@ -227,6 +227,19 @@ export default function App() {
             onAuthSuccess={handleAuthSuccess}
             defaultTab={authModalTab}
           />
+
+          {/* Footer */}
+          {view === 'home' && (
+            <footer className="border-t border-line mt-12">
+              <div className="max-w-6xl mx-auto px-4 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted">
+                <p>&copy; 2026 NoteMind @ Đội Đèn Giao Thông</p>
+                <div className="flex items-center gap-4">
+                  <button onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-txt transition-colors">Tính năng</button>
+                  <button onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-txt transition-colors">Bảng giá</button>
+                </div>
+              </div>
+            </footer>
+          )}
         </>
       )}
     </div>
