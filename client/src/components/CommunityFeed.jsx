@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { getCommunityDocuments } from '../api';
 import { Globe, FileText, Search, Loader2, Calendar } from 'lucide-react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 export default function CommunityFeed() {
     const [documents, setDocuments] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -90,9 +92,17 @@ export default function CommunityFeed() {
                                         {doc.title}
                                     </h3>
                                     <p className="text-xs text-muted flex items-center gap-1.5">
-                                        <span className="w-5 h-5 rounded-full bg-gradient-to-tr from-primary-500 to-accent-500 flex items-center justify-center text-[10px] text-white font-bold opacity-90 shadow-sm">
-                                            {doc.author.charAt(0).toUpperCase()}
-                                        </span>
+                                        {doc.author_avatar ? (
+                                            <img
+                                                src={doc.author_avatar.startsWith('http') ? doc.author_avatar : `${API_URL}${doc.author_avatar}`}
+                                                alt=""
+                                                className="w-5 h-5 rounded-full object-cover ring-1 ring-primary-500/30"
+                                            />
+                                        ) : (
+                                            <span className="w-5 h-5 rounded-full bg-gradient-to-tr from-primary-500 to-accent-500 flex items-center justify-center text-[10px] text-white font-bold opacity-90 shadow-sm">
+                                                {doc.author.charAt(0).toUpperCase()}
+                                            </span>
+                                        )}
                                         <span className="truncate">{doc.author}</span>
                                     </p>
                                 </div>

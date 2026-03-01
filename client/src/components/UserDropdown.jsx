@@ -7,6 +7,30 @@ import {
 import { getDocumentHistory } from '../api';
 import ConfirmModal from './ConfirmModal';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+function UserAvatar({ user, size = 'sm' }) {
+  const sizeClasses = size === 'sm' ? 'w-6 h-6 text-[10px]' : 'w-9 h-9 text-sm';
+  const initials = (user.displayName || user.username || '?').slice(0, 2).toUpperCase();
+
+  if (user.avatar_url) {
+    const src = user.avatar_url.startsWith('http') ? user.avatar_url : `${API_URL}${user.avatar_url}`;
+    return (
+      <img
+        src={src}
+        alt="Avatar"
+        className={`${sizeClasses} rounded-full object-cover ring-2 ring-primary-500/30`}
+      />
+    );
+  }
+
+  return (
+    <span className={`${sizeClasses} rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center font-bold text-white ring-2 ring-primary-500/30`}>
+      {initials}
+    </span>
+  );
+}
+
 export default function UserDropdown({ user, onLogout, onOpenAdmin, onOpenPricing, onUserUpdate, onOpenDocument, onOpenProfile }) {
   const [open, setOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -33,7 +57,7 @@ export default function UserDropdown({ user, onLogout, onOpenAdmin, onOpenPricin
           onClick={() => setOpen(!open)}
           className="flex items-center gap-2 bg-surface-2 hover:bg-line px-3 py-1.5 rounded-full transition-colors"
         >
-          <User size={14} className="text-primary-400" />
+          <UserAvatar user={user} size="sm" />
           <span className="text-sm font-medium max-w-[120px] truncate">
             {user.displayName || user.username}
           </span>
@@ -52,10 +76,12 @@ export default function UserDropdown({ user, onLogout, onOpenAdmin, onOpenPricin
         {open && (
           <div className="absolute right-0 top-full mt-2 w-56 bg-surface border border-line rounded-xl shadow-2xl overflow-hidden z-50 animate-fade-in">
             {/* User info header */}
-            <div className="px-4 py-3 border-b border-line">
-              <p className="text-sm font-medium truncate">{user.displayName || user.username}</p>
-              <p className="text-xs text-muted truncate">{user.email}</p>
-              <div className="flex items-center gap-1.5 mt-1">
+            <div className="px-4 py-3 border-b border-line flex items-center gap-3">
+              <UserAvatar user={user} size="lg" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{user.displayName || user.username}</p>
+                <p className="text-xs text-muted truncate">{user.email}</p>
+                <div className="flex items-center gap-1.5 mt-1">
                 <span
                   className="text-xs px-2 py-0.5 rounded-full font-medium"
                   style={{
@@ -66,6 +92,7 @@ export default function UserDropdown({ user, onLogout, onOpenAdmin, onOpenPricin
                 >
                   {planBadge || '📦'} Gói {user.planLabel || 'Free'}
                 </span>
+              </div>
               </div>
             </div>
 

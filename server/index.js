@@ -76,6 +76,15 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
+// Ensure avatars directory exists
+const avatarsDir = path.join(uploadsDir, 'avatars');
+if (!fs.existsSync(avatarsDir)) {
+  fs.mkdirSync(avatarsDir, { recursive: true });
+}
+
+// Serve avatar files statically
+app.use('/uploads/avatars', express.static(avatarsDir));
+
 // Initialize cleanup cron job
 initDocumentCleanup(uploadsDir);
 
@@ -515,6 +524,48 @@ app.put('/api/auth/profile', requireAuth, (req, res) => {
     res.json({ user: updated });
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+// Avatar upload
+const avatarUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, avatarsDir),
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      cb(null, `${req.user.id}-${Date.now()}${ext}`);
+    }
+  }),
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+  fileFilter: (req, file, cb) => {
+    const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.includes(ext)) cb(null, true);
+    else cb(new Error('Chỉ chấp nhận ảnh JPG, PNG hoặc WebP'));
+  }
+});
+
+app.post('/api/users/profile/avatar', requireAuth, avatarUpload.single('avatar'), (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Không tìm thấy file ảnh' });
+
+    // Remove old avatar file if exists
+    if (req.user.avatar_url) {
+      const oldPath = path.join(__dirname, req.user.avatar_url);
+      if (fs.existsSync(oldPath)) {
+        try { fs.unlinkSync(oldPath); } catch (e) { /* ignore */ }
+      }
+    }
+
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+    const db = new Database(DB_PATH);
+    db.prepare("UPDATE users SET avatar_url = ?, updated_at = datetime('now') WHERE id = ?").run(avatarUrl, req.user.id);
+    db.close();
+    const updated = getUserById(req.user.id);
+    res.json({ user: updated });
+  } catch (err) {
+    logger.error('Avatar upload error:', { error: err.message });
+    res.status(500).json({ error: 'Lỗi khi tải lên ảnh đại diện' });
   }
 });
 
@@ -1416,7 +1467,7 @@ app.get('/api/community/documents', async (req, res) => {
     const offset = (page - 1) * limit;
 
     const query = `
-      SELECT d.id, d.original_name as title, d.created_at, u.display_name as author
+      SELECT d.id, d.original_name as title, d.created_at, u.display_name as author, u.avatar_url as author_avatar
       FROM documents d
       JOIN users u ON d.user_id = u.id
       WHERE d.is_public = 1 AND d.status = 'ready'
