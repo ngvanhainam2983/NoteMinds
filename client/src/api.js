@@ -748,4 +748,121 @@ export async function exportMarkdown(docId) {
   return response.data;
 }
 
+// ── Admin: Real-time Dashboard ────────────────────────
+export async function adminGetRealtime() {
+  const response = await api.get('/admin/realtime');
+  return response.data;
+}
+
+// ── Admin: Bulk Actions ───────────────────────────────
+export async function adminBulkSetPlan(userIds, plan) {
+  const response = await api.post('/admin/bulk/users/plan', { userIds, plan });
+  return response.data;
+}
+export async function adminBulkBanUsers(userIds, reason) {
+  const response = await api.post('/admin/bulk/users/ban', { userIds, reason });
+  return response.data;
+}
+export async function adminBulkDeleteDocs(docIds) {
+  const response = await api.post('/admin/bulk/docs/delete', { docIds });
+  return response.data;
+}
+export async function adminBulkTogglePublicDocs(docIds, isPublic) {
+  const response = await api.post('/admin/bulk/docs/toggle-public', { docIds, is_public: isPublic });
+  return response.data;
+}
+
+// ── Admin: User Detail ────────────────────────────────
+export async function adminGetUserDetail(userId) {
+  const response = await api.get(`/admin/users/${userId}`);
+  return response.data;
+}
+
+// ── Admin: AI Usage Monitoring ────────────────────────
+export async function adminGetAiUsage(days = 7) {
+  const response = await api.get(`/admin/ai-usage?days=${days}`);
+  return response.data;
+}
+
+// ── Admin: Content Moderation ─────────────────────────
+export async function adminGetReports(status = 'pending', page = 1) {
+  const response = await api.get(`/admin/reports?status=${status}&page=${page}`);
+  return response.data;
+}
+export async function submitReport(targetType, targetId, reason, details) {
+  const response = await api.post('/community/report', { targetType, targetId, reason, details });
+  return response.data;
+}
+export async function adminReviewReport(reportId, status) {
+  const response = await api.put(`/admin/reports/${reportId}`, { status });
+  return response.data;
+}
+
+// ── Admin: System Health ──────────────────────────────
+export async function adminGetSystemHealth() {
+  const response = await api.get('/admin/system-health');
+  return response.data;
+}
+
+// ── Admin: Email Blast ────────────────────────────────
+export async function adminSendEmailBlast(subject, content, targetFilter) {
+  const response = await api.post('/admin/email-blast', { subject, content, targetFilter });
+  return response.data;
+}
+export async function adminGetEmailBlasts() {
+  const response = await api.get('/admin/email-blasts');
+  return response.data;
+}
+
+// ── Admin: Feature Flags ──────────────────────────────
+export async function adminGetFeatureFlags() {
+  const response = await api.get('/admin/feature-flags');
+  return response.data;
+}
+export async function adminCreateFeatureFlag(data) {
+  const response = await api.post('/admin/feature-flags', data);
+  return response.data;
+}
+export async function adminUpdateFeatureFlag(id, data) {
+  const response = await api.put(`/admin/feature-flags/${id}`, data);
+  return response.data;
+}
+export async function adminDeleteFeatureFlag(id) {
+  const response = await api.delete(`/admin/feature-flags/${id}`);
+  return response.data;
+}
+
+// ── Admin: Export CSV ─────────────────────────────────
+export async function adminExportUsers() {
+  const response = await api.get('/admin/export/users');
+  return response.data;
+}
+export async function adminExportDocuments() {
+  const response = await api.get('/admin/export/documents');
+  return response.data;
+}
+export async function adminExportActivity() {
+  const response = await api.get('/admin/export/activity');
+  return response.data;
+}
+
+// ── Admin: Login Activity ─────────────────────────────
+export async function adminGetLoginActivity(page = 1) {
+  const response = await api.get(`/admin/login-activity?page=${page}`);
+  return response.data;
+}
+export async function trackLogin() {
+  try { await api.post('/track-login'); } catch { /* silent */ }
+}
+
+// ── System Settings (maintenance etc.) ────────────────
+export async function getSystemSettings() {
+  const response = await api.get('/system/settings');
+  return response.data;
+}
+export async function adminUpdateSystemSetting(key, value) {
+  const response = await api.put('/admin/system-settings', { key, value });
+  return response.data;
+}
+
 export default api;

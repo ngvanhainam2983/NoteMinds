@@ -8,6 +8,8 @@ import * as featureService from '../services/featureService.js';
 import * as advancedFeatureService from '../services/advancedFeatureService.js';
 import * as syncExportService from '../services/syncAndExportService.js';
 import { logger, logAnalytic } from '../services/logger.js';
+import os from 'os';
+import fs from 'fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DB_PATH = path.join(__dirname, '../data/notemind.db');
@@ -948,6 +950,491 @@ router.get('/export/markdown/:docId', requireAuth, (req, res) => {
     db.close();
     res.json({ markdown: md, filename: `${doc.original_name}.md` });
   } catch (error) { res.status(500).json({ error: 'Export failed' }); }
+});
+
+// ════════════════════════════════════════════════════════════
+// ADMIN: REAL-TIME DASHBOARD
+// ════════════════════════════════════════════════════════════
+
+const serverStartTime = Date.now();
+
+router.get('/admin/realtime', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const db = new Database(DB_PATH);
+    const now = new Date();
+    const oneHourAgo = new Date(now - 3600000).toISOString();
+    const uploadsLastHour = db.prepare("SELECT COUNT(*) as count FROM upload_logs WHERE uploaded_at >= ?").get(oneHourAgo).count;
+    const chatMsgsLastHour = db.prepare("SELECT COUNT(*) as count FROM daily_activity WHERE activity_date = date('now')").get().count;
+    const aiCallsLastHour = db.prepare("SELECT COUNT(*) as count FROM ai_usage_logs WHERE created_at >= ?").get(oneHourAgo).count;
+    const aiErrorsLastHour = db.prepare("SELECT COUNT(*) as count FROM ai_usage_logs WHERE created_at >= ? AND success = 0").get(oneHourAgo).count;
+    const onlineRecent = db.prepare("SELECT COUNT(DISTINCT user_id) as count FROM daily_activity WHERE activity_date = date('now')").get().count;
+    // Sparkline: last 12 hours activity
+    const sparkline = [];
+    for (let i = 11; i >= 0; i--) {
+      const from = new Date(now - (i + 1) * 3600000).toISOString();
+      const to = new Date(now - i * 3600000).toISOString();
+      const c = db.prepare("SELECT COUNT(*) as count FROM ai_usage_logs WHERE created_at >= ? AND created_at < ?").get(from, to).count;
+      sparkline.push(c);
+    }
+    db.close();
+    res.json({
+      uploadsLastHour, chatMsgsLastHour, aiCallsLastHour, aiErrorsLastHour,
+      activeUsersToday: onlineRecent,
+      sparkline,
+      uptime: Date.now() - serverStartTime
+    });
+  } catch (error) { res.status(500).json({ error: 'Failed to get realtime stats' }); }
+});
+
+// ════════════════════════════════════════════════════════════
+// ADMIN: BULK ACTIONS
+// ════════════════════════════════════════════════════════════
+
+router.post('/admin/bulk/users/plan', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const { userIds, plan } = req.body;
+    if (!userIds || !Array.isArray(userIds) || !plan) return res.status(400).json({ error: 'userIds and plan required' });
+    const db = new Database(DB_PATH);
+    const stmt = db.prepare('UPDATE users SET plan = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
+    const run = db.transaction((ids) => { for (const id of ids) stmt.run(plan, id); });
+    run(userIds);
+    db.prepare('INSERT INTO admin_audit_logs (id, admin_id, action, target_type, details) VALUES (?, ?, ?, ?, ?)').run(uuidv4(), req.user.id, 'bulk_set_plan', 'user', JSON.stringify({ userIds, plan }));
+    db.close();
+    res.json({ success: true, affected: userIds.length });
+  } catch (error) { res.status(500).json({ error: 'Bulk plan update failed' }); }
+});
+
+router.post('/admin/bulk/users/ban', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const { userIds, reason } = req.body;
+    if (!userIds || !Array.isArray(userIds)) return res.status(400).json({ error: 'userIds required' });
+    const db = new Database(DB_PATH);
+    const stmt = db.prepare('UPDATE users SET is_banned = 1, ban_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
+    const run = db.transaction((ids) => { for (const id of ids) stmt.run(reason || 'Bulk ban', id); });
+    run(userIds);
+    db.prepare('INSERT INTO admin_audit_logs (id, admin_id, action, target_type, details) VALUES (?, ?, ?, ?, ?)').run(uuidv4(), req.user.id, 'bulk_ban', 'user', JSON.stringify({ userIds }));
+    db.close();
+    res.json({ success: true, affected: userIds.length });
+  } catch (error) { res.status(500).json({ error: 'Bulk ban failed' }); }
+});
+
+router.post('/admin/bulk/docs/delete', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const { docIds } = req.body;
+    if (!docIds || !Array.isArray(docIds)) return res.status(400).json({ error: 'docIds required' });
+    const db = new Database(DB_PATH);
+    const stmt = db.prepare("UPDATE documents SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?");
+    const run = db.transaction((ids) => { for (const id of ids) stmt.run(id); });
+    run(docIds);
+    db.prepare('INSERT INTO admin_audit_logs (id, admin_id, action, target_type, details) VALUES (?, ?, ?, ?, ?)').run(uuidv4(), req.user.id, 'bulk_delete_docs', 'document', JSON.stringify({ count: docIds.length }));
+    db.close();
+    res.json({ success: true, affected: docIds.length });
+  } catch (error) { res.status(500).json({ error: 'Bulk delete failed' }); }
+});
+
+router.post('/admin/bulk/docs/toggle-public', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const { docIds, is_public } = req.body;
+    if (!docIds || !Array.isArray(docIds)) return res.status(400).json({ error: 'docIds required' });
+    const db = new Database(DB_PATH);
+    const stmt = db.prepare("UPDATE documents SET is_public = ? WHERE id = ?");
+    const run = db.transaction((ids) => { for (const id of ids) stmt.run(is_public ? 1 : 0, id); });
+    run(docIds);
+    db.prepare('INSERT INTO admin_audit_logs (id, admin_id, action, target_type, details) VALUES (?, ?, ?, ?, ?)').run(uuidv4(), req.user.id, is_public ? 'bulk_make_public' : 'bulk_make_private', 'document', JSON.stringify({ count: docIds.length }));
+    db.close();
+    res.json({ success: true, affected: docIds.length });
+  } catch (error) { res.status(500).json({ error: 'Bulk toggle failed' }); }
+});
+
+// ════════════════════════════════════════════════════════════
+// ADMIN: USER DETAIL
+// ════════════════════════════════════════════════════════════
+
+router.get('/admin/users/:userId', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const db = new Database(DB_PATH);
+    const user = db.prepare('SELECT id, username, email, display_name, avatar_url, plan, plan_expires_at, role, is_banned, ban_reason, created_at, updated_at, email_verified FROM users WHERE id = ?').get(req.params.userId);
+    if (!user) { db.close(); return res.status(404).json({ error: 'User not found' }); }
+    const documents = db.prepare('SELECT id, original_name, status, is_public, created_at FROM documents WHERE user_id = ? ORDER BY created_at DESC LIMIT 50').all(user.id);
+    const recentActivity = db.prepare('SELECT * FROM daily_activity WHERE user_id = ? ORDER BY activity_date DESC LIMIT 30').all(user.id);
+    const loginHistory = db.prepare('SELECT * FROM login_activity WHERE user_id = ? ORDER BY created_at DESC LIMIT 20').all(user.id);
+    const streak = db.prepare('SELECT * FROM user_streaks WHERE user_id = ?').get(user.id);
+    const totalAiCalls = db.prepare('SELECT COUNT(*) as count, SUM(total_tokens) as tokens FROM ai_usage_logs WHERE user_id = ?').get(user.id);
+    const totalDocs = documents.length;
+    db.close();
+    res.json({ user, documents, recentActivity, loginHistory, streak, aiUsage: totalAiCalls, totalDocs });
+  } catch (error) { res.status(500).json({ error: 'Failed to get user details' }); }
+});
+
+// ════════════════════════════════════════════════════════════
+// ADMIN: AI USAGE MONITORING
+// ════════════════════════════════════════════════════════════
+
+router.get('/admin/ai-usage', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const db = new Database(DB_PATH);
+    const days = parseInt(req.query.days) || 7;
+    const totalCalls = db.prepare("SELECT COUNT(*) as count FROM ai_usage_logs WHERE created_at >= date('now', ?)").get(`-${days} days`).count;
+    const totalTokens = db.prepare("SELECT COALESCE(SUM(total_tokens), 0) as total FROM ai_usage_logs WHERE created_at >= date('now', ?)").get(`-${days} days`).total;
+    const avgLatency = db.prepare("SELECT COALESCE(AVG(latency_ms), 0) as avg FROM ai_usage_logs WHERE created_at >= date('now', ?) AND success = 1").get(`-${days} days`).avg;
+    const errorRate = db.prepare("SELECT COUNT(*) as count FROM ai_usage_logs WHERE created_at >= date('now', ?) AND success = 0").get(`-${days} days`).count;
+    const byAction = db.prepare("SELECT action, COUNT(*) as count, SUM(total_tokens) as tokens, AVG(latency_ms) as avg_latency FROM ai_usage_logs WHERE created_at >= date('now', ?) GROUP BY action ORDER BY count DESC").all(`-${days} days`);
+    const daily = db.prepare("SELECT date(created_at) as date, COUNT(*) as calls, SUM(total_tokens) as tokens FROM ai_usage_logs WHERE created_at >= date('now', ?) GROUP BY date(created_at) ORDER BY date ASC").all(`-${days} days`);
+    const topUsers = db.prepare(`
+      SELECT u.id, u.display_name, u.username, COUNT(*) as calls, SUM(a.total_tokens) as tokens
+      FROM ai_usage_logs a JOIN users u ON a.user_id = u.id
+      WHERE a.created_at >= date('now', ?) GROUP BY u.id ORDER BY calls DESC LIMIT 10
+    `).all(`-${days} days`);
+    db.close();
+    res.json({ totalCalls, totalTokens, avgLatency: Math.round(avgLatency), errorRate, byAction, daily, topUsers });
+  } catch (error) { res.status(500).json({ error: 'Failed to get AI usage' }); }
+});
+
+// ════════════════════════════════════════════════════════════
+// ADMIN: CONTENT MODERATION
+// ════════════════════════════════════════════════════════════
+
+router.get('/admin/reports', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const status = req.query.status || 'pending';
+    const page = parseInt(req.query.page) || 1;
+    const limit = 20;
+    const offset = (page - 1) * limit;
+    const db = new Database(DB_PATH);
+    const total = db.prepare('SELECT COUNT(*) as count FROM content_reports WHERE status = ?').get(status).count;
+    const reports = db.prepare(`
+      SELECT r.*, u.display_name as reporter_name, u.username as reporter_username
+      FROM content_reports r JOIN users u ON r.reporter_id = u.id
+      WHERE r.status = ? ORDER BY r.created_at DESC LIMIT ? OFFSET ?
+    `).all(status, limit, offset);
+    db.close();
+    res.json({ reports, total, page, totalPages: Math.ceil(total / limit) });
+  } catch (error) { res.status(500).json({ error: 'Failed to get reports' }); }
+});
+
+router.post('/community/report', requireAuth, (req, res) => {
+  try {
+    const { targetType, targetId, reason, details } = req.body;
+    if (!targetType || !targetId || !reason) return res.status(400).json({ error: 'Missing fields' });
+    const id = uuidv4();
+    const db = new Database(DB_PATH);
+    db.prepare('INSERT INTO content_reports (id, reporter_id, target_type, target_id, reason, details) VALUES (?, ?, ?, ?, ?, ?)').run(id, req.user.id, targetType, targetId, reason, details || null);
+    db.close();
+    res.json({ success: true, reportId: id });
+  } catch (error) { res.status(500).json({ error: 'Failed to submit report' }); }
+});
+
+router.put('/admin/reports/:reportId', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const { status } = req.body; // 'approved' | 'rejected' | 'resolved'
+    const db = new Database(DB_PATH);
+    db.prepare('UPDATE content_reports SET status = ?, reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP WHERE id = ?').run(status, req.user.id, req.params.reportId);
+    const report = db.prepare('SELECT * FROM content_reports WHERE id = ?').get(req.params.reportId);
+    // If approved and target is comment, delete it
+    if (status === 'approved' && report?.target_type === 'comment') {
+      db.prepare('DELETE FROM community_comments WHERE id = ?').run(report.target_id);
+    }
+    if (status === 'approved' && report?.target_type === 'document') {
+      db.prepare('UPDATE documents SET is_public = 0 WHERE id = ?').run(report.target_id);
+    }
+    db.prepare('INSERT INTO admin_audit_logs (id, admin_id, action, target_type, target_id, details) VALUES (?, ?, ?, ?, ?, ?)').run(uuidv4(), req.user.id, `report_${status}`, 'report', req.params.reportId, JSON.stringify({ target: report?.target_type }));
+    db.close();
+    res.json({ success: true });
+  } catch (error) { res.status(500).json({ error: 'Failed to update report' }); }
+});
+
+// ════════════════════════════════════════════════════════════
+// ADMIN: SYSTEM HEALTH
+// ════════════════════════════════════════════════════════════
+
+router.get('/admin/system-health', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const uptime = process.uptime();
+    const memUsage = process.memoryUsage();
+    const cpus = os.cpus();
+    const totalMem = os.totalmem();
+    const freeMem = os.freemem();
+    const loadAvg = os.loadavg();
+
+    // DB file size
+    let dbSize = 0;
+    try { dbSize = fs.statSync(DB_PATH).size; } catch {}
+
+    // Uploads folder size
+    let uploadsSize = 0;
+    const uploadsDir = path.join(__dirname, '../uploads');
+    try {
+      const files = fs.readdirSync(uploadsDir);
+      for (const f of files) {
+        try { uploadsSize += fs.statSync(path.join(uploadsDir, f)).size; } catch {}
+      }
+    } catch {}
+
+    // Recent errors from ai_usage_logs
+    const db = new Database(DB_PATH);
+    const recentErrors = db.prepare("SELECT action, error_message, created_at FROM ai_usage_logs WHERE success = 0 ORDER BY created_at DESC LIMIT 10").all();
+    const totalErrors24h = db.prepare("SELECT COUNT(*) as count FROM ai_usage_logs WHERE success = 0 AND created_at >= datetime('now', '-1 day')").get().count;
+    const totalCalls24h = db.prepare("SELECT COUNT(*) as count FROM ai_usage_logs WHERE created_at >= datetime('now', '-1 day')").get().count;
+    const avgResponseTime = db.prepare("SELECT COALESCE(AVG(latency_ms), 0) as avg FROM ai_usage_logs WHERE success = 1 AND created_at >= datetime('now', '-1 day')").get().avg;
+    db.close();
+
+    res.json({
+      uptime,
+      memory: {
+        rss: memUsage.rss,
+        heapUsed: memUsage.heapUsed,
+        heapTotal: memUsage.heapTotal,
+        external: memUsage.external,
+      },
+      system: {
+        totalMem,
+        freeMem,
+        cpuCount: cpus.length,
+        cpuModel: cpus[0]?.model || 'Unknown',
+        loadAvg,
+        platform: os.platform(),
+        nodeVersion: process.version,
+      },
+      storage: { dbSize, uploadsSize },
+      errors: { recentErrors, totalErrors24h, totalCalls24h, avgResponseTime: Math.round(avgResponseTime) },
+    });
+  } catch (error) { res.status(500).json({ error: 'Failed to get system health' }); }
+});
+
+// ════════════════════════════════════════════════════════════
+// ADMIN: EMAIL BLAST
+// ════════════════════════════════════════════════════════════
+
+router.post('/admin/email-blast', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { subject, content, targetFilter } = req.body;
+    if (!subject || !content) return res.status(400).json({ error: 'Subject and content required' });
+    const id = uuidv4();
+    const db = new Database(DB_PATH);
+
+    let whereClause = 'WHERE email IS NOT NULL AND email != ""';
+    if (targetFilter === 'active') whereClause += " AND id IN (SELECT DISTINCT user_id FROM daily_activity WHERE activity_date >= date('now', '-7 days'))";
+    else if (targetFilter === 'inactive') whereClause += " AND id NOT IN (SELECT DISTINCT user_id FROM daily_activity WHERE activity_date >= date('now', '-30 days'))";
+    else if (targetFilter && targetFilter.startsWith('plan:')) whereClause += ` AND plan = '${targetFilter.replace('plan:', '')}'`;
+
+    const recipients = db.prepare(`SELECT id, email, username, display_name FROM users ${whereClause}`).all();
+
+    db.prepare('INSERT INTO email_blasts (id, subject, content, target_filter, total_recipients, status, sent_by) VALUES (?, ?, ?, ?, ?, ?, ?)').run(id, subject, content, targetFilter || 'all', recipients.length, 'sending', req.user.id);
+    db.prepare('INSERT INTO admin_audit_logs (id, admin_id, action, target_type, target_id, details) VALUES (?, ?, ?, ?, ?, ?)').run(uuidv4(), req.user.id, 'send_email_blast', 'email_blast', id, JSON.stringify({ subject, recipients: recipients.length }));
+    db.close();
+
+    // Send asynchronously — don't block response
+    res.json({ success: true, blastId: id, totalRecipients: recipients.length });
+
+    // Background sending
+    (async () => {
+      let sent = 0, failed = 0;
+      const { sendBlastEmail } = await import('../services/emailService.js');
+      for (const r of recipients) {
+        try {
+          await sendBlastEmail(r.email, subject, content, r.display_name || r.username);
+          sent++;
+        } catch { failed++; }
+      }
+      try {
+        const db2 = new Database(DB_PATH);
+        db2.prepare('UPDATE email_blasts SET sent_count = ?, failed_count = ?, status = ?, completed_at = CURRENT_TIMESTAMP WHERE id = ?').run(sent, failed, 'completed', id);
+        db2.close();
+      } catch {}
+    })();
+  } catch (error) { res.status(500).json({ error: 'Failed to send blast' }); }
+});
+
+router.get('/admin/email-blasts', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const db = new Database(DB_PATH);
+    const blasts = db.prepare(`
+      SELECT e.*, u.display_name as sender_name, u.username as sender_username
+      FROM email_blasts e JOIN users u ON e.sent_by = u.id
+      ORDER BY e.created_at DESC LIMIT 20
+    `).all();
+    db.close();
+    res.json({ blasts });
+  } catch (error) { res.status(500).json({ error: 'Failed to get blasts' }); }
+});
+
+// ════════════════════════════════════════════════════════════
+// ADMIN: FEATURE FLAGS
+// ════════════════════════════════════════════════════════════
+
+router.get('/admin/feature-flags', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const db = new Database(DB_PATH);
+    const flags = db.prepare('SELECT * FROM feature_flags ORDER BY name').all();
+    db.close();
+    res.json({ flags });
+  } catch (error) { res.status(500).json({ error: 'Failed to get feature flags' }); }
+});
+
+router.post('/admin/feature-flags', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const { name, description, enabled, plans } = req.body;
+    if (!name) return res.status(400).json({ error: 'Name required' });
+    const id = uuidv4();
+    const db = new Database(DB_PATH);
+    db.prepare('INSERT INTO feature_flags (id, name, description, enabled, plans, updated_by) VALUES (?, ?, ?, ?, ?, ?)').run(id, name, description || '', enabled !== undefined ? (enabled ? 1 : 0) : 1, JSON.stringify(plans || ['free', 'basic', 'pro', 'unlimited']), req.user.id);
+    db.prepare('INSERT INTO admin_audit_logs (id, admin_id, action, target_type, target_id, details) VALUES (?, ?, ?, ?, ?, ?)').run(uuidv4(), req.user.id, 'create_feature_flag', 'feature_flag', id, JSON.stringify({ name }));
+    const flag = db.prepare('SELECT * FROM feature_flags WHERE id = ?').get(id);
+    db.close();
+    res.json({ flag });
+  } catch (error) { res.status(500).json({ error: 'Failed to create flag' }); }
+});
+
+router.put('/admin/feature-flags/:id', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const { name, description, enabled, plans } = req.body;
+    const db = new Database(DB_PATH);
+    db.prepare('UPDATE feature_flags SET name=COALESCE(?,name), description=COALESCE(?,description), enabled=COALESCE(?,enabled), plans=COALESCE(?,plans), updated_by=?, updated_at=CURRENT_TIMESTAMP WHERE id=?').run(name, description, enabled !== undefined ? (enabled ? 1 : 0) : null, plans ? JSON.stringify(plans) : null, req.user.id, req.params.id);
+    db.prepare('INSERT INTO admin_audit_logs (id, admin_id, action, target_type, target_id, details) VALUES (?, ?, ?, ?, ?, ?)').run(uuidv4(), req.user.id, 'update_feature_flag', 'feature_flag', req.params.id, JSON.stringify({ name, enabled }));
+    const flag = db.prepare('SELECT * FROM feature_flags WHERE id = ?').get(req.params.id);
+    db.close();
+    res.json({ flag });
+  } catch (error) { res.status(500).json({ error: 'Failed to update flag' }); }
+});
+
+router.delete('/admin/feature-flags/:id', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const db = new Database(DB_PATH);
+    db.prepare('INSERT INTO admin_audit_logs (id, admin_id, action, target_type, target_id) VALUES (?, ?, ?, ?, ?)').run(uuidv4(), req.user.id, 'delete_feature_flag', 'feature_flag', req.params.id);
+    db.prepare('DELETE FROM feature_flags WHERE id = ?').run(req.params.id);
+    db.close();
+    res.json({ success: true });
+  } catch (error) { res.status(500).json({ error: 'Failed to delete flag' }); }
+});
+
+// Public endpoint to check feature flags for current user
+router.get('/feature-flags', (req, res) => {
+  try {
+    const db = new Database(DB_PATH);
+    const flags = db.prepare('SELECT name, enabled, plans FROM feature_flags').all();
+    db.close();
+    const result = {};
+    flags.forEach(f => { result[f.name] = { enabled: !!f.enabled, plans: JSON.parse(f.plans || '[]') }; });
+    res.json(result);
+  } catch (error) { res.json({}); }
+});
+
+// ════════════════════════════════════════════════════════════
+// ADMIN: EXPORT DATA (CSV)
+// ════════════════════════════════════════════════════════════
+
+router.get('/admin/export/users', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const db = new Database(DB_PATH);
+    const users = db.prepare('SELECT id, username, email, display_name, plan, role, is_banned, created_at FROM users ORDER BY created_at DESC').all();
+    db.close();
+    let csv = 'ID,Username,Email,Display Name,Plan,Role,Banned,Created At\n';
+    for (const u of users) {
+      csv += `${u.id},"${u.username}","${u.email || ''}","${u.display_name || ''}",${u.plan},${u.role},${u.is_banned},${u.created_at}\n`;
+    }
+    db.prepare && 0; // no-op
+    res.json({ csv, filename: `users_export_${new Date().toISOString().split('T')[0]}.csv`, count: users.length });
+  } catch (error) { res.status(500).json({ error: 'Export failed' }); }
+});
+
+router.get('/admin/export/documents', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const db = new Database(DB_PATH);
+    const docs = db.prepare(`
+      SELECT d.id, d.original_name, d.status, d.is_public, d.created_at, u.username as owner
+      FROM documents d LEFT JOIN users u ON d.user_id = u.id
+      WHERE d.deleted_at IS NULL ORDER BY d.created_at DESC
+    `).all();
+    db.close();
+    let csv = 'ID,Title,Status,Public,Owner,Created At\n';
+    for (const d of docs) {
+      csv += `${d.id},"${(d.original_name || '').replace(/"/g, '""')}",${d.status},${d.is_public ? 'Yes' : 'No'},"${d.owner || ''}",${d.created_at}\n`;
+    }
+    res.json({ csv, filename: `documents_export_${new Date().toISOString().split('T')[0]}.csv`, count: docs.length });
+  } catch (error) { res.status(500).json({ error: 'Export failed' }); }
+});
+
+router.get('/admin/export/activity', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const db = new Database(DB_PATH);
+    const activity = db.prepare(`
+      SELECT da.*, u.username FROM daily_activity da
+      JOIN users u ON da.user_id = u.id
+      ORDER BY da.activity_date DESC LIMIT 5000
+    `).all();
+    db.close();
+    let csv = 'Date,Username,Flashcards,Quizzes,Documents,Chat Messages,Study Minutes\n';
+    for (const a of activity) {
+      csv += `${a.activity_date},"${a.username}",${a.flashcards_reviewed},${a.quizzes_completed},${a.documents_uploaded},${a.chat_messages},${a.study_minutes}\n`;
+    }
+    res.json({ csv, filename: `activity_export_${new Date().toISOString().split('T')[0]}.csv`, count: activity.length });
+  } catch (error) { res.status(500).json({ error: 'Export failed' }); }
+});
+
+// ════════════════════════════════════════════════════════════
+// ADMIN: LOGIN ACTIVITY
+// ════════════════════════════════════════════════════════════
+
+router.get('/admin/login-activity', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 50;
+    const offset = (page - 1) * limit;
+    const db = new Database(DB_PATH);
+    const total = db.prepare('SELECT COUNT(*) as count FROM login_activity').get().count;
+    const logs = db.prepare(`
+      SELECT la.*, u.display_name, u.username
+      FROM login_activity la JOIN users u ON la.user_id = u.id
+      ORDER BY la.created_at DESC LIMIT ? OFFSET ?
+    `).all(limit, offset);
+    // IP summary
+    const ipSummary = db.prepare(`
+      SELECT ip_address, COUNT(*) as count, COUNT(DISTINCT user_id) as unique_users,
+        MAX(created_at) as last_seen
+      FROM login_activity GROUP BY ip_address ORDER BY count DESC LIMIT 20
+    `).all();
+    db.close();
+    res.json({ logs, total, page, totalPages: Math.ceil(total / limit), ipSummary });
+  } catch (error) { res.status(500).json({ error: 'Failed to get login activity' }); }
+});
+
+// Track login (called from auth)
+router.post('/track-login', requireAuth, (req, res) => {
+  try {
+    const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.ip || 'unknown';
+    const userAgent = req.headers['user-agent'] || '';
+    const db = new Database(DB_PATH);
+    db.prepare('INSERT INTO login_activity (user_id, ip_address, user_agent, success) VALUES (?, ?, ?, 1)').run(req.user.id, ip, userAgent);
+    db.close();
+    res.json({ success: true });
+  } catch { res.json({ success: false }); }
+});
+
+// ════════════════════════════════════════════════════════════
+// ADMIN: MAINTENANCE MODE
+// ════════════════════════════════════════════════════════════
+
+router.get('/system/settings', (req, res) => {
+  try {
+    const db = new Database(DB_PATH);
+    const rows = db.prepare('SELECT key, value FROM system_settings').all();
+    db.close();
+    const settings = {};
+    rows.forEach(r => { try { settings[r.key] = JSON.parse(r.value); } catch { settings[r.key] = r.value; } });
+    res.json(settings);
+  } catch { res.json({}); }
+});
+
+router.put('/admin/system-settings', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const { key, value } = req.body;
+    if (!key) return res.status(400).json({ error: 'Key required' });
+    const db = new Database(DB_PATH);
+    db.prepare('INSERT INTO system_settings (key, value, updated_by) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_by = excluded.updated_by, updated_at = CURRENT_TIMESTAMP').run(key, JSON.stringify(value), req.user.id);
+    db.prepare('INSERT INTO admin_audit_logs (id, admin_id, action, target_type, target_id, details) VALUES (?, ?, ?, ?, ?, ?)').run(uuidv4(), req.user.id, 'update_system_setting', 'setting', key, JSON.stringify({ value }));
+    db.close();
+    res.json({ success: true });
+  } catch (error) { res.status(500).json({ error: 'Failed to update setting' }); }
 });
 
 export default router;

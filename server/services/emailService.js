@@ -181,3 +181,23 @@ export async function testEmailConnection() {
         return false;
     }
 }
+
+// ── Blast Email ─────────────────────────────────────────
+export async function sendBlastEmail(email, subject, content, displayName) {
+    const html = baseTemplate(`
+    <h2 style="margin:0 0 8px; font-size:18px; color:#ffffff;">${subject}</h2>
+    <p style="margin:0 0 20px; font-size:14px; color:#9496a1; line-height:1.6;">
+      Xin chào <strong style="color:#a78bfa;">${displayName || 'bạn'}</strong>,
+    </p>
+    <div style="font-size:14px; color:#d1d5db; line-height:1.7;">
+      ${content.replace(/\n/g, '<br>')}
+    </div>
+  `);
+
+    await transporter.sendMail({
+        from: `"${FROM_NAME}" <${FROM_EMAIL}>`,
+        to: email,
+        subject: `📢 ${subject} - NoteMinds`,
+        html,
+    });
+}

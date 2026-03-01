@@ -606,7 +606,111 @@ export function initializeEnhancedTables() {
     `);
     console.log('  ✓ Announcement reads table created');
 
-    console.log('[Database] ✓ All v2 feature tables initialized');
+    // ── AI Usage Logs ───────────────────────────────────
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS ai_usage_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        action TEXT NOT NULL,
+        model TEXT,
+        prompt_tokens INTEGER DEFAULT 0,
+        completion_tokens INTEGER DEFAULT 0,
+        total_tokens INTEGER DEFAULT 0,
+        latency_ms INTEGER DEFAULT 0,
+        success INTEGER DEFAULT 1,
+        error_message TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_ai_usage_user ON ai_usage_logs(user_id, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_ai_usage_action ON ai_usage_logs(action, created_at DESC);
+    `);
+    console.log('  ✓ AI usage logs table created');
+
+    // ── Content Reports (Moderation) ────────────────────
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS content_reports (
+        id TEXT PRIMARY KEY,
+        reporter_id INTEGER NOT NULL,
+        target_type TEXT NOT NULL,
+        target_id TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        details TEXT,
+        status TEXT DEFAULT 'pending',
+        reviewed_by INTEGER,
+        reviewed_at DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(reporter_id) REFERENCES users(id),
+        FOREIGN KEY(reviewed_by) REFERENCES users(id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_reports_status ON content_reports(status, created_at DESC);
+    `);
+    console.log('  ✓ Content reports table created');
+
+    // ── Feature Flags ───────────────────────────────────
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS feature_flags (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL UNIQUE,
+        description TEXT,
+        enabled INTEGER DEFAULT 1,
+        plans TEXT DEFAULT '["free","basic","pro","unlimited"]',
+        updated_by INTEGER,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(updated_by) REFERENCES users(id)
+      );
+    `);
+    console.log('  ✓ Feature flags table created');
+
+    // ── System Settings (maintenance mode, etc.) ────────
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS system_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_by INTEGER,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    console.log('  ✓ System settings table created');
+
+    // ── Login Activity ──────────────────────────────────
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS login_activity (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        ip_address TEXT,
+        user_agent TEXT,
+        country TEXT,
+        city TEXT,
+        success INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_login_activity_user ON login_activity(user_id, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_login_activity_ip ON login_activity(ip_address, created_at DESC);
+    `);
+    console.log('  ✓ Login activity table created');
+
+    // ── Email Blast Log ─────────────────────────────────
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS email_blasts (
+        id TEXT PRIMARY KEY,
+        subject TEXT NOT NULL,
+        content TEXT NOT NULL,
+        target_filter TEXT DEFAULT 'all',
+        total_recipients INTEGER DEFAULT 0,
+        sent_count INTEGER DEFAULT 0,
+        failed_count INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'pending',
+        sent_by INTEGER NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        completed_at DATETIME,
+        FOREIGN KEY(sent_by) REFERENCES users(id)
+      );
+    `);
+    console.log('  ✓ Email blasts table created');
+
+    console.log('[Database] ✓ All v3 admin feature tables initialized');
     db.close();
     return true;
 
