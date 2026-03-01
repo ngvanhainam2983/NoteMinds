@@ -206,60 +206,161 @@ export default function AdminPanel({ onBack }) {
     });
   };
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   const totalUsers = users.length;
   const bannedUsers = users.filter((u) => u.isBanned).length;
 
+  const SIDEBAR_SECTIONS = [
+    {
+      title: 'Tổng quan',
+      items: [
+        { id: 'realtime', icon: <Activity size={17} />, label: 'Dashboard' },
+        { id: 'stats', icon: <BarChart3 size={17} />, label: 'Thống kê' },
+      ]
+    },
+    {
+      title: 'Quản lý người dùng',
+      items: [
+        { id: 'users', icon: <Users size={17} />, label: 'Người dùng', badge: totalUsers },
+        { id: 'ips', icon: <Globe size={17} />, label: 'IP bị chặn', badge: bannedIps.length },
+        { id: 'logins', icon: <MapPin size={17} />, label: 'Lịch sử đăng nhập' },
+      ]
+    },
+    {
+      title: 'Nội dung',
+      items: [
+        { id: 'docs', icon: <FileText size={17} />, label: 'Tài liệu' },
+        { id: 'moderation', icon: <Flag size={17} />, label: 'Kiểm duyệt' },
+        { id: 'ai', icon: <Brain size={17} />, label: 'AI Usage' },
+      ]
+    },
+    {
+      title: 'Truyền thông',
+      items: [
+        { id: 'email', icon: <Mail size={17} />, label: 'Email Blast' },
+        { id: 'announcements', icon: <Megaphone size={17} />, label: 'Thông báo' },
+      ]
+    },
+    {
+      title: 'Hệ thống',
+      items: [
+        { id: 'health', icon: <Server size={17} />, label: 'Sức khoẻ hệ thống' },
+        { id: 'flags', icon: <ToggleLeft size={17} />, label: 'Feature Flags' },
+        { id: 'maintenance', icon: <Wrench size={17} />, label: 'Bảo trì' },
+        { id: 'audit', icon: <ScrollText size={17} />, label: 'Nhật ký' },
+        { id: 'export', icon: <Download size={17} />, label: 'Export dữ liệu' },
+      ]
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-bg">
-      <div className="max-w-6xl mx-auto px-4 py-6">
-        {/* Top bar */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-2 rounded-lg bg-surface hover:bg-surface-2 transition-colors">
-              <ArrowLeft size={18} />
-            </button>
-            <div>
-              <h1 className="text-xl font-bold font-display flex items-center gap-2">
-                <Shield size={20} className="text-primary-400" /> Bảng điều khiển Admin
-              </h1>
-              <p className="text-xs text-muted">Quản lý người dùng, gói dịch vụ & bảo mật</p>
+    <div className="min-h-screen bg-bg flex">
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`fixed lg:sticky top-0 left-0 z-50 lg:z-auto h-screen w-64 bg-surface border-r border-line flex flex-col shrink-0 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+        {/* Sidebar header */}
+        <div className="p-4 border-b border-line">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-primary-600/15 border border-primary-500/20 flex items-center justify-center">
+                <Shield size={18} className="text-primary-400" />
+              </div>
+              <div>
+                <h1 className="text-sm font-bold tracking-tight">Admin Panel</h1>
+                <p className="text-[11px] text-muted">NoteMind</p>
+              </div>
             </div>
+            <button onClick={() => setSidebarOpen(false)} className="p-1.5 rounded-lg hover:bg-surface-2 lg:hidden text-muted">
+              <X size={16} />
+            </button>
           </div>
-          <button onClick={load} disabled={loading} className="p-2 rounded-lg bg-surface hover:bg-surface-2 transition-colors" title="Làm mới">
-            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+        </div>
+
+        {/* Sidebar navigation */}
+        <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-5 scrollbar-thin">
+          {SIDEBAR_SECTIONS.map((section) => (
+            <div key={section.title}>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted/60 px-3 mb-1.5">{section.title}</p>
+              <div className="space-y-0.5">
+                {section.items.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => { setTab(item.id); setSidebarOpen(false); }}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all ${
+                      tab === item.id
+                        ? 'bg-primary-600/15 text-primary-400 border border-primary-500/20'
+                        : 'text-muted hover:text-txt hover:bg-surface-2 border border-transparent'
+                    }`}
+                  >
+                    <span className={tab === item.id ? 'text-primary-400' : 'text-muted'}>{item.icon}</span>
+                    <span className="flex-1 text-left">{item.label}</span>
+                    {item.badge !== undefined && (
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${tab === item.id ? 'bg-primary-500/20 text-primary-300' : 'bg-surface-2 text-muted'}`}>
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </nav>
+
+        {/* Sidebar footer */}
+        <div className="p-3 border-t border-line">
+          <button
+            onClick={onBack}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-muted hover:text-txt hover:bg-surface-2 transition-all"
+          >
+            <ArrowLeft size={17} />
+            <span>Quay lại trang chủ</span>
           </button>
         </div>
+      </aside>
 
-        {/* Stats row */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-          <StatCard icon={<Users size={16} />} label="Tổng users" value={totalUsers} color="#60a5fa" />
-          <StatCard icon={<UserX size={16} />} label="Bị khóa" value={bannedUsers} color="#f87171" />
-          <StatCard icon={<Ban size={16} />} label="IP bị chặn" value={bannedIps.length} color="#fb923c" />
-          {Object.entries(PLAN_STYLES).slice(1).map(([key, { badge, label, color }]) => (
-            <StatCard key={key} icon={<span className="text-sm">{badge}</span>} label={label} value={users.filter((u) => u.plan === key).length} color={color} />
-          ))}
+      {/* Main content */}
+      <div className="flex-1 min-w-0">
+        {/* Top bar */}
+        <div className="sticky top-0 z-30 bg-bg/80 backdrop-blur-xl border-b border-line">
+          <div className="flex items-center justify-between px-6 py-3">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="p-2 rounded-lg hover:bg-surface-2 transition-colors lg:hidden"
+              >
+                <BarChart3 size={18} />
+              </button>
+              <h2 className="text-lg font-bold tracking-tight">
+                {SIDEBAR_SECTIONS.flatMap(s => s.items).find(i => i.id === tab)?.label || 'Dashboard'}
+              </h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={load} disabled={loading} className="p-2 rounded-lg bg-surface hover:bg-surface-2 border border-line transition-colors" title="Làm mới">
+                <RefreshCw size={15} className={loading ? 'animate-spin text-primary-400' : 'text-muted'} />
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-1 mb-4 bg-surface p-1 rounded-xl w-fit flex-wrap">
-          <TabBtn active={tab === 'realtime'} onClick={() => setTab('realtime')} icon={<Activity size={14} />} label="Dashboard" />
-          <TabBtn active={tab === 'users'} onClick={() => setTab('users')} icon={<Users size={14} />} label={`Users (${totalUsers})`} />
-          <TabBtn active={tab === 'ips'} onClick={() => setTab('ips')} icon={<Globe size={14} />} label={`IP (${bannedIps.length})`} />
-          <TabBtn active={tab === 'stats'} onClick={() => setTab('stats')} icon={<BarChart3 size={14} />} label="Thống kê" />
-          <TabBtn active={tab === 'docs'} onClick={() => setTab('docs')} icon={<FileText size={14} />} label="Tài liệu" />
-          <TabBtn active={tab === 'ai'} onClick={() => setTab('ai')} icon={<Brain size={14} />} label="AI Usage" />
-          <TabBtn active={tab === 'moderation'} onClick={() => setTab('moderation')} icon={<Flag size={14} />} label="Kiểm duyệt" />
-          <TabBtn active={tab === 'health'} onClick={() => setTab('health')} icon={<Server size={14} />} label="Hệ thống" />
-          <TabBtn active={tab === 'email'} onClick={() => setTab('email')} icon={<Mail size={14} />} label="Email" />
-          <TabBtn active={tab === 'flags'} onClick={() => setTab('flags')} icon={<ToggleLeft size={14} />} label="Feature Flags" />
-          <TabBtn active={tab === 'export'} onClick={() => setTab('export')} icon={<Download size={14} />} label="Export" />
-          <TabBtn active={tab === 'announcements'} onClick={() => setTab('announcements')} icon={<Megaphone size={14} />} label="Thông báo" />
-          <TabBtn active={tab === 'logins'} onClick={() => setTab('logins')} icon={<MapPin size={14} />} label="Login Activity" />
-          <TabBtn active={tab === 'maintenance'} onClick={() => setTab('maintenance')} icon={<Wrench size={14} />} label="Bảo trì" />
-          <TabBtn active={tab === 'audit'} onClick={() => setTab('audit')} icon={<ScrollText size={14} />} label="Nhật ký" />
+        {/* Quick stats bar */}
+        <div className="px-6 pt-5">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+            <StatCard icon={<Users size={16} />} label="Tổng users" value={totalUsers} color="#60a5fa" />
+            <StatCard icon={<UserX size={16} />} label="Bị khóa" value={bannedUsers} color="#f87171" />
+            <StatCard icon={<Ban size={16} />} label="IP bị chặn" value={bannedIps.length} color="#fb923c" />
+            {Object.entries(PLAN_STYLES).slice(1).map(([key, { badge, label, color }]) => (
+              <StatCard key={key} icon={<span className="text-sm">{badge}</span>} label={label} value={users.filter((u) => u.plan === key).length} color={color} />
+            ))}
+          </div>
         </div>
 
-        {tab === 'users' && (
+        {/* Tab content */}
+        <div className="px-6 pb-8">
           <>
             <div className="flex flex-col sm:flex-row gap-2 mb-4">
               <div className="relative flex-1">
@@ -350,6 +451,7 @@ export default function AdminPanel({ onBack }) {
         {tab === 'logins' && <LoginActivityPanel />}
         {tab === 'maintenance' && <MaintenanceModePanel showToast={showToast} />}
         {tab === 'audit' && <AdminAuditPanel />}
+        </div>
       </div>
 
       {userDetailId && <UserDetailDrawer userId={userDetailId} onClose={() => setUserDetailId(null)} />}
@@ -375,24 +477,15 @@ export default function AdminPanel({ onBack }) {
 
 function StatCard({ icon, label, value, color }) {
   return (
-    <div className="bg-surface border border-line rounded-xl p-3">
-      <div className="flex items-center gap-2 mb-1">
-        <span style={{ color }}>{icon}</span>
+    <div className="bg-surface border border-line rounded-xl p-3.5 hover:border-primary-500/20 transition-colors">
+      <div className="flex items-center gap-2 mb-1.5">
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${color}15` }}>
+          <span style={{ color }}>{icon}</span>
+        </div>
         <span className="text-xs text-muted">{label}</span>
       </div>
-      <p className="text-xl font-bold" style={{ color }}>{value}</p>
+      <p className="text-xl font-bold pl-0.5" style={{ color }}>{value}</p>
     </div>
-  );
-}
-
-function TabBtn({ active, onClick, icon, label }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${active ? 'bg-primary-600 text-white' : 'text-muted hover:text-txt hover:bg-surface-2'}`}
-    >
-      {icon} {label}
-    </button>
   );
 }
 

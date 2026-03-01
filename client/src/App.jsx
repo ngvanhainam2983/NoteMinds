@@ -72,6 +72,8 @@ export default function App() {
       setView('public-profile');
     } else if (path === '/community') {
       setView('community');
+    } else if (path === '/admin') {
+      setView('admin');
     } else if (path === '/leaderboard') {
       setView('leaderboard');
     } else if (path === '/stats') {
@@ -198,7 +200,7 @@ export default function App() {
               user={user}
               onLoginClick={() => openAuthModal('login')}
               onLogout={handleLogout}
-              onOpenAdmin={() => setView('admin')}
+              onOpenAdmin={() => { setView('admin'); window.history.pushState({}, '', '/admin'); }}
               onUserUpdate={(updated) => setUser(updated)}
               onOpenDocument={handleOpenDocument}
               onOpenHistory={() => { setView('history-list'); window.history.pushState({}, '', '/history'); }}
