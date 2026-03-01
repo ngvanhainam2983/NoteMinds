@@ -319,7 +319,7 @@ export function changePassword(userId, oldPassword, newPassword) {
 // ── Email verification ─────────────────────────────────
 
 export function setVerificationToken(userId, token) {
-  const expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 hours
+  const expires = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 minutes
   db.prepare(`
     UPDATE users SET verification_token = ?, verification_token_expires = ?, updated_at = datetime('now')
     WHERE id = ?
@@ -347,7 +347,7 @@ export function getUserByEmail(email) {
 // ── Password reset ─────────────────────────────────────
 
 export function setResetToken(userId, token) {
-  const expires = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
+  const expires = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 minutes
   db.prepare(`
     UPDATE users SET reset_token = ?, reset_token_expires = ?, updated_at = datetime('now')
     WHERE id = ?

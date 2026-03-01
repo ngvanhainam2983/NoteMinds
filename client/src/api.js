@@ -326,10 +326,13 @@ export async function chatWithMultipleDocuments(docIds, message, history) {
 // ── Profile API ───────────────────────────────────────
 
 export async function updateProfile(displayName, email) {
-  const response = await api.put('/auth/profile', { displayName, email });
+  const body = {};
+  if (displayName !== undefined) body.displayName = displayName;
+  if (email !== undefined) body.email = email;
+  const response = await api.put('/auth/profile', body);
   const { user } = response.data;
   storeAuth(getStoredToken(), user);
-  return user;
+  return response.data;
 }
 
 export async function changePassword(oldPassword, newPassword) {

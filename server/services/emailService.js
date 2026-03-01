@@ -97,7 +97,7 @@ function verificationEmailTemplate(username, verifyUrl) {
       ${verifyUrl}
     </p>
     <p style="margin:0; font-size:12px; color:#9496a1;">
-      Link này sẽ hết hạn sau <strong>24 giờ</strong>. Nếu bạn không đăng ký tài khoản này, vui lòng bỏ qua email này.
+      Link này sẽ hết hạn sau <strong>5 phút</strong>. Nếu bạn không đăng ký tài khoản này, vui lòng bỏ qua email này.
     </p>
   `);
 }
@@ -125,7 +125,7 @@ function resetPasswordEmailTemplate(username, resetUrl) {
       ${resetUrl}
     </p>
     <p style="margin:0; font-size:12px; color:#9496a1;">
-      Link này sẽ hết hạn sau <strong>1 giờ</strong>. Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.
+      Link này sẽ hết hạn sau <strong>5 phút</strong>. Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.
     </p>
   `);
 }

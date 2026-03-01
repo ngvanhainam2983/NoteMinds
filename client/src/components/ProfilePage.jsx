@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import {
     ArrowLeft, User, Mail, Shield, ShieldCheck, Crown, Calendar, Clock,
     CheckCircle2, XCircle, Fingerprint, KeyRound, Loader2, Edit3,
-    Save, X, Lock, ShieldOff, RefreshCw, Copy, Palette, AlertCircle, Plus, Trash2, Download, Moon, Sun, Monitor, Camera
+    Save, X, Lock, ShieldOff, RefreshCw, Copy, Palette, AlertCircle, Plus, Trash2, Download, Moon, Sun, Monitor, Camera, Send
 } from 'lucide-react';
 import {
     updateProfile, get2FAStatus, getPasskeyList, changePassword,
     setup2FA, enable2FA, disable2FA, regenerateRecoveryCodes,
-    getPasskeyRegisterOptions, verifyPasskeyRegistration, deletePasskey
+    getPasskeyRegisterOptions, verifyPasskeyRegistration, deletePasskey,
+    resendVerification
 } from '../api';
 import { useTheme, THEMES } from '../ThemeContext';
 import ConfirmModal from './ConfirmModal';
@@ -28,6 +29,12 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
     const [avatarFile, setAvatarFile] = useState(null);
     const [avatarPreview, setAvatarPreview] = useState(null);
     const [avatarUploading, setAvatarUploading] = useState(false);
+
+    // Email editing
+    const [editingEmail, setEditingEmail] = useState(false);
+    const [newEmail, setNewEmail] = useState(user?.email || '');
+    const [emailSaving, setEmailSaving] = useState(false);
+    const [verificationSending, setVerificationSending] = useState(false);
 
     // Password
     const [oldPw, setOldPw] = useState('');
@@ -111,7 +118,7 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
             }
 
             if (displayName !== user?.displayName) {
-                const result = await updateProfile({ displayName });
+                const result = await updateProfile(displayName);
                 onUserUpdate?.(result.user);
             }
 
@@ -121,6 +128,43 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
             setTimeout(() => setSuccess(''), 3000);
         } catch (err) {
             setError(err.response?.data?.error || err.message);
+        }
+    };
+
+    const handleChangeEmail = async () => {
+        setError(''); setSuccess('');
+        const trimmed = newEmail.trim().toLowerCase();
+        if (!trimmed) return setError('Email không được để trống');
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return setError('Email không hợp lệ');
+        if (trimmed === user?.email?.toLowerCase()) {
+            setEditingEmail(false);
+            return;
+        }
+        setEmailSaving(true);
+        try {
+            const result = await updateProfile(undefined, trimmed);
+            onUserUpdate?.(result.user);
+            setSuccess('Đã cập nhật email thành công!');
+            setEditingEmail(false);
+            setTimeout(() => setSuccess(''), 3000);
+        } catch (err) {
+            setError(err.response?.data?.error || err.message);
+        } finally {
+            setEmailSaving(false);
+        }
+    };
+
+    const handleResendVerification = async () => {
+        setError(''); setSuccess('');
+        setVerificationSending(true);
+        try {
+            await resendVerification(user.email);
+            setSuccess('Email xác minh đã được gửi! Vui lòng kiểm tra hộp thư.');
+            setTimeout(() => setSuccess(''), 5000);
+        } catch (err) {
+            setError(err.response?.data?.error || err.message);
+        } finally {
+            setVerificationSending(false);
         }
     };
 
@@ -422,9 +466,76 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <InfoRow label="ID" value={`#${user.id}`} />
                             <InfoRow label="Username" value={`@${user.username}`} />
-                            <InfoRow label="Email" value={user.email} verified={user.emailVerified} />
                             <InfoRow label="Tên hiển thị" value={user.displayName || '—'} />
                         </div>
+                    </div>
+
+                    {/* ── Email Change ── */}
+                    <div className="bg-surface border border-line rounded-xl p-5">
+                        <h3 className="text-sm font-semibold mb-4 flex items-center gap-2"><Mail size={16} className="text-primary-400" /> Địa chỉ email</h3>
+                        {editingEmail ? (
+                            <div className="max-w-md space-y-3">
+                                <div className="relative flex items-center">
+                                    <span className="absolute left-3 text-muted"><Mail size={16} /></span>
+                                    <input
+                                        autoFocus
+                                        type="email"
+                                        value={newEmail}
+                                        onChange={(e) => setNewEmail(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter') handleChangeEmail(); if (e.key === 'Escape') { setEditingEmail(false); setNewEmail(user?.email || ''); } }}
+                                        className="w-full bg-bg border border-line rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary-500 transition-colors"
+                                        placeholder="email@example.com"
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={handleChangeEmail}
+                                        disabled={emailSaving}
+                                        className="py-2 px-5 bg-primary-600 hover:bg-primary-700 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-2"
+                                    >
+                                        {emailSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Lưu email
+                                    </button>
+                                    <button
+                                        onClick={() => { setEditingEmail(false); setNewEmail(user?.email || ''); setError(''); }}
+                                        className="py-2 px-4 bg-surface-2 hover:bg-line rounded-xl text-sm font-medium text-muted transition-colors"
+                                    >
+                                        Hủy
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-surface-2 rounded-xl flex items-center justify-center">
+                                        <Mail size={18} className="text-muted" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium flex items-center gap-1.5">
+                                            {user.email}
+                                            {user.emailVerified ? <CheckCircle2 size={14} className="text-green-400" /> : <XCircle size={14} className="text-amber-400" />}
+                                        </p>
+                                        <p className="text-[11px] text-muted">{user.emailVerified ? 'Đã xác minh' : 'Chưa xác minh'}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    {!user.emailVerified && (
+                                        <button
+                                            onClick={handleResendVerification}
+                                            disabled={verificationSending}
+                                            className="py-2 px-4 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-xl text-sm font-medium transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                                        >
+                                            {verificationSending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} Gửi xác minh
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => { setEditingEmail(true); setNewEmail(user?.email || ''); setError(''); setSuccess(''); }}
+                                        className="py-2 px-4 bg-surface-2 hover:bg-line rounded-xl text-sm font-medium text-muted hover:text-txt transition-colors flex items-center gap-1.5"
+                                    >
+                                        <Edit3 size={14} /> Đổi email
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
