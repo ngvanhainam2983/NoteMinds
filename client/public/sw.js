@@ -1,5 +1,5 @@
 // NoteMind Service Worker — enables offline app shell caching
-const CACHE_NAME = 'notemind-v3';
+const CACHE_NAME = 'notemind-v4-security-20260302';
 
 // Install: cache the app shell
 self.addEventListener('install', (event) => {
@@ -58,7 +58,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static assets (JS, CSS, images) — stale-while-revalidate
+  // Static assets (JS, CSS, images) — network-first to avoid serving stale encrypted client bundles
   if (
     url.pathname.startsWith('/assets/') ||
     url.pathname.endsWith('.js') ||
@@ -70,16 +70,14 @@ self.addEventListener('fetch', (event) => {
   ) {
     event.respondWith(
       caches.open(CACHE_NAME).then((cache) => {
-        return cache.match(request).then((cached) => {
-          const fetchPromise = fetch(request).then((response) => {
+        return fetch(request)
+          .then((response) => {
             if (response.ok) {
               cache.put(request, response.clone());
             }
             return response;
-          }).catch(() => cached);
-
-          return cached || fetchPromise;
-        });
+          })
+          .catch(() => caches.match(request));
       })
     );
     return;
