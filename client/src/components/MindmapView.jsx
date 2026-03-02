@@ -122,36 +122,58 @@ LeafNode.displayName = 'LeafNode';
 
 const nodeTypes = { rootNode: RootNode, branchNode: BranchNode, subNode: SubNode, leafNode: LeafNode };
 
-/* ─── Recursive subtree-aware layout ─── */
+/* ─── Adaptive spacing based on total visible node count ─── */
+function getLayoutConfig(totalNodes) {
+  // Scale factor: 1.0 for small maps, shrinks for large ones
+  // < 20 nodes: full size, 20-50: slightly compact, 50-100: compact, 100+: very compact
+  const s = totalNodes <= 15 ? 1 : totalNodes <= 30 ? 0.85 : totalNodes <= 60 ? 0.7 : totalNodes <= 100 ? 0.55 : 0.42;
+  return {
+    nodeH:  { 0: 52, 1: Math.round(40 * s), 2: Math.round(36 * s), 3: Math.round(30 * s) },
+    vGap:   { 1: Math.round(18 * s), 2: Math.round(14 * s), 3: Math.round(10 * s) },
+    hGap:   { 1: Math.round(320 * Math.max(s, 0.6)), 2: Math.round(250 * Math.max(s, 0.55)), 3: Math.round(220 * Math.max(s, 0.5)) },
+  };
+}
 
-// Estimated node heights by level (used to calculate subtree vertical extent)
-const NODE_H = { 0: 52, 1: 40, 2: 36, 3: 30 };
-// Vertical gap between sibling nodes at each level
-const V_GAP  = { 1: 18, 2: 14, 3: 10 };
-// Horizontal distance between levels
-const H_GAP  = { 1: 320, 2: 250, 3: 220 };
+/* Count all visible nodes (respecting collapsed set) */
+function countVisible(node, level, collapsed) {
+  let n = 1;
+  if (node.children?.length && !collapsed.has(node.id)) {
+    node.children.forEach(ch => { n += countVisible(ch, level + 1, collapsed); });
+  }
+  return n;
+}
 
 /**
  * Calculate the total vertical space a subtree needs (recursive, bottom-up).
- * For a leaf node it's just the node height.
- * For a parent it's the sum of all children subtree heights + gaps between them.
  */
-function measureHeight(node, level, collapsed) {
-  const selfH = NODE_H[level] || 30;
+function measureHeight(node, level, collapsed, cfg) {
+  const selfH = cfg.nodeH[level] || 30;
   if (!node.children?.length || collapsed.has(node.id)) return selfH;
 
   const childLevel = level + 1;
-  const gap = V_GAP[childLevel] || 10;
+  const gap = cfg.vGap[childLevel] || 10;
   let total = 0;
   node.children.forEach((ch, i) => {
     if (i > 0) total += gap;
-    total += measureHeight(ch, childLevel, collapsed);
+    total += measureHeight(ch, childLevel, collapsed, cfg);
   });
   return Math.max(selfH, total);
 }
 
 function convertToReactFlow(data, collapsed) {
   if (!data?.nodes?.[0]) return { nodes: [], edges: [] };
+
+  const rfNodes = [];
+  const rfEdges = [];
+  const root = data.nodes[0];
+  const collapsedSet = collapsed || new Set();
+
+  // Count visible nodes to determine adaptive scaling
+  let visibleCount = 1;
+  if (root.children?.length) {
+    root.children.forEach(ch => { visibleCount += countVisible(ch, 1, collapsedSet); });
+  }
+  const cfg = getLayoutConfig(visibleCount);
 
   const rfNodes = [];
   const rfEdges = [];
@@ -172,9 +194,8 @@ function convertToReactFlow(data, collapsed) {
   const rightBranches = root.children.filter((_, i) => i % 2 !== 0);
 
   const layoutSide = (branches, isLeft) => {
-    // Measure total height for this side
-    const sideGap = V_GAP[1];
-    const heights = branches.map(b => measureHeight(b, 1, collapsedSet));
+    const sideGap = cfg.vGap[1];
+    const heights = branches.map(b => measureHeight(b, 1, collapsedSet, cfg));
     const totalH = heights.reduce((s, h) => s + h, 0) + Math.max(0, heights.length - 1) * sideGap;
 
     let cursorY = -totalH / 2;
@@ -185,7 +206,7 @@ function convertToReactFlow(data, collapsed) {
       const branchH = heights[idx];
       const branchCenterY = cursorY + branchH / 2;
       const xDir = isLeft ? -1 : 1;
-      const branchX = xDir * H_GAP[1];
+      const branchX = xDir * cfg.hGap[1];
       const isCollapsed = collapsedSet.has(branch.id);
 
       rfNodes.push({
@@ -214,15 +235,15 @@ function convertToReactFlow(data, collapsed) {
 
       // Layout level 2 children
       if (branch.children?.length && !isCollapsed) {
-        const subHeights = branch.children.map(s => measureHeight(s, 2, collapsedSet));
-        const subGap = V_GAP[2];
+        const subHeights = branch.children.map(s => measureHeight(s, 2, collapsedSet, cfg));
+        const subGap = cfg.vGap[2];
         const subTotalH = subHeights.reduce((s, h) => s + h, 0) + Math.max(0, subHeights.length - 1) * subGap;
         let subCursorY = branchCenterY - subTotalH / 2;
 
         branch.children.forEach((sub, j) => {
           const subH = subHeights[j];
           const subCenterY = subCursorY + subH / 2;
-          const subX = branchX + xDir * H_GAP[2];
+          const subX = branchX + xDir * cfg.hGap[2];
           const isSubCollapsed = collapsedSet.has(sub.id);
 
           rfNodes.push({
@@ -249,14 +270,14 @@ function convertToReactFlow(data, collapsed) {
 
           // Layout level 3 children
           if (sub.children?.length && !isSubCollapsed) {
-            const leafGap = V_GAP[3];
-            const leafH = NODE_H[3];
+            const leafGap = cfg.vGap[3];
+            const leafH = cfg.nodeH[3];
             const leafTotalH = sub.children.length * leafH + Math.max(0, sub.children.length - 1) * leafGap;
             let leafCursorY = subCenterY - leafTotalH / 2;
 
             sub.children.forEach((leaf) => {
               const leafCenterY = leafCursorY + leafH / 2;
-              const leafX = subX + xDir * H_GAP[3];
+              const leafX = subX + xDir * cfg.hGap[3];
 
               rfNodes.push({
                 id: leaf.id,
@@ -372,6 +393,29 @@ function MindmapViewInner({ data, loading, error, onGenerate, isLocked }) {
   }, []);
 
   const nodeCount = useMemo(() => countNodes(data), [data]);
+
+  /* ── Auto-collapse deep levels for very large mindmaps on first load ── */
+  const hasAutoCollapsed = useRef(false);
+  useEffect(() => {
+    if (!data || hasAutoCollapsed.current) return;
+    hasAutoCollapsed.current = true;
+    const total = countNodes(data);
+    if (total > 40) {
+      // Auto-collapse level 2+ nodes (sub-branches) so the initial view is clean
+      const ids = new Set();
+      const root = data.nodes[0];
+      root.children?.forEach(branch => {
+        if (total > 80) {
+          // Very large: collapse branches too
+          if (branch.children?.length) ids.add(branch.id);
+        }
+        branch.children?.forEach(sub => {
+          if (sub.children?.length) ids.add(sub.id);
+        });
+      });
+      if (ids.size > 0) setCollapsed(ids);
+    }
+  }, [data]);
 
   const [loadingText, setLoadingText] = useState("Đang phân tích cấu trúc tài liệu...");
 
@@ -643,8 +687,8 @@ function MindmapViewInner({ data, loading, error, onGenerate, isLocked }) {
           onNodeClick={onNodeClick}
           nodeTypes={nodeTypes}
           fitView
-          fitViewOptions={{ padding: 0.25, duration: 600 }}
-          minZoom={0.1}
+          fitViewOptions={{ padding: nodeCount > 60 ? 0.1 : nodeCount > 30 ? 0.15 : 0.25, duration: 600 }}
+          minZoom={0.05}
           maxZoom={3}
           proOptions={{ hideAttribution: true }}
           defaultEdgeOptions={{
