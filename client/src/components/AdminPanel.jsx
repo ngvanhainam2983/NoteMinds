@@ -924,7 +924,19 @@ function AdminAnnouncementsPanel({ showToast, askConfirm }) {
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null); // null | 'new' | announcementObj
-  const [form, setForm] = useState({ title: '', content: '', type: 'info', is_active: 1, expires_at: '' });
+  const [form, setForm] = useState({ 
+    title: '', 
+    content: '', 
+    type: 'info', 
+    is_active: 1, 
+    expires_at: '',
+    target_audience: 'registered',
+    dismissible: 1,
+    auto_dismiss_days: '',
+    link_url: '',
+    link_text: '',
+    priority: 0
+  });
 
   useEffect(() => {
     fetchAnnouncements();
@@ -940,24 +952,53 @@ function AdminAnnouncementsPanel({ showToast, askConfirm }) {
   };
 
   const startNew = () => {
-    setForm({ title: '', content: '', type: 'info', is_active: 1, expires_at: '' });
+    setForm({ 
+      title: '', 
+      content: '', 
+      type: 'info', 
+      is_active: 1, 
+      expires_at: '',
+      target_audience: 'registered',
+      dismissible: 1,
+      auto_dismiss_days: '',
+      link_url: '',
+      link_text: '',
+      priority: 0
+    });
     setEditing('new');
   };
 
   const startEdit = (a) => {
-    setForm({ title: a.title, content: a.content || '', type: a.type || 'info', is_active: a.is_active, expires_at: a.expires_at || '' });
+    setForm({ 
+      title: a.title, 
+      content: a.content || '', 
+      type: a.type || 'info', 
+      is_active: a.is_active, 
+      expires_at: a.expires_at || '',
+      target_audience: a.target_audience || 'registered',
+      dismissible: a.dismissible !== undefined ? a.dismissible : 1,
+      auto_dismiss_days: a.auto_dismiss_days || '',
+      link_url: a.link_url || '',
+      link_text: a.link_text || '',
+      priority: a.priority || 0
+    });
     setEditing(a);
   };
 
   const handleSave = async () => {
     if (!form.title.trim()) return;
     try {
+      const payload = {
+        ...form,
+        auto_dismiss_days: form.auto_dismiss_days ? parseInt(form.auto_dismiss_days) : null,
+        priority: parseInt(form.priority) || 0
+      };
       if (editing === 'new') {
-        const a = await createAnnouncement(form);
+        const a = await createAnnouncement(payload);
         setAnnouncements(prev => [a, ...prev]);
         showToast('success', 'Đã tạo thông báo');
       } else {
-        const a = await updateAnnouncement(editing.id, form);
+        const a = await updateAnnouncement(editing.id, payload);
         setAnnouncements(prev => prev.map(x => x.id === editing.id ? a : x));
         showToast('success', 'Đã cập nhật');
       }
@@ -973,6 +1014,15 @@ function AdminAnnouncementsPanel({ showToast, askConfirm }) {
         showToast('success', 'Đã xóa');
       } catch { showToast('error', 'Lỗi xóa'); }
     });
+  };
+
+  const TARGET_LABELS = {
+    all: '🌍 Tất cả',
+    registered: '👤 Đã đăng ký',
+    free: '📦 Free',
+    basic: '⭐ Basic',
+    pro: '💎 Pro',
+    unlimited: '👑 Unlimited'
   };
 
   return (
@@ -995,34 +1045,115 @@ function AdminAnnouncementsPanel({ showToast, askConfirm }) {
           <textarea
             value={form.content}
             onChange={(e) => setForm(p => ({ ...p, content: e.target.value }))}
-            placeholder="Nội dung (tùy chọn)..."
-            rows={2}
+            placeholder="Nội dung chi tiết (tùy chọn)..."
+            rows={3}
             className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-primary-500/50"
           />
-          <div className="flex flex-wrap gap-2">
-            <select
-              value={form.type}
-              onChange={(e) => setForm(p => ({ ...p, type: e.target.value }))}
-              className="bg-bg border border-line rounded-lg px-2 py-1.5 text-xs focus:outline-none cursor-pointer"
-            >
-              <option value="info">Thông tin</option>
-              <option value="warning">Cảnh báo</option>
-              <option value="update">Cập nhật</option>
-              <option value="important">Quan trọng</option>
-            </select>
-            <label className="flex items-center gap-1.5 text-xs">
-              <input type="checkbox" checked={!!form.is_active} onChange={(e) => setForm(p => ({ ...p, is_active: e.target.checked ? 1 : 0 }))} />
-              Đang hoạt động
-            </label>
-            <input
-              type="datetime-local"
-              value={form.expires_at}
-              onChange={(e) => setForm(p => ({ ...p, expires_at: e.target.value }))}
-              className="bg-bg border border-line rounded-lg px-2 py-1.5 text-xs focus:outline-none"
-              title="Hết hạn (tùy chọn)"
-            />
+          
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted mb-1 block">Loại thông báo</label>
+              <select
+                value={form.type}
+                onChange={(e) => setForm(p => ({ ...p, type: e.target.value }))}
+                className="w-full bg-bg border border-line rounded-lg px-2 py-1.5 text-xs focus:outline-none cursor-pointer"
+              >
+                <option value="info">ℹ️ Thông tin</option>
+                <option value="warning">⚠️ Cảnh báo</option>
+                <option value="update">🔔 Cập nhật</option>
+                <option value="important">📢 Quan trọng</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="text-xs text-muted mb-1 block">Đối tượng</label>
+              <select
+                value={form.target_audience}
+                onChange={(e) => setForm(p => ({ ...p, target_audience: e.target.value }))}
+                className="w-full bg-bg border border-line rounded-lg px-2 py-1.5 text-xs focus:outline-none cursor-pointer"
+              >
+                <option value="all">🌍 Tất cả (cả chưa đăng ký)</option>
+                <option value="registered">👤 Người dùng đã đăng ký</option>
+                <option value="free">📦 Gói Free</option>
+                <option value="basic">⭐ Gói Basic</option>
+                <option value="pro">💎 Gói Pro</option>
+                <option value="unlimited">👑 Gói Unlimited</option>
+              </select>
+            </div>
           </div>
-          <div className="flex gap-2">
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted mb-1 block">Hết hạn (tùy chọn)</label>
+              <input
+                type="datetime-local"
+                value={form.expires_at}
+                onChange={(e) => setForm(p => ({ ...p, expires_at: e.target.value }))}
+                className="w-full bg-bg border border-line rounded-lg px-2 py-1.5 text-xs focus:outline-none"
+              />
+            </div>
+            
+            <div>
+              <label className="text-xs text-muted mb-1 block">Tự ẩn sau (ngày)</label>
+              <input
+                type="number"
+                value={form.auto_dismiss_days}
+                onChange={(e) => setForm(p => ({ ...p, auto_dismiss_days: e.target.value }))}
+                placeholder="Vĩnh viễn nếu để trống"
+                className="w-full bg-bg border border-line rounded-lg px-2 py-1.5 text-xs focus:outline-none"
+                min="1"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted mb-1 block">Link URL (tùy chọn)</label>
+              <input
+                type="url"
+                value={form.link_url}
+                onChange={(e) => setForm(p => ({ ...p, link_url: e.target.value }))}
+                placeholder="https://..."
+                className="w-full bg-bg border border-line rounded-lg px-2 py-1.5 text-xs focus:outline-none"
+              />
+            </div>
+            
+            <div>
+              <label className="text-xs text-muted mb-1 block">Văn bản link</label>
+              <input
+                type="text"
+                value={form.link_text}
+                onChange={(e) => setForm(p => ({ ...p, link_text: e.target.value }))}
+                placeholder="Xem thêm"
+                className="w-full bg-bg border border-line rounded-lg px-2 py-1.5 text-xs focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-muted mb-1 block">Độ ưu tiên (càng cao càng lên trên)</label>
+              <input
+                type="number"
+                value={form.priority}
+                onChange={(e) => setForm(p => ({ ...p, priority: e.target.value }))}
+                className="w-full bg-bg border border-line rounded-lg px-2 py-1.5 text-xs focus:outline-none"
+              />
+            </div>
+            
+            <div className="flex flex-col gap-2 pt-5">
+              <label className="flex items-center gap-1.5 text-xs">
+                <input type="checkbox" checked={!!form.is_active} onChange={(e) => setForm(p => ({ ...p, is_active: e.target.checked ? 1 : 0 }))} />
+                Đang hoạt động
+              </label>
+              <label className="flex items-center gap-1.5 text-xs">
+                <input type="checkbox" checked={!!form.dismissible} onChange={(e) => setForm(p => ({ ...p, dismissible: e.target.checked ? 1 : 0 }))} />
+                Cho phép ẩn
+              </label>
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-2">
             <button onClick={handleSave} className="flex items-center gap-1 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 rounded-lg text-xs font-medium transition-colors">
               <Save size={12} /> Lưu
             </button>
@@ -1045,14 +1176,28 @@ function AdminAnnouncementsPanel({ showToast, askConfirm }) {
           {announcements.map(a => (
             <div key={a.id} className="bg-surface border border-line rounded-xl p-4 flex items-start gap-3">
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
                   <p className="font-medium text-sm">{a.title}</p>
                   <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${a.is_active ? 'bg-emerald-500/15 text-emerald-400' : 'bg-surface-2 text-muted'}`}>
                     {a.is_active ? 'Đang hiển thị' : 'Đã ẩn'}
                   </span>
-                  <span className="px-1.5 py-0.5 bg-surface-2 rounded text-[10px] text-muted font-medium">{a.type}</span>
+                  <span className="px-1.5 py-0.5 bg-blue-500/15 text-blue-400 rounded text-[10px] font-medium">{a.type}</span>
+                  <span className="px-1.5 py-0.5 bg-purple-500/15 text-purple-400 rounded text-[10px] font-medium">
+                    {TARGET_LABELS[a.target_audience] || a.target_audience}
+                  </span>
+                  {a.priority > 0 && (
+                    <span className="px-1.5 py-0.5 bg-amber-500/15 text-amber-400 rounded text-[10px] font-medium">
+                      ⚡ Ưu tiên {a.priority}
+                    </span>
+                  )}
                 </div>
-                {a.content && <p className="text-xs text-muted mt-1 line-clamp-2">{a.content}</p>}
+                {a.content && <p className="text-xs text-muted line-clamp-2">{a.content}</p>}
+                <div className="flex items-center gap-3 mt-2 text-[10px] text-muted">
+                  {a.expires_at && <span>⏰ Hết hạn: {new Date(a.expires_at).toLocaleString('vi-VN')}</span>}
+                  {a.auto_dismiss_days && <span>🔄 Tự ẩn sau {a.auto_dismiss_days} ngày</span>}
+                  {a.link_url && <span>🔗 Có link</span>}
+                  {!a.dismissible && <span>🔒 Không cho ẩn</span>}
+                </div>
               </div>
               <div className="flex items-center gap-1 shrink-0">
                 <button onClick={() => startEdit(a)} className="p-1.5 rounded-lg hover:bg-surface-2 text-muted hover:text-txt transition-colors"><Edit3 size={13} /></button>

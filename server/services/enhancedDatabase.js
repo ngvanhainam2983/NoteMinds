@@ -523,10 +523,39 @@ export function initializeEnhancedTables() {
         created_by INTEGER NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         expires_at DATETIME,
+        target_audience TEXT DEFAULT 'registered',
+        dismissible INTEGER DEFAULT 1,
+        auto_dismiss_days INTEGER,
+        link_url TEXT,
+        link_text TEXT,
+        priority INTEGER DEFAULT 0,
         FOREIGN KEY(created_by) REFERENCES users(id)
       );
       CREATE INDEX IF NOT EXISTS idx_announcements_active ON announcements(is_active, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_announcements_priority ON announcements(priority DESC, created_at DESC);
     `);
+    
+    // Add new columns if they don't exist (for existing databases)
+    const columns = db.prepare("PRAGMA table_info(announcements)").all();
+    const columnNames = columns.map(c => c.name);
+    if (!columnNames.includes('target_audience')) {
+      db.exec("ALTER TABLE announcements ADD COLUMN target_audience TEXT DEFAULT 'registered'");
+    }
+    if (!columnNames.includes('dismissible')) {
+      db.exec("ALTER TABLE announcements ADD COLUMN dismissible INTEGER DEFAULT 1");
+    }
+    if (!columnNames.includes('auto_dismiss_days')) {
+      db.exec("ALTER TABLE announcements ADD COLUMN auto_dismiss_days INTEGER");
+    }
+    if (!columnNames.includes('link_url')) {
+      db.exec("ALTER TABLE announcements ADD COLUMN link_url TEXT");
+    }
+    if (!columnNames.includes('link_text')) {
+      db.exec("ALTER TABLE announcements ADD COLUMN link_text TEXT");
+    }
+    if (!columnNames.includes('priority')) {
+      db.exec("ALTER TABLE announcements ADD COLUMN priority INTEGER DEFAULT 0");
+    }
     console.log('  ✓ Announcements table created');
 
     // ── Admin Audit Log ─────────────────────────────────

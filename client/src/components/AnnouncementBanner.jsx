@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Megaphone, X, Info, AlertTriangle, Bell, ChevronRight } from 'lucide-react';
+import { Megaphone, X, Info, AlertTriangle, Bell, ExternalLink, ArrowRight } from 'lucide-react';
 import { getAnnouncements, markAnnouncementRead } from '../api';
 
 const TYPE_STYLES = {
@@ -13,12 +13,20 @@ export default function AnnouncementBanner({ user }) {
   const [announcements, setAnnouncements] = useState([]);
   const [dismissedIds, setDismissedIds] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem('dismissed_announcements') || '[]');
-    } catch { return []; }
+      const stored = JSON.parse(localStorage.getItem('dismissed_announcements') || '{}');
+      // Clean up old entries (older than 90 days)
+      const now = Date.now();
+      const cleaned = Object.entries(stored).reduce((acc, [id, timestamp]) => {
+        if (now - timestamp < 90 * 24 * 60 * 60 * 1000) {
+          acc[id] = timestamp;
+        }
+        return acc;
+      }, {});
+      return cleaned;
+    } catch { return {}; }
   });
 
   useEffect(() => {
-    if (!user) return;
     fetchAnnouncements();
     const interval = setInterval(fetchAnnouncements, 60000); // Refresh every minute
     return () => clearInterval(interval);
@@ -32,23 +40,45 @@ export default function AnnouncementBanner({ user }) {
   };
 
   const handleDismiss = async (id) => {
-    const newDismissed = [...dismissedIds, id];
+    const now = Date.now();
+    const newDismissed = { ...dismissedIds, [id]: now };
     setDismissedIds(newDismissed);
     localStorage.setItem('dismissed_announcements', JSON.stringify(newDismissed));
-    try {
-      await markAnnouncementRead(id);
-    } catch { /* ignore */ }
+    if (user) {
+      try {
+        await markAnnouncementRead(id);
+      } catch { /* ignore */ }
+    }
   };
 
-  const visibleAnnouncements = announcements.filter(a => !dismissedIds.includes(a.id));
+  const shouldShowAnnouncement = (announcement) => {
+    // Check if dismissed
+    const dismissedTime = dismissedIds[announcement.id];
+    if (dismissedTime) {
+      // Check auto-dismiss duration
+      if (announcement.auto_dismiss_days) {
+        const daysSinceDismiss = (Date.now() - dismissedTime) / (24 * 60 * 60 * 1000);
+        if (daysSinceDismiss < announcement.auto_dismiss_days) {
+          return false; // Still within auto-dismiss period
+        }
+      } else {
+        return false; // Dismissed permanently
+      }
+    }
+    return true;
+  };
+
+  const visibleAnnouncements = announcements.filter(shouldShowAnnouncement);
 
   if (visibleAnnouncements.length === 0) return null;
 
   return (
     <div className="space-y-2 mb-2">
-      {visibleAnnouncements.slice(0, 2).map(announcement => {
+      {visibleAnnouncements.slice(0, 3).map(announcement => {
         const style = TYPE_STYLES[announcement.type] || TYPE_STYLES.info;
         const Icon = style.icon;
+        const isDismissible = announcement.dismissible !== 0;
+        
         return (
           <div
             key={announcement.id}
@@ -60,13 +90,27 @@ export default function AnnouncementBanner({ user }) {
               {announcement.content && (
                 <p className="text-xs text-muted mt-0.5 line-clamp-2">{announcement.content}</p>
               )}
+              {announcement.link_url && (
+                <a
+                  href={announcement.link_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`inline-flex items-center gap-1 mt-2 text-xs ${style.text} hover:underline font-medium`}
+                >
+                  {announcement.link_text || 'Xem thêm'}
+                  <ArrowRight size={12} />
+                </a>
+              )}
             </div>
-            <button
-              onClick={() => handleDismiss(announcement.id)}
-              className="p-1 rounded-lg hover:bg-surface-2 text-muted hover:text-txt transition-colors shrink-0"
-            >
-              <X size={14} />
-            </button>
+            {isDismissible && (
+              <button
+                onClick={() => handleDismiss(announcement.id)}
+                className="p-1 rounded-lg hover:bg-surface-2 text-muted hover:text-txt transition-colors shrink-0"
+                title="Ẩn thông báo"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
         );
       })}

@@ -101,7 +101,13 @@ export default function App() {
     } else if (path === '/community') {
       setView('community');
     } else if (path === '/admin') {
-      setView('admin');
+      // Only allow admin users to access admin panel
+      const storedUser = getStoredUser();
+      if (storedUser && storedUser.role === 'admin') {
+        setView('admin');
+      } else {
+        setView('home');
+      }
     } else if (path === '/leaderboard') {
       setView('leaderboard');
     } else if (path === '/stats') {
@@ -292,7 +298,12 @@ export default function App() {
               user={user}
               onLoginClick={() => openAuthModal('login')}
               onLogout={handleLogout}
-              onOpenAdmin={() => { setView('admin'); window.history.pushState({}, '', '/admin'); }}
+              onOpenAdmin={() => {
+                if (user && user.role === 'admin') {
+                  setView('admin');
+                  window.history.pushState({}, '', '/admin');
+                }
+              }}
               onUserUpdate={(updated) => setUser(updated)}
               onOpenDocument={handleOpenDocument}
               onOpenHistory={() => { setView('history-list'); window.history.pushState({}, '', '/history'); }}
@@ -303,8 +314,8 @@ export default function App() {
             />
           )}
 
-          {/* Announcement Banner (show on major views) */}
-          {user && ['home', 'dashboard', 'history-list', 'community'].includes(view) && (
+          {/* Announcement Banner (show on major views for all users) */}
+          {['home', 'dashboard', 'history-list', 'community'].includes(view) && (
             <div className="max-w-7xl mx-auto px-4 pt-3">
               <AnnouncementBanner user={user} />
             </div>
@@ -338,7 +349,7 @@ export default function App() {
             <HistoryPage onOpenDocument={handleOpenDocument} />
           )}
 
-          {view === 'admin' && (
+          {view === 'admin' && user && user.role === 'admin' && (
             <AdminPanel onBack={handleBackHome} />
           )}
 

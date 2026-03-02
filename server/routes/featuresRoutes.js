@@ -698,28 +698,61 @@ router.get('/leaderboard', (req, res) => {
 router.get('/announcements', (req, res) => {
   try {
     const db = new Database(DB_PATH);
+    const userPlan = req.user ? req.user.plan : null;
+    const isLoggedIn = !!req.user;
+    
+    // Get all active, non-expired announcements
     const announcements = db.prepare(`
       SELECT a.*, u.display_name as author_name
       FROM announcements a
       JOIN users u ON a.created_by = u.id
       WHERE a.is_active = 1 AND (a.expires_at IS NULL OR a.expires_at > datetime('now'))
-      ORDER BY a.created_at DESC
-      LIMIT 10
+      ORDER BY a.priority DESC, a.created_at DESC
+      LIMIT 20
     `).all();
+    
+    // Filter by target audience
+    const filtered = announcements.filter(ann => {
+      if (ann.target_audience === 'all') return true;
+      if (ann.target_audience === 'registered') return isLoggedIn;
+      // Specific plan targets: free, basic, pro, unlimited
+      if (['free', 'basic', 'pro', 'unlimited'].includes(ann.target_audience)) {
+        return isLoggedIn && userPlan === ann.target_audience;
+      }
+      return false;
+    });
+    
     db.close();
-    res.json({ announcements });
+    res.json({ announcements: filtered });
   } catch (error) { res.status(500).json({ error: 'Failed to get announcements' }); }
 });
 
 router.post('/announcements', requireAuth, requireAdmin, (req, res) => {
   try {
-    const { title, content, type, expires_at } = req.body;
+    const { title, content, type, expires_at, target_audience, dismissible, auto_dismiss_days, link_url, link_text, priority } = req.body;
     if (!title || !content) return res.status(400).json({ error: 'Title and content required' });
     const id = uuidv4();
     const db = new Database(DB_PATH);
-    db.prepare('INSERT INTO announcements (id, title, content, type, created_by, expires_at) VALUES (?, ?, ?, ?, ?, ?)').run(id, title, content, type || 'info', req.user.id, expires_at || null);
+    db.prepare(`
+      INSERT INTO announcements 
+      (id, title, content, type, created_by, expires_at, target_audience, dismissible, auto_dismiss_days, link_url, link_text, priority) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      id, 
+      title, 
+      content, 
+      type || 'info', 
+      req.user.id, 
+      expires_at || null, 
+      target_audience || 'registered',
+      dismissible !== undefined ? dismissible : 1,
+      auto_dismiss_days || null,
+      link_url || null,
+      link_text || null,
+      priority || 0
+    );
     // Audit log
-    db.prepare('INSERT INTO admin_audit_logs (id, admin_id, action, target_type, target_id, details) VALUES (?, ?, ?, ?, ?, ?)').run(uuidv4(), req.user.id, 'create_announcement', 'announcement', id, JSON.stringify({ title }));
+    db.prepare('INSERT INTO admin_audit_logs (id, admin_id, action, target_type, target_id, details) VALUES (?, ?, ?, ?, ?, ?)').run(uuidv4(), req.user.id, 'create_announcement', 'announcement', id, JSON.stringify({ title, target_audience }));
     const announcement = db.prepare('SELECT a.*, u.display_name as author_name FROM announcements a JOIN users u ON a.created_by = u.id WHERE a.id = ?').get(id);
     db.close();
     res.json({ announcement });
@@ -728,9 +761,23 @@ router.post('/announcements', requireAuth, requireAdmin, (req, res) => {
 
 router.put('/announcements/:id', requireAuth, requireAdmin, (req, res) => {
   try {
-    const { title, content, type, is_active, expires_at } = req.body;
+    const { title, content, type, is_active, expires_at, target_audience, dismissible, auto_dismiss_days, link_url, link_text, priority } = req.body;
     const db = new Database(DB_PATH);
-    db.prepare('UPDATE announcements SET title=COALESCE(?,title), content=COALESCE(?,content), type=COALESCE(?,type), is_active=COALESCE(?,is_active), expires_at=COALESCE(?,expires_at) WHERE id = ?').run(title, content, type, is_active, expires_at, req.params.id);
+    db.prepare(`
+      UPDATE announcements SET 
+        title=COALESCE(?,title), 
+        content=COALESCE(?,content), 
+        type=COALESCE(?,type), 
+        is_active=COALESCE(?,is_active), 
+        expires_at=COALESCE(?,expires_at),
+        target_audience=COALESCE(?,target_audience),
+        dismissible=COALESCE(?,dismissible),
+        auto_dismiss_days=COALESCE(?,auto_dismiss_days),
+        link_url=COALESCE(?,link_url),
+        link_text=COALESCE(?,link_text),
+        priority=COALESCE(?,priority)
+      WHERE id = ?
+    `).run(title, content, type, is_active, expires_at, target_audience, dismissible, auto_dismiss_days, link_url, link_text, priority, req.params.id);
     db.prepare('INSERT INTO admin_audit_logs (id, admin_id, action, target_type, target_id, details) VALUES (?, ?, ?, ?, ?, ?)').run(uuidv4(), req.user.id, 'update_announcement', 'announcement', req.params.id, JSON.stringify({ title }));
     const updated = db.prepare('SELECT a.*, u.display_name as author_name FROM announcements a JOIN users u ON a.created_by = u.id WHERE a.id = ?').get(req.params.id);
     db.close();
