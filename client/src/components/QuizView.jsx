@@ -99,40 +99,22 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
     // ── Loading ───
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[500px] gap-6 relative overflow-hidden">
-                {/* Decorative bg orbs */}
-                <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-primary-500/5 blur-3xl animate-float pointer-events-none" />
-                <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-emerald-500/5 blur-3xl animate-float pointer-events-none" style={{ animationDelay: '3s' }} />
-
-                {/* Icon card — mindmap style */}
-                <div className="relative group">
-                    <div className="absolute -inset-3 rounded-3xl bg-gradient-to-br from-primary-500/20 to-emerald-500/10 blur-xl opacity-60 group-hover:opacity-90 transition-opacity duration-500" />
-                    <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-600 to-primary-500 shadow-lg shadow-primary-600/25 border border-primary-400/20 flex items-center justify-center">
-                        <FileQuestion size={32} className="text-white opacity-90" />
-                    </div>
-                </div>
-
-                {/* Quiz skeleton */}
-                <div className="w-full max-w-md">
-                    <div className="bg-surface border border-line rounded-xl p-5 space-y-3 opacity-40">
-                        <div className="flex items-center gap-2">
-                            <div className="w-8 h-5 bg-primary-500/20 rounded-md animate-pulse" />
-                            <div className="h-4 bg-line rounded-full flex-1 animate-pulse" />
+            <div className="flex flex-col items-center justify-center min-h-[500px] h-full relative overflow-hidden bg-surface">
+                {/* Foreground card — same as mindmap loading */}
+                <div className="relative z-20 flex flex-col items-center bg-surface/90 backdrop-blur-xl px-10 py-8 rounded-3xl border border-line shadow-2xl">
+                    <div className="relative">
+                        <div className="absolute -inset-4 bg-primary-500/10 rounded-full blur-2xl animate-pulse" />
+                        <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-lg shadow-primary-600/20">
+                            <FileQuestion size={28} className="text-white animate-pulse" />
                         </div>
-                        {[1, 2, 3, 4].map(i => (
-                            <div key={i} className="h-12 bg-surface-2 border border-line rounded-lg animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
-                        ))}
                     </div>
-                </div>
-
-                {/* Gradient text + progress bar */}
-                <div className="flex flex-col items-center gap-3">
-                    <p className="font-semibold text-sm bg-clip-text text-transparent bg-gradient-to-r from-primary-400 to-emerald-400 transition-all duration-500 text-center min-w-[250px] min-h-[20px]">
+                    <p className="mt-5 font-semibold text-sm bg-clip-text text-transparent bg-gradient-to-r from-primary-400 to-primary-600 transition-all duration-500 text-center min-h-[24px] flex items-center justify-center">
                         {loadingText}
                     </p>
-                    <div className="w-44 bg-surface-2 h-1 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-primary-500 to-emerald-500 rounded-full w-1/3 animate-[slide_2s_ease-in-out_infinite_alternate]" />
+                    <div className="w-56 bg-line/50 h-1.5 rounded-full mt-4 overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-primary-500 to-primary-400 rounded-full animate-[slide_2.5s_ease-in-out_infinite_alternate]" style={{ width: '40%' }} />
                     </div>
+                    <p className="text-[11px] text-muted mt-3">Bài kiểm tra đang được AI tạo...</p>
                 </div>
             </div>
         );

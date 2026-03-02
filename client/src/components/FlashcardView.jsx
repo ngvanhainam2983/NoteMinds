@@ -56,42 +56,22 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[500px] h-full gap-6 relative overflow-hidden">
-        {/* Decorative bg orbs */}
-        <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-primary-500/5 blur-3xl animate-float pointer-events-none" />
-        <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-accent-500/5 blur-3xl animate-float pointer-events-none" style={{ animationDelay: '3s' }} />
-
-        {/* Icon card — matching mindmap style */}
-        <div className="relative group">
-          <div className="absolute -inset-3 rounded-3xl bg-gradient-to-br from-accent-500/20 to-primary-500/10 blur-xl opacity-60 group-hover:opacity-90 transition-opacity duration-500" />
-          <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-accent-600 to-accent-500 shadow-lg shadow-accent-600/25 border border-accent-400/20 flex items-center justify-center">
-            <Brain size={32} className="text-white opacity-90" />
-          </div>
-        </div>
-
-        {/* Skeleton cards stack */}
-        <div className="relative w-56 h-36">
-          <div className="absolute inset-0 bg-surface-2/60 border border-line/50 rounded-xl transform rotate-3 translate-y-2 opacity-40" />
-          <div className="absolute inset-0 bg-surface-2/80 border border-line/50 rounded-xl transform -rotate-2 translate-y-1 opacity-60" />
-          <div className="absolute inset-0 bg-surface border border-line rounded-xl shadow-lg p-5 flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-3 bg-accent-500/20 rounded-full animate-pulse" />
-              <div className="h-3 bg-line rounded-full flex-1 animate-pulse" />
+      <div className="flex flex-col items-center justify-center min-h-[500px] h-full relative overflow-hidden bg-surface">
+        {/* Foreground card — same as mindmap loading */}
+        <div className="relative z-20 flex flex-col items-center bg-surface/90 backdrop-blur-xl px-10 py-8 rounded-3xl border border-line shadow-2xl">
+          <div className="relative">
+            <div className="absolute -inset-4 bg-accent-500/10 rounded-full blur-2xl animate-pulse" />
+            <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-accent-500 to-accent-600 flex items-center justify-center shadow-lg shadow-accent-600/20">
+              <Brain size={28} className="text-white animate-pulse" />
             </div>
-            <div className="h-3 bg-line/80 rounded-full w-4/5 animate-pulse" style={{ animationDelay: '100ms' }} />
-            <div className="h-3 bg-line/60 rounded-full w-3/5 animate-pulse" style={{ animationDelay: '200ms' }} />
-            <div className="mt-auto h-2 bg-line/40 rounded-full w-2/5 animate-pulse" style={{ animationDelay: '300ms' }} />
           </div>
-        </div>
-
-        {/* Gradient text + progress bar */}
-        <div className="flex flex-col items-center gap-3">
-          <p className="font-semibold text-sm bg-clip-text text-transparent bg-gradient-to-r from-accent-400 to-primary-500 transition-all duration-500 text-center min-w-[260px] min-h-[20px]">
+          <p className="mt-5 font-semibold text-sm bg-clip-text text-transparent bg-gradient-to-r from-accent-400 to-accent-600 transition-all duration-500 text-center min-h-[24px] flex items-center justify-center">
             {loadingText}
           </p>
-          <div className="w-44 bg-surface-2 h-1 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-accent-500 to-primary-500 rounded-full w-1/3 animate-[slide_2s_ease-in-out_infinite_alternate]" />
+          <div className="w-56 bg-line/50 h-1.5 rounded-full mt-4 overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-accent-500 to-accent-400 rounded-full animate-[slide_2.5s_ease-in-out_infinite_alternate]" style={{ width: '40%' }} />
           </div>
+          <p className="text-[11px] text-muted mt-3">Flashcard đang được AI tạo...</p>
         </div>
       </div>
     );
