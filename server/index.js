@@ -273,7 +273,7 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: false,
-  keyGenerator: (req) => req.headers['x-forwarded-for'] || req.ip,
+  // Note: Using default keyGenerator (handles IPv6 properly)
 });
 
 const registerLimiter = rateLimit({
