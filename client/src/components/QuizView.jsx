@@ -100,7 +100,32 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[500px] h-full relative overflow-hidden bg-surface">
-                {/* Foreground card — same as mindmap loading */}
+                {/* Animated background skeleton — quiz layout */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <svg className="w-[460px] h-[380px] opacity-20" viewBox="0 0 460 380">
+                        {/* Question card */}
+                        <rect x="50" y="20" width="360" height="340" rx="18" className="fill-surface-2 animate-pulse" style={{ animationDelay: '0ms' }} />
+                        {/* Question number badge */}
+                        <rect x="75" y="45" width="36" height="36" rx="10" className="fill-line animate-pulse" style={{ animationDelay: '100ms' }} />
+                        {/* Question text lines */}
+                        <rect x="125" y="50" width="250" height="10" rx="5" className="fill-line animate-pulse" style={{ animationDelay: '200ms' }} />
+                        <rect x="125" y="68" width="180" height="10" rx="5" className="fill-line animate-pulse" style={{ animationDelay: '300ms' }} />
+                        {/* Option rows */}
+                        {[0, 1, 2, 3].map(i => (
+                            <g key={i}>
+                                <rect x="75" y={110 + i * 55} width="310" height="42" rx="12" className="fill-surface-2 animate-pulse" style={{ animationDelay: `${400 + i * 150}ms` }} stroke="var(--color-border)" strokeWidth="1.5" />
+                                <rect x="90" y={121 + i * 55} width="24" height="20" rx="6" className="fill-line animate-pulse" style={{ animationDelay: `${500 + i * 150}ms` }} />
+                                <rect x="125" y={125 + i * 55} width={160 - i * 20} height="10" rx="5" className="fill-line animate-pulse" style={{ animationDelay: `${600 + i * 150}ms` }} />
+                            </g>
+                        ))}
+                        {/* Progress pills at top */}
+                        {[0, 1, 2, 3, 4].map(i => (
+                            <rect key={i} x={170 + i * 26} y={340} width="20" height="20" rx="6" className="fill-line animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
+                        ))}
+                    </svg>
+                </div>
+
+                {/* Foreground card */}
                 <div className="relative z-20 flex flex-col items-center bg-surface/90 backdrop-blur-xl px-10 py-8 rounded-3xl border border-line shadow-2xl">
                     <div className="relative">
                         <div className="absolute -inset-4 bg-primary-500/10 rounded-full blur-2xl animate-pulse" />

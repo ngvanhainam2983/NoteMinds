@@ -57,7 +57,29 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[500px] h-full relative overflow-hidden bg-surface">
-        {/* Foreground card — same as mindmap loading */}
+        {/* Animated background skeleton — flashcard stack */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <svg className="w-[420px] h-[360px] opacity-20" viewBox="0 0 420 360">
+            {/* Stacked card shadows */}
+            <rect x="115" y="45" width="200" height="130" rx="16" className="fill-line animate-pulse" transform="rotate(4 215 110)" style={{ animationDelay: '0ms' }} />
+            <rect x="110" y="40" width="200" height="130" rx="16" className="fill-surface-2 animate-pulse" transform="rotate(-2 210 105)" style={{ animationDelay: '150ms' }} />
+            <rect x="105" y="35" width="200" height="130" rx="16" className="fill-surface-2 animate-pulse" style={{ animationDelay: '300ms' }} />
+            {/* Card content lines */}
+            <rect x="130" y="60" width="60" height="8" rx="4" className="fill-line animate-pulse" style={{ animationDelay: '400ms' }} />
+            <rect x="130" y="80" width="150" height="8" rx="4" className="fill-line animate-pulse" style={{ animationDelay: '500ms' }} />
+            <rect x="130" y="100" width="120" height="8" rx="4" className="fill-line animate-pulse" style={{ animationDelay: '600ms' }} />
+            <rect x="130" y="130" width="80" height="6" rx="3" className="fill-line animate-pulse" style={{ animationDelay: '700ms' }} />
+            {/* Bottom dots */}
+            {[0, 1, 2, 3, 4].map(i => (
+              <circle key={i} cx={175 + i * 18} cy="210" r="4" className="fill-line animate-pulse" style={{ animationDelay: `${i * 120}ms` }} />
+            ))}
+            {/* Navigation arrows */}
+            <rect x="90" y="230" width="40" height="40" rx="10" className="fill-surface-2 animate-pulse" style={{ animationDelay: '200ms' }} />
+            <rect x="290" y="230" width="40" height="40" rx="10" className="fill-surface-2 animate-pulse" style={{ animationDelay: '400ms' }} />
+          </svg>
+        </div>
+
+        {/* Foreground card */}
         <div className="relative z-20 flex flex-col items-center bg-surface/90 backdrop-blur-xl px-10 py-8 rounded-3xl border border-line shadow-2xl">
           <div className="relative">
             <div className="absolute -inset-4 bg-accent-500/10 rounded-full blur-2xl animate-pulse" />
