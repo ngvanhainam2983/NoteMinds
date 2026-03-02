@@ -261,9 +261,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
 
       {/* Modal */}
       <div className="relative w-full max-w-md bg-surface border border-line rounded-2xl shadow-2xl animate-fade-in">
-        {/* Turnstile (invisible) */}
-        <div ref={turnstileRef} className="hidden" />
-
         {/* Close button */}
         <button
           onClick={onClose}
