@@ -5,17 +5,19 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // ── SMTP Configuration ──────────────────────────────────
+const smtpPort = parseInt(process.env.SMTP_PORT || '587');
 const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.azurecomm.net',
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: false,
+    host: process.env.SMTP_HOST || 'smtp.titan.email',
+    port: smtpPort,
+    secure: smtpPort === 465, // true for 465 (SSL), false for 587 (STARTTLS)
     auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
     },
+    requireTLS: smtpPort === 587, // Force STARTTLS for port 587
     tls: {
-        ciphers: 'SSLv3',
-        rejectUnauthorized: false,
+        minVersion: 'TLSv1.2',
+        rejectUnauthorized: true,
     },
 });
 
