@@ -175,11 +175,6 @@ function convertToReactFlow(data, collapsed) {
   }
   const cfg = getLayoutConfig(visibleCount);
 
-  const rfNodes = [];
-  const rfEdges = [];
-  const root = data.nodes[0];
-  const collapsedSet = collapsed || new Set();
-
   rfNodes.push({
     id: root.id,
     type: 'rootNode',
