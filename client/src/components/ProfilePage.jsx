@@ -359,7 +359,7 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                         <div className="relative group">
                             <div className={`w-24 h-24 rounded-2xl flex items-center justify-center text-3xl font-bold border-4 border-surface shadow-xl overflow-hidden ${user.plan === 'premium' || user.plan === 'pro' ? 'bg-gradient-to-br from-amber-400 to-primary-600 shadow-amber-500/20' : 'bg-gradient-to-br from-primary-500 to-purple-600'}`}>
                                 {avatarPreview || user.avatar_url ? (
-                                    <img src={avatarPreview || (user.avatar_url.startsWith('http') ? user.avatar_url : `${API_URL}${user.avatar_url}`)} alt="Avatar" className="w-full h-full object-cover" />
+                                    <img src={avatarPreview || (user.avatar_url.startsWith('http') ? user.avatar_url : `${getApiBaseUrl()}${user.avatar_url}`)} alt="Avatar" className="w-full h-full object-cover" />
                                 ) : (
                                     initials
                                 )}

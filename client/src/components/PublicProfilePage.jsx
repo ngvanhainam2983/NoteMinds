@@ -95,7 +95,7 @@ export default function PublicProfilePage({ username, onBack, user: currentUser 
             {/* Avatar */}
             {u.avatarUrl ? (
               <img
-                src={u.avatarUrl.startsWith('http') ? u.avatarUrl : `${API_URL}${u.avatarUrl}`}
+                src={u.avatarUrl.startsWith('http') ? u.avatarUrl : `${getApiBaseUrl()}${u.avatarUrl}`}
                 alt={u.displayName}
                 className="w-24 h-24 rounded-2xl object-cover border-4 border-surface ring-2 ring-primary-500/30 shadow-xl"
               />
