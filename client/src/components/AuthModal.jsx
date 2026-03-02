@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { X, User, Mail, Lock, Eye, EyeOff, LogIn, UserPlus, Loader2, ArrowLeft, CheckCircle2, MailCheck, ShieldCheck, KeyRound, Fingerprint } from 'lucide-react';
 import { register, login, forgotPassword, resendVerification, verify2FA, verify2FARecovery, getPasskeyAuthOptions, verifyPasskeyAuth, getPasskeyLoginOptions, verifyPasskeyLogin } from '../api';
 import { startAuthentication } from '@simplewebauthn/browser';
+import TurnstileModal from './TurnstileModal';
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab = 'login' }) {
   const [tab, setTab] = useState(defaultTab);
@@ -21,59 +22,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
   // Recovery code
   const [recoveryCode, setRecoveryCode] = useState('');
 
-  // Turnstile
-  const TURNSTILE_SITE_KEY = '0x4AAAAAACCkEz_zQ397q5Sv';
-  const turnstileRef = useRef(null);
-  const turnstileWidgetId = useRef(null);
-  const turnstileToken = useRef(null);
-
-  const resetTurnstile = useCallback(() => {
-    turnstileToken.current = null;
-    if (turnstileWidgetId.current !== null && window.turnstile) {
-      try { window.turnstile.reset(turnstileWidgetId.current); } catch {}
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    // Wait for turnstile script to load, then render widget
-    const initTurnstile = () => {
-      if (!window.turnstile || !turnstileRef.current) return;
-      // Remove existing widget if any
-      if (turnstileWidgetId.current !== null) {
-        try { window.turnstile.remove(turnstileWidgetId.current); } catch {}
-        turnstileWidgetId.current = null;
-      }
-      turnstileWidgetId.current = window.turnstile.render(turnstileRef.current, {
-        sitekey: TURNSTILE_SITE_KEY,
-        callback: (token) => { turnstileToken.current = token; },
-        'expired-callback': () => { turnstileToken.current = null; },
-        'error-callback': () => { turnstileToken.current = null; },
-        theme: 'dark',
-        size: 'invisible',
-      });
-    };
-
-    // Retry until turnstile script is loaded
-    if (window.turnstile) {
-      initTurnstile();
-    } else {
-      const interval = setInterval(() => {
-        if (window.turnstile) {
-          clearInterval(interval);
-          initTurnstile();
-        }
-      }, 200);
-      return () => clearInterval(interval);
-    }
-
-    return () => {
-      if (turnstileWidgetId.current !== null && window.turnstile) {
-        try { window.turnstile.remove(turnstileWidgetId.current); } catch {}
-        turnstileWidgetId.current = null;
-      }
-    };
-  }, [isOpen]);
+  // Turnstile modal
+  const [showTurnstile, setShowTurnstile] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState(null);
+  const pendingActionRef = useRef(null);
 
   // Form fields
   const [formData, setFormData] = useState({
@@ -130,14 +82,24 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
     e.preventDefault();
     setError('');
     setSuccess('');
+
+    // Show Turnstile modal for verification
+    pendingActionRef.current = { type: tab, formData: { ...formData } };
+    setShowTurnstile(true);
+  };
+
+  const handleTurnstileVerified = async (token) => {
+    setShowTurnstile(false);
+    setTurnstileToken(token);
     setLoading(true);
 
     try {
+      const action = pendingActionRef.current;
+      if (!action) return;
+
       let result;
-      const cfToken = turnstileToken.current || '';
-      if (tab === 'login') {
-        result = await login(formData.login, formData.password, cfToken);
-        resetTurnstile();
+      if (action.type === 'login') {
+        result = await login(action.formData.login, action.formData.password, token);
 
         if (result.requires2FA) {
           setTempToken(result.tempToken);
@@ -152,34 +114,40 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
 
         onAuthSuccess(result.user);
         onClose();
-      } else if (tab === 'register') {
-        if (formData.password !== formData.confirmPassword) {
+      } else if (action.type === 'register') {
+        if (action.formData.password !== action.formData.confirmPassword) {
           setError('Mật khẩu xác nhận không khớp');
           setLoading(false);
           return;
         }
         result = await register(
-          formData.username,
-          formData.email,
-          formData.password,
-          formData.displayName || formData.username,
-          cfToken
+          action.formData.username,
+          action.formData.email,
+          action.formData.password,
+          action.formData.displayName || action.formData.username,
+          token
         );
-        resetTurnstile();
-        setRegisteredEmail(formData.email);
+        setRegisteredEmail(action.formData.email);
         onAuthSuccess(result.user);
         setTab('verify-notice');
-      } else if (tab === 'forgot') {
-        const resp = await forgotPassword(formData.forgotEmail, cfToken);
-        resetTurnstile();
+      } else if (action.type === 'forgot') {
+        const resp = await forgotPassword(action.formData.forgotEmail, token);
         setSuccess(resp.message);
       }
     } catch (err) {
       setError(err.response?.data?.error || err.message || 'Đã xảy ra lỗi');
-      resetTurnstile();
+      setTurnstileToken(null);
     } finally {
       setLoading(false);
+      pendingActionRef.current = null;
     }
+  };
+
+  const handleTurnstileError = (errorMsg) => {
+    setError(errorMsg);
+    setShowTurnstile(false);
+    setTurnstileToken(null);
+    pendingActionRef.current = null;
   };
 
   const handle2FAVerify = async () => {
@@ -753,6 +721,17 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
           </>
         )}
       </div>
+
+      {/* Turnstile Verification Modal */}
+      <TurnstileModal
+        isOpen={showTurnstile}
+        onClose={() => {
+          setShowTurnstile(false);
+          pendingActionRef.current = null;
+        }}
+        onVerified={handleTurnstileVerified}
+        onError={handleTurnstileError}
+      />
     </div>
   );
 }

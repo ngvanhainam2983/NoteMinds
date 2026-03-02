@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     ArrowLeft, User, Mail, Shield, ShieldCheck, Crown, Calendar, Clock,
     CheckCircle2, XCircle, Fingerprint, KeyRound, Loader2, Edit3,
@@ -12,6 +12,7 @@ import {
 } from '../api';
 import { useTheme, THEMES } from '../ThemeContext';
 import ConfirmModal from './ConfirmModal';
+import TurnstileModal from './TurnstileModal';
 import { startRegistration } from '@simplewebauthn/browser';
 
 export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) {
@@ -56,6 +57,10 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
 
     // Theme
     const { theme: currentTheme, setTheme, mode, setMode } = useTheme();
+
+    // Turnstile verification
+    const [showTurnstile, setShowTurnstile] = useState(false);
+    const pendingEmailRef = useRef(null);
 
     useEffect(() => {
         if (!user) return;
@@ -139,6 +144,16 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
             setEditingEmail(false);
             return;
         }
+        // Show Turnstile modal for verification
+        pendingEmailRef.current = trimmed;
+        setShowTurnstile(true);
+    };
+
+    const handleTurnstileVerified = async (token) => {
+        setShowTurnstile(false);
+        const trimmed = pendingEmailRef.current;
+        if (!trimmed) return;
+
         setEmailSaving(true);
         try {
             const result = await updateProfile(undefined, trimmed);
@@ -150,7 +165,14 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
             setError(err.response?.data?.error || err.message);
         } finally {
             setEmailSaving(false);
+            pendingEmailRef.current = null;
         }
+    };
+
+    const handleTurnstileError = (errorMsg) => {
+        setError(errorMsg);
+        setShowTurnstile(false);
+        pendingEmailRef.current = null;
     };
 
     const handleResendVerification = async () => {
@@ -790,6 +812,17 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                 variant="warning"
                 onConfirm={executeChangePassword}
                 onCancel={() => setShowPwConfirm(false)}
+            />
+
+            {/* Turnstile Verification Modal */}
+            <TurnstileModal
+                isOpen={showTurnstile}
+                onClose={() => {
+                    setShowTurnstile(false);
+                    pendingEmailRef.current = null;
+                }}
+                onVerified={handleTurnstileVerified}
+                onError={handleTurnstileError}
             />
         </div>
     );
