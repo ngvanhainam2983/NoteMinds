@@ -1,5 +1,23 @@
 import CryptoJS from 'crypto-js';
 
+/**
+ * ⚠️ SECURITY WARNING: Client-side encryption provides limited security
+ * 
+ * This implementation encrypts data in the browser before sending to server.
+ * However, the encryption key must be embedded in the JavaScript bundle,
+ * which means it can be extracted by anyone who downloads your app.
+ * 
+ * RECOMMENDED APPROACH:
+ * - Remove client-side encryption entirely
+ * - Rely on HTTPS/TLS for transport encryption
+ * - Store all data encrypted server-side with keys in secure environment
+ * 
+ * CURRENT APPROACH (not recommended for sensitive data):
+ * - Client encrypts with shared key before sending
+ * - Server decrypts with same key
+ * - Key is embedded in frontend code (visible to all users)
+ */
+
 // Must match server ENCRYPTION_KEY exactly.
 // In production, key is required via VITE_ENCRYPTION_KEY.
 const ENV_ENCRYPTION_KEY =

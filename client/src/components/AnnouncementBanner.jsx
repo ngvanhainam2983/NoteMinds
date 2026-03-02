@@ -9,6 +9,21 @@ const TYPE_STYLES = {
   important: { bg: 'bg-red-500/10', border: 'border-red-500/20', text: 'text-red-400', icon: Megaphone },
 };
 
+// ==== SECURITY: URL validation helper ====
+function isValidUrl(url) {
+  if (!url) return true; // Optional field
+  try {
+    const parsed = new URL(url);
+    // Only allow http and https protocols
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export default function AnnouncementBanner({ user }) {
   const [announcements, setAnnouncements] = useState([]);
   const [dismissedIds, setDismissedIds] = useState(() => {
@@ -90,7 +105,7 @@ export default function AnnouncementBanner({ user }) {
               {announcement.content && (
                 <p className="text-xs text-muted mt-0.5 line-clamp-2">{announcement.content}</p>
               )}
-              {announcement.link_url && (
+              {announcement.link_url && isValidUrl(announcement.link_url) && (
                 <a
                   href={announcement.link_url}
                   target="_blank"

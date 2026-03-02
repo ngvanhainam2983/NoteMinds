@@ -727,10 +727,28 @@ router.get('/announcements', (req, res) => {
   } catch (error) { res.status(500).json({ error: 'Failed to get announcements' }); }
 });
 
+// ==== SECURITY: URL validation helper ====
+function isValidUrl(url) {
+  if (!url) return true; // Optional field
+  try {
+    const parsed = new URL(url);
+    // Only allow http and https protocols
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 router.post('/announcements', requireAuth, requireAdmin, (req, res) => {
   try {
     const { title, content, type, expires_at, target_audience, dismissible, auto_dismiss_days, link_url, link_text, priority } = req.body;
     if (!title || !content) return res.status(400).json({ error: 'Title and content required' });
+    if (title.length > 200) return res.status(400).json({ error: 'Title must be 200 characters or less' });
+    if (content.length > 2000) return res.status(400).json({ error: 'Content must be 2000 characters or less' });
+    if (link_url && !isValidUrl(link_url)) return res.status(400).json({ error: 'Invalid URL format' });
     const id = uuidv4();
     const db = new Database(DB_PATH);
     db.prepare(`
@@ -762,6 +780,9 @@ router.post('/announcements', requireAuth, requireAdmin, (req, res) => {
 router.put('/announcements/:id', requireAuth, requireAdmin, (req, res) => {
   try {
     const { title, content, type, is_active, expires_at, target_audience, dismissible, auto_dismiss_days, link_url, link_text, priority } = req.body;
+    if (title && title.length > 200) return res.status(400).json({ error: 'Title must be 200 characters or less' });
+    if (content && content.length > 2000) return res.status(400).json({ error: 'Content must be 2000 characters or less' });
+    if (link_url && !isValidUrl(link_url)) return res.status(400).json({ error: 'Invalid URL format' });
     const db = new Database(DB_PATH);
     db.prepare(`
       UPDATE announcements SET 

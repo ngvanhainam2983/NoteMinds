@@ -6,35 +6,38 @@ import { logger } from './logger.js';
 const ALGORITHM = 'aes-256-cbc';
 const DEFAULT_COMPAT_KEY = 'notemind-default-encryption-key-2024-secure';
 
-// Get encryption key from environment or generate/use default
+// ==== SECURITY: Enforce ENCRYPTION_KEY from environment ====
 let ENCRYPTION_KEY;
-let RAW_ENCRYPTION_KEY;
-if (process.env.ENCRYPTION_KEY) {
-  RAW_ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
-  // If env var is set, convert hex string to buffer
-  if (process.env.ENCRYPTION_KEY.length === 64) {
-    ENCRYPTION_KEY = Buffer.from(process.env.ENCRYPTION_KEY, 'hex');
-  } else {
-    // If it's a plain string, hash it to get exactly 32 bytes
-    ENCRYPTION_KEY = crypto.createHash('sha256').update(process.env.ENCRYPTION_KEY).digest();
-  }
-} else {
-  // Default development key - MUST MATCH client-side default!
-  // Client uses: 'notemind-default-encryption-key-2024-secure'
-  // Hash it to 32 bytes like the server does for plain strings
-  const defaultKeyString = 'notemind-default-encryption-key-2024-secure';
-  RAW_ENCRYPTION_KEY = defaultKeyString;
-  ENCRYPTION_KEY = crypto.createHash('sha256').update(defaultKeyString).digest();
-  logger.warn('[Encryption] Using default encryption key. Set ENCRYPTION_KEY env var for production');
+let RAW_ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
+
+if (!RAW_ENCRYPTION_KEY) {
+  console.error('❌ FATAL ERROR: ENCRYPTION_KEY environment variable is not set!');
+  console.error('   Generate a 32-byte hex string with:');
+  console.error('   node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+  console.error('   Then set: export ENCRYPTION_KEY=<generated-value>');
+  process.exit(1);
 }
 
-logger.warn('[Encryption] Key diagnostics', {
-  rawKey: RAW_ENCRYPTION_KEY,
-  rawKeyLength: RAW_ENCRYPTION_KEY?.length,
-  rawKeyIsHex64: !!(RAW_ENCRYPTION_KEY && RAW_ENCRYPTION_KEY.length === 64 && /^[0-9a-fA-F]+$/.test(RAW_ENCRYPTION_KEY)),
-  derivedKeyHex: ENCRYPTION_KEY.toString('hex'),
-  algorithm: ALGORITHM
-});
+// Validate format
+if (!/^[a-f0-9]{64}$/i.test(RAW_ENCRYPTION_KEY)) {
+  console.error('❌ ERROR: ENCRYPTION_KEY must be 64 hexadecimal characters (32 bytes)');
+  if (RAW_ENCRYPTION_KEY.length !== 64) {
+    console.error('   Current length: ' + RAW_ENCRYPTION_KEY.length + ' characters');
+  }
+  process.exit(1);
+}
+
+// Convert to buffer
+try {
+  ENCRYPTION_KEY = Buffer.from(RAW_ENCRYPTION_KEY, 'hex');
+} catch (err) {
+  console.error('❌ ERROR: Failed to parse ENCRYPTION_KEY:', err.message);
+  process.exit(1);
+}
+
+// Only log non-sensitive information
+logger.info('[Encryption] Service initialized with 32-byte key');
+// ✅ DO NOT log the key hex or any sensitive data!
 
 function deriveNodeKey(rawKey) {
   if (!rawKey) return null;

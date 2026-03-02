@@ -6,6 +6,8 @@ import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
 import { processDocument } from './services/documentProcessor.js';
 import { generateMindmap } from './services/mindmapGenerator.js';
 import { generateFlashcards } from './services/flashcardGenerator.js';
@@ -55,7 +57,14 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
 // ── Cloudflare Turnstile ──
-const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || '0x4AAAAAACCkE-YqorZdo6vjcjprTWSC8lM';
+// ==== SECURITY: Enforce TURNSTILE_SECRET from environment ====
+const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET;
+
+if (!TURNSTILE_SECRET && NODE_ENV === 'production') {
+  console.error('❌ FATAL ERROR: TURNSTILE_SECRET environment variable is not set!');
+  console.error('   Get it from Cloudflare dashboard https://dash.cloudflare.com/profile/api-tokens');
+  process.exit(1);
+}
 async function verifyTurnstile(token, ip) {
   if (!TURNSTILE_SECRET || NODE_ENV === 'development') return true;
   if (!token) return false;
@@ -76,39 +85,59 @@ async function verifyTurnstile(token, ip) {
 app.set('trust proxy', true);
 
 // CORS Configuration
-// In production behind nginx proxy, let nginx handle CORS
-// In development, use strict CORS checking
-const corsOptions = NODE_ENV === 'production' ? {
-  origin: true, // Accept all origins (nginx will filter)
-  credentials: true,
-  optionsSuccessStatus: 200
-} : {
+// ==== SECURITY: Use whitelist for all origins, not just development ====
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:5173').split(',').map(o => o.trim());
+const allowedOriginsLower = ALLOWED_ORIGINS.map(o => o.toLowerCase());
+
+if (NODE_ENV === 'production') {
+  console.log('✅ CORS configured for origins:', ALLOWED_ORIGINS);
+}
+
+const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
     
-    // Allowed origins for development
-    const allowedOrigins = [
-      FRONTEND_URL,
-      'http://localhost:5173',
-      'http://localhost:3000',
-      'http://127.0.0.1:5173',
-      'http://127.0.0.1:3000',
-    ];
-    
-    if (allowedOrigins.includes(origin)) {
+    const originLower = origin.toLowerCase();
+    if (allowedOriginsLower.includes(originLower)) {
       callback(null, true);
     } else {
+      if (NODE_ENV === 'development') {
+        console.warn(`[CORS] Blocked request from origin: ${origin}`);
+      }
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
+  maxAge: 86400
 };
 
 // Middleware
 app.use(cors(corsOptions));
+app.use(cookieParser());
 app.use(express.json({ limit: '50mb' }));
+
+// ==== SECURITY: Security headers ====
+app.use((req, res, next) => {
+  // Prevent clickjacking
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  // Prevent MIME type sniffing
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  // Enable XSS protection
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  // Referrer policy
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  // Permissions policy
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  
+  if (NODE_ENV === 'production') {
+    // Enforce HTTPS in production
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+  
+  next();
+});
 
 // Request logging middleware
 app.use(requestLoggerMiddleware);
@@ -236,9 +265,29 @@ function checkBan(req, res, next) {
 // Apply ban check to all API routes
 app.use('/api', checkBan);
 
+// ==== SECURITY: Rate limiting for authentication endpoints ====
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 requests per windowMs
+  message: 'Quá nhiều lần đăng nhập từ IP này, vui lòng thử lại sau 15 phút',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: false,
+  keyGenerator: (req) => req.headers['x-forwarded-for'] || req.ip,
+});
+
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // Limit each IP to 3 registration attempts per hour
+  message: 'Quá nhiều lần đăng ký từ IP này, vui lòng thử lại sau 1 giờ',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+});
+
 // ============ AUTH ROUTES ============
 
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', registerLimiter, async (req, res) => {
   try {
     const { username, email, password, displayName, turnstileToken } = req.body;
     const ip = getClientIp(req);
@@ -355,7 +404,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
   }
 });
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', authLimiter, async (req, res) => {
   try {
     const { login, password, turnstileToken } = req.body;
     const ip = getClientIp(req);
@@ -803,8 +852,8 @@ function uploadRateLimitMiddleware(req, res, next) {
 
 // ============ ROUTES ============
 
-// Upload and process document
-app.post('/api/upload', optionalAuth, uploadRateLimitMiddleware, upload.single('file'), async (req, res) => {
+// ==== SECURITY: Upload requires authentication to prevent anonymous spam ====
+app.post('/api/upload', requireAuth, uploadRateLimitMiddleware, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
@@ -813,8 +862,8 @@ app.post('/api/upload', optionalAuth, uploadRateLimitMiddleware, upload.single('
     // Free/guest users cannot upload audio files
     const audioExts = ['.mp3', '.wav', '.m4a', '.ogg', '.webm'];
     const ext = path.extname(req.file.originalname).toLowerCase();
-    const userPlan = req.user?.plan || 'free';
-    if (audioExts.includes(ext) && (userPlan === 'free' || !req.user)) {
+    const userPlan = req.user.plan || 'free';
+    if (audioExts.includes(ext) && userPlan === 'free') {
       // Delete the uploaded file
       fs.unlink(req.file.path, () => { });
       return res.status(403).json({
@@ -836,7 +885,7 @@ app.post('/api/upload', optionalAuth, uploadRateLimitMiddleware, upload.single('
     });
 
     // Persist to DB immediately (processing state)
-    const userId = req.user?.id || null;
+    const userId = req.user.id;
     persistDocumentToDB(docId, userId, filePath, originalName, 'processing');
 
     // Process in background
@@ -995,23 +1044,52 @@ app.get('/api/documents/history', optionalAuth, (req, res) => {
   }
 });
 
+// ==== SECURITY: Document access verification helper ====
+function verifyDocumentAccess(docId, userId, userRole) {
+  try {
+    const db = new Database(DB_PATH);
+    const doc = db.prepare('SELECT id, user_id FROM documents WHERE id = ?').get(docId);
+    db.close();
+
+    if (!doc) {
+      return { allowed: false, status: 404, message: 'Document not found' };
+    }
+
+    // Admins can access all documents
+    if (userRole === 'admin') {
+      return { allowed: true };
+    }
+
+    // User must own the document
+    if (doc.user_id !== userId) {
+      return { allowed: false, status: 403, message: 'You do not have permission to access this document' };
+    }
+
+    return { allowed: true };
+  } catch (err) {
+    console.error('[Access] Error verifying document access:', err.message);
+    return { allowed: false, status: 500, message: 'Internal server error' };
+  }
+}
+
 // Get saved sessions for a document (history viewer)
-app.get('/api/documents/:docId/sessions', optionalAuth, (req, res) => {
+app.get('/api/documents/:docId/sessions', requireAuth, (req, res) => {
   try {
     const docId = req.params.docId;
+    
+    // Verify ownership
+    const accessCheck = verifyDocumentAccess(docId, req.user.id, req.user.role);
+    if (!accessCheck.allowed) {
+      return res.status(accessCheck.status).json({ error: accessCheck.message });
+    }
+
     const db = new Database(DB_PATH);
-    // Get document info (verify ownership if user is logged in)
     const doc = db.prepare('SELECT id, user_id, original_name, status, text_length, deleted_at, created_at FROM documents WHERE id = ?').get(docId);
+    db.close();
+    
     if (!doc) {
-      db.close();
       return res.status(404).json({ error: 'Document not found' });
     }
-    // Check ownership
-    if (req.user?.id && doc.user_id && doc.user_id !== req.user.id) {
-      db.close();
-      return res.status(403).json({ error: 'Access denied' });
-    }
-    db.close();
 
     const sessions = getAllDocumentSessions(docId);
     const isFileDeleted = !!doc.deleted_at || !documents.has(docId);
@@ -1049,11 +1127,38 @@ app.get('/api/documents/:docId/status', (req, res) => {
   });
 });
 
-// Delete document — only removes from in-memory cache (DB record kept for history)
-app.delete('/api/documents/:docId', (req, res) => {
-  documents.delete(req.params.docId);
-  console.log(`Document ${req.params.docId} removed from memory`);
-  res.json({ success: true });
+// ==== SECURITY: Delete document requires authentication and ownership verification ====
+app.delete('/api/documents/:docId', requireAuth, (req, res) => {
+  try {
+    const docId = req.params.docId;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    
+    // Verify user owns the document or is admin
+    if (userRole !== 'admin') {
+      const db = new Database(DB_PATH);
+      const doc = db.prepare('SELECT id, user_id FROM uploaded_documents WHERE id = ?').get(docId);
+      db.close();
+      
+      if (!doc || doc.user_id !== userId) {
+        return res.status(403).json({ error: 'You do not have permission to delete this document' });
+      }
+    }
+    
+    // Remove from memory cache
+    documents.delete(docId);
+    
+    // Mark as deleted in database
+    const db = new Database(DB_PATH);
+    db.prepare('UPDATE uploaded_documents SET is_deleted = 1, deleted_at = CURRENT_TIMESTAMP WHERE id = ?').run(docId);
+    db.close();
+    
+    console.log(`[DELETE] Document ${docId} deleted by user ${userId}`);
+    res.json({ success: true, message: 'Document deleted successfully' });
+  } catch (err) {
+    console.error(`[DELETE] Error deleting document:`, err.message);
+    res.status(500).json({ error: 'Failed to delete document' });
+  }
 });
 
 // ── Session persistence helpers ──
@@ -1100,9 +1205,15 @@ function getAllDocumentSessions(docId) {
 }
 
 // Download original document
-app.get('/api/documents/:docId/download', optionalAuth, async (req, res) => {
+app.get('/api/documents/:docId/download', requireAuth, async (req, res) => {
   try {
     const docId = req.params.docId;
+    
+    // Verify ownership
+    const accessCheck = verifyDocumentAccess(docId, req.user.id, req.user.role);
+    if (!accessCheck.allowed) {
+      return res.status(accessCheck.status).json({ error: accessCheck.message });
+    }
 
     // First try to find it in memory to get originalName
     let originalName = 'document.txt';
@@ -1266,9 +1377,17 @@ app.post('/api/documents/:docId/quiz', async (req, res) => {
 });
 
 // Chat with document (plan-based message limit per document)
-app.post('/api/documents/:docId/chat', optionalAuth, async (req, res) => {
+app.post('/api/documents/:docId/chat', requireAuth, async (req, res) => {
   try {
-    const doc = documents.get(req.params.docId);
+    const docId = req.params.docId;
+    
+    // Verify ownership first
+    const accessCheck = verifyDocumentAccess(docId, req.user.id, req.user.role);
+    if (!accessCheck.allowed) {
+      return res.status(accessCheck.status).json({ error: accessCheck.message });
+    }
+
+    const doc = documents.get(docId);
     if (!doc) {
       return res.status(404).json({ error: 'Document not found' });
     }
@@ -1310,8 +1429,8 @@ app.post('/api/documents/:docId/chat', optionalAuth, async (req, res) => {
   }
 });
 
-// Chat with multiple documents
-app.post('/api/chat/multi', optionalAuth, async (req, res) => {
+// ==== SECURITY: Multi-document chat requires authentication ====
+app.post('/api/chat/multi', requireAuth, async (req, res) => {
   try {
     const { docIds, message, history } = req.body;
     if (!docIds || !Array.isArray(docIds) || docIds.length === 0) {
