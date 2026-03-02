@@ -881,7 +881,7 @@ function AdminDocsPanel({ showToast, askConfirm }) {
                     <p className="font-medium text-sm truncate max-w-xs">{d.original_name || d.title || 'Không rõ'}</p>
                     <p className="text-[11px] text-muted">{new Date(d.created_at).toLocaleDateString('vi-VN')}</p>
                   </td>
-                  <td className="py-3 px-4 hidden sm:table-cell text-muted text-xs">{d.username || '?'}</td>
+                  <td className="py-3 px-4 hidden sm:table-cell text-muted text-xs">{d.owner_username || '?'}</td>
                   <td className="py-3 px-4 text-center">
                     <button
                       onClick={() => handleTogglePublic(d.id)}

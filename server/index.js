@@ -52,6 +52,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 const NODE_ENV = process.env.NODE_ENV || 'development';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
 // ── Cloudflare Turnstile ──
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET || '0x4AAAAAACCkE-YqorZdo6vjcjprTWSC8lM';
@@ -74,8 +75,41 @@ async function verifyTurnstile(token, ip) {
 // Trust proxy (nginx) for correct client IP
 app.set('trust proxy', true);
 
+// CORS Configuration
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    
+    // Allowed origins
+    const allowedOrigins = [
+      FRONTEND_URL,
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'http://127.0.0.1:5173',
+      'http://127.0.0.1:3000',
+    ];
+    
+    // In production, allow main domain and www subdomain
+    if (NODE_ENV === 'production' && process.env.DOMAIN) {
+      allowedOrigins.push(`https://${process.env.DOMAIN}`);
+      allowedOrigins.push(`https://www.${process.env.DOMAIN}`);
+      allowedOrigins.push(`http://${process.env.DOMAIN}`);
+      allowedOrigins.push(`http://www.${process.env.DOMAIN}`);
+    }
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 
 // Request logging middleware

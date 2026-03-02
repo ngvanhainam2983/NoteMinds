@@ -1,89 +1,45 @@
 version: '3.8'
 
 services:
-  # Main NoteMind Application
-  notemind:
+  # Backend API Server
+  backend:
     build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: notemind-app
+      context: ./server
+      dockerfile: ../Dockerfile
+      target: backend
+    container_name: notemind-backend
     restart: unless-stopped
     ports:
-      - "${PORT:-3001}:${PORT:-3001}"
+      - "3001:3001"
     environment:
-      NODE_ENV: ${NODE_ENV:-production}
-      PORT: ${PORT:-3001}
-      QWEN_API_BASE_URL: ${QWEN_API_BASE_URL}
-      QWEN_API_KEY: ${QWEN_API_KEY}
-      QWEN_MODEL: ${QWEN_MODEL}
-      JWT_SECRET: ${JWT_SECRET}
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
-      LOG_LEVEL: ${LOG_LEVEL:-info}
+      - NODE_ENV=production
+      - PORT=3001
+      - FRONTEND_URL=${FRONTEND_URL:-https://yourdomain.com}
+      - DOMAIN=${DOMAIN:-yourdomain.com}
+      - JWT_SECRET=${JWT_SECRET}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - QWEN_API_KEY=${QWEN_API_KEY}
+      - TURNSTILE_SECRET=${TURNSTILE_SECRET}
+      - EMAIL_HOST=${EMAIL_HOST}
+      - EMAIL_PORT=${EMAIL_PORT}
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+      - EMAIL_FROM=${EMAIL_FROM}
     volumes:
-      # Persist uploads
-      - ./server/uploads:/app/server/uploads
-      # Persist database
-      - ./server/data:/app/server/data
-      # Persist logs
-      - ./logs:/app/logs
-    depends_on:
-      - postgres  # Optional: if using PostgreSQL in future
+      - ./server/data:/app/data
+      - ./server/uploads:/app/uploads
+      - ./server/exports:/app/exports
+      - ./server/logs:/app/logs
     networks:
       - notemind-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${PORT:-3001}/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+      start_period: 40s
 
-  # Optional: PostgreSQL for future database migration
-  postgres:
-    image: postgres:16-alpine
-    container_name: notemind-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${DB_NAME:-notemind}
-      POSTGRES_USER: ${DB_USER:-notemind}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - notemind-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-notemind}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    profiles:
-      - postgres  # Only run when explicitly enabled: docker-compose --profile postgres up
-
-  # Optional: Redis for caching
-  redis:
-    image: redis:7-alpine
-    container_name: notemind-redis
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    command: redis-server --requirepass ${REDIS_PASSWORD:-changeme}
-    volumes:
-      - redis_data:/data
-    networks:
-      - notemind-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    profiles:
-      - redis  # Only run when explicitly enabled: docker-compose --profile redis up
-
-  # Optional: Nginx reverse proxy
+  # Nginx Reverse Proxy
   nginx:
     image: nginx:alpine
     container_name: notemind-nginx
@@ -92,42 +48,35 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./deploy/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./server/public:/usr/share/nginx/html:ro
-      - ./certs:/etc/nginx/certs:ro
-    depends_on:
-      - notemind
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./client/dist:/var/www/notemind/client:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
     networks:
       - notemind-network
-    profile:
-      - nginx  # Only run when explicitly enabled
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-volumes:
-  postgres_data:
-  redis_data:
+  # Certbot for Let's Encrypt SSL (optional if using Cloudflare Origin certificates)
+  certbot:
+    image: certbot/certbot:latest
+    container_name: notemind-certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - notemind-network
 
 networks:
   notemind-network:
     driver: bridge
 
-# Usage:
-# Production (minimal):
-#   docker-compose up -d
-#
-# With database:
-#   docker-compose --profile postgres up -d
-#
-# With caching:
-#   docker-compose --profile redis up -d
-#
-# Full stack:
-#   docker-compose --profile postgres --profile redis --profile nginx up -d
-#
-# Development:
-#   docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
-#
-# View logs:
-#   docker-compose logs -f notemind
-#
-# Stop all:
-#   docker-compose down
+volumes:
+  certbot-conf:
+  certbot-www:

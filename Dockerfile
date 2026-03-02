@@ -1,65 +1,38 @@
-# Multi-stage build for NoteMind
-# Stage 1: Build client
-FROM node:20-alpine AS client-builder
+# Multi-stage Dockerfile for NoteMind
+
+# Stage 1: Build Frontend
+FROM node:18-alpine AS frontend-builder
 
 WORKDIR /app/client
-
 COPY client/package*.json ./
-
-RUN npm install --omit=dev --legacy-peer-deps
-
-COPY client/ .
-
+RUN npm ci --only=production
+COPY client/ ./
 RUN npm run build
 
-# Stage 2: Build server runtime
-FROM node:20-alpine AS server-builder
-
-WORKDIR /app/server
-
-COPY server/package*.json ./
-
-RUN npm install --omit=dev --legacy-peer-deps
-
-# Stage 3: Final runtime image
-FROM node:20-alpine
-
-LABEL maintainer="NoteMind Team"
-LABEL description="NoteMind - AI-powered note assistant with encryption"
+# Stage 2: Backend Runtime
+FROM node:18-alpine AS backend
 
 WORKDIR /app
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init curl
-
-# Copy server dependencies from builder
-COPY --from=server-builder /app/server/node_modules ./server/node_modules
+# Install production dependencies
+COPY server/package*.json ./
+RUN npm ci --only=production
 
 # Copy server code
-COPY server/ ./server/
+COPY server/ ./
 
-# Copy built client from builder
-COPY --from=client-builder /app/client/dist ./server/public
+# Copy built frontend
+COPY --from=frontend-builder /app/client/dist ./public
 
 # Create necessary directories
-RUN mkdir -p /app/server/data /app/server/uploads /app/logs
-
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 && \
-    chown -R nodejs:nodejs /app
-
-USER nodejs
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:${PORT:-3001}/health || exit 1
+RUN mkdir -p data uploads exports logs uploads/avatars
 
 # Expose port
-EXPOSE ${PORT:-3001}
+EXPOSE 3001
 
-# Use dumb-init to handle signals properly
-ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3001/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Start application
-CMD ["node", "server/index.js"]
+# Start server
+CMD ["node", "index.js"]

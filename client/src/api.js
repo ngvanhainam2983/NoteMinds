@@ -1,11 +1,29 @@
 import axios from 'axios';
 import { encryptDataForServer, decryptDataFromServer } from './encryptionService.js';
 
-const API_BASE = '/api';
+// Determine API base URL based on environment
+const getApiBaseUrl = () => {
+  // Local development
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return '/api';
+  }
+  
+  // Production: use api subdomain
+  const protocol = window.location.protocol;
+  const hostname = window.location.hostname;
+  
+  // Extract main domain (handles www.domain.com -> api.domain.com)
+  const mainDomain = hostname.replace(/^www\./, '');
+  
+  return `${protocol}//api.${mainDomain}`;
+};
+
+const API_BASE = getApiBaseUrl();
 
 const api = axios.create({
   baseURL: API_BASE,
   timeout: 120000, // 2 minutes for AI processing
+  withCredentials: true, // Enable credentials for CORS
 });
 
 // ── Token management ──────────────────────────────────

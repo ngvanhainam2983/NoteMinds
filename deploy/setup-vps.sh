@@ -1,253 +1,236 @@
 #!/bin/bash
-# ============================================================
-#  NoteMinds VPS Deploy Script
-#  Target: Ubuntu/Debian VPS (2 vCPU, 1GB RAM)
-#
-#  Usage:
-#    First-time:   bash deploy/setup-vps.sh
-#    Redeploy:     bash deploy/setup-vps.sh update
-# ============================================================
 
-set -euo pipefail
+# NoteMind VPS Setup Script
+# This script automates the initial server setup for NoteMind
 
-APP_DIR="/opt/notemind"
-REPO_URL=""   # Fill with your Git repo URL if using git-based deploy
-BRANCH="main"
+set -e
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-NC='\033[0m'
+echo "╔═══════════════════════════════════════════════════════╗"
+echo "║     NoteMind - Automated VPS Setup Script            ║"
+echo "║     Nginx + Cloudflare + PM2 Configuration           ║"
+echo "╚═══════════════════════════════════════════════════════╝"
+echo ""
 
-log()  { echo -e "${GREEN}[✓]${NC} $1"; }
-warn() { echo -e "${YELLOW}[!]${NC} $1"; }
-err()  { echo -e "${RED}[✗]${NC} $1"; exit 1; }
-ask()  { echo -e "${CYAN}[?]${NC} $1"; }
-
-# ── Check root ──────────────────────────────────────────────
-if [ "$EUID" -ne 0 ]; then
-  err "Please run as root:  sudo bash deploy/setup-vps.sh"
+# Check if running as root
+if [ "$EUID" -ne 0 ]; then 
+    echo "⚠️  Please run as root: sudo bash setup-vps.sh"
+    exit 1
 fi
 
-MODE="${1:-full}"   # "full" or "update"
+# Prompt for domain
+read -p "Enter your domain name (e.g., example.com): " DOMAIN
+read -p "Enter your email for SSL certificate: " EMAIL
 
-# ── Prompt for domain ───────────────────────────────────────
-DOMAIN_FILE="$APP_DIR/.domain"
-DOMAIN=""
-
-if [ -f "$DOMAIN_FILE" ]; then
-  DOMAIN=$(cat "$DOMAIN_FILE")
-  ask "Previous domain found: $DOMAIN"
-  read -rp "    Press Enter to keep it, or type a new domain: " NEW_DOMAIN
-  if [ -n "$NEW_DOMAIN" ]; then
-    DOMAIN="$NEW_DOMAIN"
-  fi
-else
-  echo ""
-  ask "Enter your domain name (e.g. notemind.example.com):"
-  read -rp "    Domain: " DOMAIN
-  echo ""
+echo ""
+echo "📝 Configuration:"
+echo "   Domain: $DOMAIN"
+echo "   API Subdomain: api.$DOMAIN"
+echo "   Email: $EMAIL"
+echo ""
+read -p "Continue? (y/n) " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    exit 1
 fi
 
-# Strip protocol if user accidentally included it
-DOMAIN=$(echo "$DOMAIN" | sed -E 's|^https?://||' | sed 's|/.*||')
+echo ""
+echo "🔄 Step 1: Updating system packages..."
+apt update && apt upgrade -y
 
-if [ -z "$DOMAIN" ]; then
-  err "Domain is required. Example: bash deploy/setup-vps.sh"
+echo ""
+echo "📦 Step 2: Installing dependencies..."
+
+# Install Node.js 18.x
+if ! command -v node &> /dev/null; then
+    echo "Installing Node.js..."
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+    apt install -y nodejs
 fi
 
-# Validate domain format
-if ! echo "$DOMAIN" | grep -qP '^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)+$'; then
-  err "Invalid domain format: $DOMAIN"
+# Install Nginx
+if ! command -v nginx &> /dev/null; then
+    echo "Installing Nginx..."
+    apt install -y nginx
 fi
 
-mkdir -p "$APP_DIR"
-echo "$DOMAIN" > "$DOMAIN_FILE"
-log "Domain set to: $DOMAIN"
+# Install Certbot
+if ! command -v certbot &> /dev/null; then
+    echo "Installing Certbot..."
+    apt install -y certbot python3-certbot-nginx
+fi
 
-# ════════════════════════════════════════════════════════════
-#  FULL SETUP (first-time only)
-# ════════════════════════════════════════════════════════════
-if [ "$MODE" = "full" ]; then
+# Install Git
+if ! command -v git &> /dev/null; then
+    echo "Installing Git..."
+    apt install -y git
+fi
 
-  log "Updating system packages..."
-  apt-get update -qq && apt-get upgrade -y -qq
-
-  # ── Install Node.js 20 LTS ────────────────────────────────
-  if ! command -v node &>/dev/null; then
-    log "Installing Node.js 20..."
-    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-    apt-get install -y nodejs
-  fi
-  log "Node $(node -v) / npm $(npm -v)"
-
-  # ── Install PM2 ───────────────────────────────────────────
-  if ! command -v pm2 &>/dev/null; then
-    log "Installing PM2..."
+# Install PM2 globally
+if ! command -v pm2 &> /dev/null; then
+    echo "Installing PM2..."
     npm install -g pm2
-  fi
+fi
 
-  # ── Install Nginx ─────────────────────────────────────────
-  if ! command -v nginx &>/dev/null; then
-    log "Installing Nginx..."
-    apt-get install -y nginx
-  fi
+echo ""
+echo "🔧 Step 3: Setting up application directory..."
 
-  # ── Create swap (important for 1GB RAM) ───────────────────
-  if [ ! -f /swapfile ]; then
-    log "Creating 1GB swap file..."
-    fallocate -l 1G /swapfile
-    chmod 600 /swapfile
-    mkswap /swapfile
-    swapon /swapfile
-    echo '/swapfile none swap sw 0 0' >> /etc/fstab
-    # Optimize swappiness for low-RAM server
-    sysctl vm.swappiness=10
-    echo 'vm.swappiness=10' >> /etc/sysctl.conf
-  fi
-  log "Swap: $(swapon --show | tail -1)"
+APP_DIR="/var/www/notemind"
 
-  # ── Firewall ──────────────────────────────────────────────
-  if command -v ufw &>/dev/null; then
-    ufw allow OpenSSH
-    ufw allow 'Nginx Full'
-    ufw --force enable
-    log "Firewall configured"
-  fi
-
-fi  # end full setup
-
-# ════════════════════════════════════════════════════════════
-#  DEPLOY / UPDATE
-# ════════════════════════════════════════════════════════════
-
-log "Creating directories..."
-mkdir -p "$APP_DIR" "$APP_DIR/logs"
-
-# ── Copy project files (or git pull) ────────────────────────
-if [ -n "$REPO_URL" ]; then
-  if [ -d "$APP_DIR/.git" ]; then
-    log "Pulling latest code..."
-    cd "$APP_DIR" && git pull origin "$BRANCH"
-  else
-    log "Cloning repository..."
-    git clone -b "$BRANCH" "$REPO_URL" "$APP_DIR"
-  fi
-else
-  log "Syncing project files with rsync..."
-  # Run this from the project root directory
-  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-  rsync -av --delete \
-    --exclude='node_modules' \
-    --exclude='.git' \
-    --exclude='server/uploads/*' \
-    --exclude='server/public' \
-    --exclude='.env' \
-    "$PROJECT_DIR/" "$APP_DIR/"
+if [ ! -d "$APP_DIR" ]; then
+    mkdir -p "$APP_DIR"
 fi
 
 cd "$APP_DIR"
 
-# ── Install deps ────────────────────────────────────────────
-log "Installing server dependencies..."
-cd "$APP_DIR/server"
-npm ci --omit=dev 2>/dev/null || npm install --omit=dev
-
-log "Installing client dependencies..."
-cd "$APP_DIR/client"
-npm ci 2>/dev/null || npm install
-
-# ── Build frontend ──────────────────────────────────────────
-log "Building frontend..."
-npm run build
-log "Frontend built → $APP_DIR/server/public"
-
-# ── Setup .env ──────────────────────────────────────────────
-if [ ! -f "$APP_DIR/server/.env" ]; then
-  cp "$APP_DIR/.env.example" "$APP_DIR/server/.env"
-  warn "Created server/.env from .env.example — edit it with your API keys!"
-  warn "  nano $APP_DIR/server/.env"
+# If this script is in deploy/, we're already in the repo
+if [ -f "../package.json" ]; then
+    echo "Repository detected, skipping clone..."
+    APP_DIR="$(pwd)/.."
+    cd "$APP_DIR"
+else
+    read -p "Enter Git repository URL (or press Enter to skip): " GIT_REPO
+    if [ ! -z "$GIT_REPO" ]; then
+        echo "Cloning repository..."
+        cd /var/www
+        rm -rf notemind
+        git clone "$GIT_REPO" notemind
+        cd notemind
+    fi
 fi
 
-# ── Ensure uploads directory ────────────────────────────────
-mkdir -p "$APP_DIR/server/uploads"
+echo ""
+echo "🔐 Step 4: Configuring SSL certificate..."
 
-# ── Configure Nginx ─────────────────────────────────────────
-log "Configuring Nginx for $DOMAIN..."
-cp "$APP_DIR/deploy/nginx.conf" /etc/nginx/sites-available/notemind
-# Replace placeholder with actual domain
-sed -i "s/DOMAIN_PLACEHOLDER/$DOMAIN/g" /etc/nginx/sites-available/notemind
-ln -sf /etc/nginx/sites-available/notemind /etc/nginx/sites-enabled/notemind
+# Stop nginx for standalone mode
+systemctl stop nginx
+
+# Get SSL certificate
+certbot certonly --standalone \
+    --non-interactive \
+    --agree-tos \
+    --email "$EMAIL" \
+    -d "$DOMAIN" \
+    -d "www.$DOMAIN" \
+    -d "api.$DOMAIN"
+
+echo ""
+echo "⚙️  Step 5: Configuring Nginx..."
+
+# Update nginx.conf with actual domain
+sed -i "s/yourdomain.com/$DOMAIN/g" "$APP_DIR/deploy/nginx.conf"
+
+# Update SSL certificate paths in nginx.conf to use Let's Encrypt
+sed -i "s|/etc/letsencrypt/live/yourdomain.com/|/etc/letsencrypt/live/$DOMAIN/|g" "$APP_DIR/deploy/nginx.conf"
+
+# Link nginx configuration
+ln -sf "$APP_DIR/deploy/nginx.conf" /etc/nginx/sites-available/notemind
+ln -sf /etc/nginx/sites-available/notemind /etc/nginx/sites-enabled/
+
+# Remove default nginx site
 rm -f /etc/nginx/sites-enabled/default
 
-nginx -t && systemctl reload nginx
-log "Nginx configured and reloaded"
+# Test nginx configuration
+nginx -t
 
-# ── SSL with Certbot (automatic) ───────────────────────────
-log "Setting up SSL certificate for $DOMAIN..."
+# Start nginx
+systemctl start nginx
+systemctl enable nginx
 
-# Install certbot if not present
-if ! command -v certbot &>/dev/null; then
-  log "Installing Certbot..."
-  apt-get install -y certbot python3-certbot-nginx
+echo ""
+echo "📱 Step 6: Setting up backend..."
+
+cd "$APP_DIR/server"
+
+# Install dependencies
+npm install
+
+# Create .env if it doesn't exist
+if [ ! -f .env ]; then
+    cp ../.env.example .env
+    
+    # Generate secure keys
+    JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+    ENCRYPTION_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+    
+    # Update .env with domain and generated secrets
+    sed -i "s/DOMAIN=.*/DOMAIN=$DOMAIN/" .env
+    sed -i "s|FRONTEND_URL=.*|FRONTEND_URL=https://$DOMAIN|" .env
+    sed -i "s|API_DOMAIN=.*|API_DOMAIN=https://api.$DOMAIN|" .env
+    sed -i "s/JWT_SECRET=.*/JWT_SECRET=$JWT_SECRET/" .env
+    sed -i "s/ENCRYPTION_KEY=.*/ENCRYPTION_KEY=$ENCRYPTION_KEY/" .env
+    sed -i "s/NODE_ENV=.*/NODE_ENV=production/" .env
+    
+    echo ""
+    echo "⚠️  .env file created with generated secrets!"
+    echo "   Please edit $APP_DIR/server/.env to add:"
+    echo "   - QWEN_API_KEY (for AI features)"
+    echo "   - Email configuration (optional)"
 fi
 
-# Prompt for email
-ask "Enter your email for SSL certificate notifications (Let's Encrypt):"
-read -rp "    Email: " SSL_EMAIL
+# Create necessary directories
+mkdir -p data uploads exports logs uploads/avatars
 
-if [ -z "$SSL_EMAIL" ]; then
-  warn "No email provided — using --register-unsafely-without-email"
-  EMAIL_FLAG="--register-unsafely-without-email"
-else
-  EMAIL_FLAG="--email $SSL_EMAIL --no-eff-email"
-fi
-
-# Check if certificate already exists
-if certbot certificates 2>/dev/null | grep -q "$DOMAIN"; then
-  log "SSL certificate already exists for $DOMAIN, renewing..."
-  certbot renew --nginx --non-interactive
-else
-  log "Obtaining SSL certificate for $DOMAIN..."
-  certbot --nginx -d "$DOMAIN" \
-    $EMAIL_FLAG \
-    --agree-tos \
-    --non-interactive \
-    --redirect
-fi
-
-# Verify certbot auto-renewal timer
-if systemctl is-active --quiet certbot.timer 2>/dev/null; then
-  log "Certbot auto-renewal timer is active"
-else
-  # Set up cron-based renewal as fallback
-  if ! crontab -l 2>/dev/null | grep -q 'certbot renew'; then
-    (crontab -l 2>/dev/null; echo "0 3 * * * certbot renew --quiet --post-hook 'systemctl reload nginx'") | crontab -
-    log "Certbot auto-renewal cron job added (daily at 3 AM)"
-  fi
-fi
-
-log "SSL configured — HTTPS is active!"
-
-# ── Start / Restart PM2 ────────────────────────────────────
-log "Starting application with PM2..."
-cd "$APP_DIR"
-pm2 delete notemind 2>/dev/null || true
-pm2 start deploy/ecosystem.config.cjs
+# Start with PM2
+pm2 delete notemind-api 2>/dev/null || true
+pm2 start index.js --name notemind-api
 pm2 save
-pm2 startup systemd -u root --hp /root 2>/dev/null || true
+pm2 startup | tail -n 1 | bash
 
-log "────────────────────────────────────────"
-log "  NoteMinds deployed successfully! 🎉"
-log "────────────────────────────────────────"
-log "  App URL:      https://$DOMAIN"
-log "  PM2 status:   pm2 status"
-log "  PM2 logs:     pm2 logs notemind"
-log "  Nginx logs:   tail -f /var/log/nginx/access.log"
-log ""
-warn "Next steps:"
-warn "  1. Edit $APP_DIR/server/.env with your Qwen API settings"
-warn "  2. Make sure DNS A record for $DOMAIN points to $(hostname -I | awk '{print $1}')"
-log "────────────────────────────────────────"
+echo ""
+echo "🎨 Step 7: Building frontend..."
+
+cd "$APP_DIR/client"
+
+# Install dependencies
+npm install
+
+# Build for production
+npm run build
+
+echo ""
+echo "🔥 Step 8: Setting up firewall..."
+
+# Configure UFW
+if command -v ufw &> /dev/null; then
+    ufw --force enable
+    ufw allow 22/tcp    # SSH
+    ufw allow 80/tcp    # HTTP
+    ufw allow 443/tcp   # HTTPS
+    echo "Firewall configured"
+fi
+
+echo ""
+echo "╔═══════════════════════════════════════════════════════╗"
+echo "║            ✅ Setup Complete!                         ║"
+echo "╚═══════════════════════════════════════════════════════╝"
+echo ""
+echo "🌐 Your NoteMind instance should now be available at:"
+echo "   Frontend: https://$DOMAIN"
+echo "   API:      https://api.$DOMAIN"
+echo ""
+echo "📝 Next steps:"
+echo "   1. Configure Cloudflare DNS (if not done):"
+echo "      - A record: @ → Your Server IP (Proxied)"
+echo "      - A record: api → Your Server IP (Proxied)"
+echo "      - A record: www → Your Server IP (Proxied)"
+echo ""
+echo "   2. Edit server configuration:"
+echo "      nano $APP_DIR/server/.env"
+echo ""
+echo "   3. Add your AI API key (required):"
+echo "      - Get key from: https://dashscope.console.aliyun.com/"
+echo "      - Or use Ollama locally"
+echo ""
+echo "   4. Restart backend:"
+echo "      pm2 restart notemind-api"
+echo ""
+echo "📊 Useful commands:"
+echo "   - View logs:    pm2 logs notemind-api"
+echo "   - Monitor:      pm2 monit"
+echo "   - Restart:      pm2 restart notemind-api"
+echo "   - Nginx logs:   tail -f /var/log/nginx/error.log"
+echo ""
+echo "🔐 SSL Certificate auto-renewal is configured"
+echo ""
+echo "Need help? Check: $APP_DIR/deploy/DEPLOYMENT.md"
+echo ""
