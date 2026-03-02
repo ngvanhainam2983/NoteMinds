@@ -189,7 +189,7 @@ function convertToReactFlow(data) {
           sourceHandle: isLeft ? 'left' : 'right',
           targetHandle: isLeft ? 'right-in' : undefined,
           type: 'smoothstep',
-          style: { stroke: color.fg, strokeWidth: 1.5, opacity: 0.45, strokeDasharray: '6 3' },
+          style: { stroke: color.fg, strokeWidth: 1.5, opacity: 0.5 },
         });
 
         if (sub.children?.length) {
@@ -213,7 +213,7 @@ function convertToReactFlow(data) {
               sourceHandle: isLeft ? 'left' : 'right',
               targetHandle: isLeft ? 'right-in' : undefined,
               type: 'smoothstep',
-              style: { stroke: 'var(--color-border)', strokeWidth: 1, opacity: 0.5 },
+              style: { stroke: color.fg, strokeWidth: 1, opacity: 0.35 },
             });
           });
         }
