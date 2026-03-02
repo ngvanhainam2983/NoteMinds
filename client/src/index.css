@@ -97,6 +97,68 @@ body {
   display: none !important;
 }
 
+/* Mindmap node entrance animation */
+.react-flow__node {
+  animation: mindmap-node-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes mindmap-node-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Stagger entrance for different node depths */
+.react-flow__node[data-id*="l1"] { animation-delay: 0.1s; }
+.react-flow__node[data-id*="l2"] { animation-delay: 0.25s; }
+.react-flow__node[data-id*="l3"] { animation-delay: 0.4s; }
+
+/* Mindmap edge entrance */
+.react-flow__edge path {
+  animation: mindmap-edge-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 0.2s;
+}
+
+@keyframes mindmap-edge-in {
+  from {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    opacity: 0;
+  }
+  to {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+/* Mindmap custom node styles */
+.mindmap-node-root,
+.mindmap-node-branch,
+.mindmap-node-sub,
+.mindmap-node-leaf {
+  transition: filter 0.2s ease;
+}
+.mindmap-node-root:hover,
+.mindmap-node-branch:hover {
+  filter: brightness(1.08);
+}
+
+/* MiniMap styling */
+.react-flow__minimap {
+  border-radius: 12px !important;
+}
+
+/* Smooth mindmap loading bar */
+@keyframes slide {
+  from { margin-left: 0; }
+  to { margin-left: 60%; }
+}
+
 /* Flashcard flip animation */
 .flip-card {
   perspective: 1000px;
