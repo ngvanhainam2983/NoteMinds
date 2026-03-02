@@ -93,6 +93,30 @@ body {
   font-family: 'Inter', sans-serif !important;
 }
 
+/* Remove default React Flow node borders/outlines on custom nodes */
+.react-flow__node.nopan {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+.react-flow__node:focus,
+.react-flow__node:focus-visible,
+.react-flow__node.selected {
+  box-shadow: none !important;
+  outline: none !important;
+}
+.react-flow__node-rootNode,
+.react-flow__node-branchNode,
+.react-flow__node-subNode,
+.react-flow__node-leafNode {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
 .react-flow__attribution {
   display: none !important;
 }

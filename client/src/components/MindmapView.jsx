@@ -160,7 +160,7 @@ function convertToReactFlow(data) {
       source: root.id,
       target: branch.id,
       sourceHandle: isLeft ? 'left' : undefined,
-      targetHandle: isLeft ? undefined : 'right-in',
+      targetHandle: isLeft ? 'right-in' : undefined,
       type: 'smoothstep',
       animated: false,
       style: { stroke: color.fg, strokeWidth: 2.5, opacity: 0.7 },
@@ -187,7 +187,7 @@ function convertToReactFlow(data) {
           source: branch.id,
           target: sub.id,
           sourceHandle: isLeft ? 'left' : 'right',
-          targetHandle: isLeft ? undefined : 'right-in',
+          targetHandle: isLeft ? 'right-in' : undefined,
           type: 'smoothstep',
           style: { stroke: color.fg, strokeWidth: 1.5, opacity: 0.45, strokeDasharray: '6 3' },
         });
@@ -211,7 +211,7 @@ function convertToReactFlow(data) {
               source: sub.id,
               target: leaf.id,
               sourceHandle: isLeft ? 'left' : 'right',
-              targetHandle: isLeft ? undefined : 'right-in',
+              targetHandle: isLeft ? 'right-in' : undefined,
               type: 'smoothstep',
               style: { stroke: 'var(--color-border)', strokeWidth: 1, opacity: 0.5 },
             });
