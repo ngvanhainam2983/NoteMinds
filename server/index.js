@@ -76,12 +76,18 @@ async function verifyTurnstile(token, ip) {
 app.set('trust proxy', true);
 
 // CORS Configuration
-const corsOptions = {
+// In production behind nginx proxy, let nginx handle CORS
+// In development, use strict CORS checking
+const corsOptions = NODE_ENV === 'production' ? {
+  origin: true, // Accept all origins (nginx will filter)
+  credentials: true,
+  optionsSuccessStatus: 200
+} : {
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
     
-    // Allowed origins
+    // Allowed origins for development
     const allowedOrigins = [
       FRONTEND_URL,
       'http://localhost:5173',
@@ -89,14 +95,6 @@ const corsOptions = {
       'http://127.0.0.1:5173',
       'http://127.0.0.1:3000',
     ];
-    
-    // In production, allow main domain and www subdomain
-    if (NODE_ENV === 'production' && process.env.DOMAIN) {
-      allowedOrigins.push(`https://${process.env.DOMAIN}`);
-      allowedOrigins.push(`https://www.${process.env.DOMAIN}`);
-      allowedOrigins.push(`http://${process.env.DOMAIN}`);
-      allowedOrigins.push(`http://www.${process.env.DOMAIN}`);
-    }
     
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
