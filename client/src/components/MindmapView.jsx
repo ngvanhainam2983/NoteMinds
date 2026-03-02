@@ -124,13 +124,12 @@ const nodeTypes = { rootNode: RootNode, branchNode: BranchNode, subNode: SubNode
 
 /* ─── Adaptive spacing based on total visible node count ─── */
 function getLayoutConfig(totalNodes) {
-  // Scale factor: 1.0 for small maps, shrinks for large ones
-  // < 20 nodes: full size, 20-50: slightly compact, 50-100: compact, 100+: very compact
-  const s = totalNodes <= 15 ? 1 : totalNodes <= 30 ? 0.85 : totalNodes <= 60 ? 0.7 : totalNodes <= 100 ? 0.55 : 0.42;
+  // Scale factor: 1.0 for small maps, gently shrinks for large ones
+  const s = totalNodes <= 20 ? 1 : totalNodes <= 40 ? 0.9 : totalNodes <= 70 ? 0.8 : totalNodes <= 120 ? 0.7 : 0.6;
   return {
-    nodeH:  { 0: 52, 1: Math.round(40 * s), 2: Math.round(36 * s), 3: Math.round(30 * s) },
-    vGap:   { 1: Math.round(18 * s), 2: Math.round(14 * s), 3: Math.round(10 * s) },
-    hGap:   { 1: Math.round(320 * Math.max(s, 0.6)), 2: Math.round(250 * Math.max(s, 0.55)), 3: Math.round(220 * Math.max(s, 0.5)) },
+    nodeH:  { 0: 56, 1: Math.round(48 * s), 2: Math.round(44 * s), 3: Math.round(38 * s) },
+    vGap:   { 1: Math.round(28 * s), 2: Math.round(22 * s), 3: Math.round(16 * s) },
+    hGap:   { 1: Math.round(360 * Math.max(s, 0.7)), 2: Math.round(280 * Math.max(s, 0.65)), 3: Math.round(240 * Math.max(s, 0.6)) },
   };
 }
 
