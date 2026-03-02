@@ -3,12 +3,12 @@ import { encryptDataForServer, decryptDataFromServer } from './encryptionService
 
 // Determine API base URL based on environment
 const getApiBaseUrl = () => {
-  // Local development
+  // Local development - use /api prefix
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     return '/api';
   }
   
-  // Production: use api subdomain
+  // Production: use api subdomain (nginx will add /api prefix internally)
   const protocol = window.location.protocol;
   const hostname = window.location.hostname;
   
