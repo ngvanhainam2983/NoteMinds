@@ -1,18 +1,31 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Loader2, AlertCircle, CreditCard, RefreshCw,
-  ChevronLeft, ChevronRight, RotateCw, Download, Tag, Star, Volume2, Lock
+  ChevronLeft, ChevronRight, RotateCw, Download, Tag, Star, Volume2, Lock,
+  Layers, List, BookOpen, Sparkles, Brain,
 } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
 import { reviewFlashcard } from '../api';
 
+/* ─── colour palette (shared with mindmap style) ─── */
+const CARD_PALETTE = [
+  { bg: '#ef444420', fg: '#ef4444', glow: '#ef444440', accent: '#fca5a5' },
+  { bg: '#8b5cf620', fg: '#8b5cf6', glow: '#8b5cf640', accent: '#c4b5fd' },
+  { bg: '#06b6d420', fg: '#06b6d4', glow: '#06b6d440', accent: '#67e8f9' },
+  { bg: '#f59e0b20', fg: '#f59e0b', glow: '#f59e0b40', accent: '#fcd34d' },
+  { bg: '#10b98120', fg: '#10b981', glow: '#10b98140', accent: '#6ee7b7' },
+  { bg: '#ec489920', fg: '#ec4899', glow: '#ec489940', accent: '#f9a8d4' },
+  { bg: '#3b82f620', fg: '#3b82f6', glow: '#3b82f640', accent: '#93c5fd' },
+  { bg: '#f9731620', fg: '#f97316', glow: '#f9731640', accent: '#fdba74' },
+];
+
 const SR_GRADES = [
-  { grade: 0, label: 'Quên', color: 'bg-red-600', emoji: '😞' },
-  { grade: 1, label: 'Khó', color: 'bg-orange-600', emoji: '😟' },
-  { grade: 2, label: 'Nhớ mờ', color: 'bg-amber-600', emoji: '🤔' },
-  { grade: 3, label: 'Khá', color: 'bg-yellow-600', emoji: '😐' },
-  { grade: 4, label: 'Tốt', color: 'bg-green-600', emoji: '😊' },
-  { grade: 5, label: 'Xuất sắc', color: 'bg-emerald-600', emoji: '🤩' },
+  { grade: 0, label: 'Quên', color: 'bg-red-500/80', emoji: '😞', ring: 'ring-red-500/30' },
+  { grade: 1, label: 'Khó', color: 'bg-orange-500/80', emoji: '😟', ring: 'ring-orange-500/30' },
+  { grade: 2, label: 'Nhớ mờ', color: 'bg-amber-500/80', emoji: '🤔', ring: 'ring-amber-500/30' },
+  { grade: 3, label: 'Khá', color: 'bg-yellow-500/80', emoji: '😐', ring: 'ring-yellow-500/30' },
+  { grade: 4, label: 'Tốt', color: 'bg-green-500/80', emoji: '😊', ring: 'ring-green-500/30' },
+  { grade: 5, label: 'Xuất sắc', color: 'bg-emerald-500/80', emoji: '🤩', ring: 'ring-emerald-500/30' },
 ];
 
 export default function FlashcardView({ data, loading, error, onGenerate, docId, isLocked }) {
@@ -43,31 +56,41 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[500px] h-full gap-8 relative overflow-hidden bg-surface">
-        {/* Flashcard Skeleton Animation */}
-        <div className="relative w-64 h-80 perspective-1000 mt-8">
-          {/* Back card 3 */}
-          <div className="absolute inset-0 bg-surface-2 border border-line rounded-2xl transform rotate-6 translate-y-4 opacity-30 pointer-events-none" />
-          {/* Back card 2 */}
-          <div className="absolute inset-0 bg-surface-2 border border-line rounded-2xl transform -rotate-3 translate-y-2 opacity-60 pointer-events-none" />
-          {/* Front card */}
-          <div className="absolute inset-0 bg-surface border border-line shadow-2xl rounded-2xl flex flex-col items-center justify-center p-6 animate-[flip_3s_ease-in-out_infinite_alternate]">
-            <div className="w-12 h-12 rounded-full bg-accent-500/20 flex items-center justify-center mb-6">
-              <Loader2 size={24} className="text-accent-400 animate-spin" />
-            </div>
-            <div className="w-full h-4 bg-line rounded-full animate-pulse mb-3" />
-            <div className="w-3/4 h-4 bg-line rounded-full animate-pulse mb-6" />
-            <div className="w-1/2 h-2 bg-line rounded-full animate-pulse opacity-50" />
+      <div className="flex flex-col items-center justify-center min-h-[500px] h-full gap-6 relative overflow-hidden">
+        {/* Decorative bg orbs */}
+        <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-primary-500/5 blur-3xl animate-float pointer-events-none" />
+        <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-accent-500/5 blur-3xl animate-float pointer-events-none" style={{ animationDelay: '3s' }} />
+
+        {/* Icon card — matching mindmap style */}
+        <div className="relative group">
+          <div className="absolute -inset-3 rounded-3xl bg-gradient-to-br from-accent-500/20 to-primary-500/10 blur-xl opacity-60 group-hover:opacity-90 transition-opacity duration-500" />
+          <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-accent-600 to-accent-500 shadow-lg shadow-accent-600/25 border border-accent-400/20 flex items-center justify-center">
+            <Brain size={32} className="text-white opacity-90" />
           </div>
         </div>
 
-        {/* Progress Text */}
-        <div className="relative z-20 flex flex-col items-center">
-          <p className="font-medium bg-clip-text text-transparent bg-gradient-to-r from-accent-400 to-accent-600 transition-all duration-500 text-center w-72 min-h-[40px] flex items-center justify-center">
+        {/* Skeleton cards stack */}
+        <div className="relative w-56 h-36">
+          <div className="absolute inset-0 bg-surface-2/60 border border-line/50 rounded-xl transform rotate-3 translate-y-2 opacity-40" />
+          <div className="absolute inset-0 bg-surface-2/80 border border-line/50 rounded-xl transform -rotate-2 translate-y-1 opacity-60" />
+          <div className="absolute inset-0 bg-surface border border-line rounded-xl shadow-lg p-5 flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-3 bg-accent-500/20 rounded-full animate-pulse" />
+              <div className="h-3 bg-line rounded-full flex-1 animate-pulse" />
+            </div>
+            <div className="h-3 bg-line/80 rounded-full w-4/5 animate-pulse" style={{ animationDelay: '100ms' }} />
+            <div className="h-3 bg-line/60 rounded-full w-3/5 animate-pulse" style={{ animationDelay: '200ms' }} />
+            <div className="mt-auto h-2 bg-line/40 rounded-full w-2/5 animate-pulse" style={{ animationDelay: '300ms' }} />
+          </div>
+        </div>
+
+        {/* Gradient text + progress bar */}
+        <div className="flex flex-col items-center gap-3">
+          <p className="font-semibold text-sm bg-clip-text text-transparent bg-gradient-to-r from-accent-400 to-primary-500 transition-all duration-500 text-center min-w-[260px] min-h-[20px]">
             {loadingText}
           </p>
-          <div className="w-48 bg-line h-1 rounded-full mt-4 overflow-hidden">
-            <div className="h-full bg-accent-500 rounded-full w-1/3 animate-[slide_2s_ease-in-out_infinite_alternate]" />
+          <div className="w-44 bg-surface-2 h-1 rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-accent-500 to-primary-500 rounded-full w-1/3 animate-[slide_2s_ease-in-out_infinite_alternate]" />
           </div>
         </div>
       </div>
@@ -76,13 +99,20 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-[500px] gap-4">
-        <AlertCircle size={40} className="text-red-400" />
-        <p className="text-red-400">Lỗi tạo Flashcard</p>
-        <p className="text-sm text-muted max-w-md text-center">{error}</p>
+      <div className="flex flex-col items-center justify-center h-[500px] gap-5 animate-fade-in">
+        <div className="relative group">
+          <div className="absolute -inset-2 rounded-2xl bg-red-500/15 blur-lg opacity-60" />
+          <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-red-600 to-red-500 shadow-lg shadow-red-600/25 border border-red-400/20 flex items-center justify-center">
+            <AlertCircle size={28} className="text-white" />
+          </div>
+        </div>
+        <div className="text-center">
+          <p className="font-bold text-lg text-red-400 mb-1">Lỗi tạo Flashcard</p>
+          <p className="text-sm text-muted max-w-md">{error}</p>
+        </div>
         <button
           onClick={onGenerate}
-          className="flex items-center gap-2 px-4 py-2 bg-primary-600 rounded-lg text-sm hover:bg-primary-700 transition-colors"
+          className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-primary-600 to-primary-500 rounded-xl text-sm font-semibold text-white hover:shadow-lg hover:shadow-primary-600/20 transition-all active:scale-95"
         >
           <RefreshCw size={14} /> Thử lại
         </button>
@@ -93,23 +123,31 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
   if (!data) {
     return (
       <div className="flex flex-col items-center justify-center h-[500px] gap-5 animate-fade-in">
-        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${isLocked ? 'bg-gray-500/10' : 'bg-surface-2'}`}>
-          {isLocked ? <Lock size={28} className="text-gray-400" /> : <CreditCard size={28} className="text-muted" />}
+        {/* Pulsing glow icon */}
+        <div className="relative group">
+          <div className={`absolute -inset-2 rounded-2xl blur-lg opacity-40 transition-opacity duration-500 ${isLocked ? 'bg-gray-500/15' : 'bg-accent-500/15 group-hover:opacity-70'}`} />
+          <div className={`relative w-16 h-16 rounded-2xl shadow-lg border flex items-center justify-center ${
+            isLocked 
+              ? 'bg-gradient-to-br from-gray-600 to-gray-500 shadow-gray-600/25 border-gray-400/20'
+              : 'bg-gradient-to-br from-accent-600 to-accent-500 shadow-accent-600/25 border-accent-400/20'
+          }`}>
+            {isLocked ? <Lock size={28} className="text-white" /> : <CreditCard size={28} className="text-white" />}
+          </div>
         </div>
         <div className="text-center">
-          <p className={`font-semibold text-lg mb-1 text-txt`}>{isLocked ? 'Tài liệu gốc đã bị xóa' : 'Chưa có Flashcard'}</p>
+          <p className="font-bold text-lg text-txt mb-1">{isLocked ? 'Tài liệu gốc đã bị xóa' : 'Chưa có Flashcard'}</p>
           <p className="text-sm text-muted">{isLocked ? 'Không thể tạo mới vì file gốc không còn tồn tại' : 'Tạo flashcard từ nội dung tài liệu'}</p>
         </div>
         <button
           onClick={onGenerate}
           disabled={isLocked}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all shadow-lg active:scale-95 font-medium text-white ${
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all font-semibold text-white text-sm active:scale-95 ${
             isLocked
-              ? 'bg-gray-600 cursor-not-allowed opacity-50 shadow-none'
-              : 'bg-accent-600 hover:bg-accent-700 shadow-accent-600/25'
+              ? 'bg-gray-600 cursor-not-allowed opacity-50'
+              : 'bg-gradient-to-r from-accent-600 to-accent-500 hover:shadow-lg hover:shadow-accent-600/20'
           }`}
         >
-          <RefreshCw size={15} /> Tạo Flashcard
+          <RefreshCw size={14} /> Tạo Flashcard
         </button>
       </div>
     );
@@ -195,165 +233,213 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
   };
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h3 className="font-bold text-lg">{data.title || 'Flashcards'}</h3>
-          <p className="text-xs text-muted mt-1">{total} thẻ ghi nhớ • Nhấn vào thẻ để lật</p>
+    <div className="h-full flex flex-col">
+      {/* ─── Toolbar (matches mindmap style) ─── */}
+      <div className="flex items-center justify-between px-5 py-3 border-b border-line bg-surface/80 backdrop-blur-sm">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent-600 to-accent-500 flex items-center justify-center shadow-sm shadow-accent-600/20">
+            <Brain size={16} className="text-white" />
+          </div>
+          <div className="min-w-0">
+            <h3 className="font-bold text-sm truncate">{data.title || 'Flashcards'}</h3>
+            <p className="text-[11px] text-muted">{total} thẻ ghi nhớ</p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          {/* View toggle */}
           <button
             onClick={() => setViewMode(viewMode === 'card' ? 'list' : 'card')}
-            className="px-3.5 py-2 text-xs font-medium bg-surface-2 border border-line rounded-xl hover:bg-line transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-surface-2 border border-line rounded-lg hover:bg-line hover:border-primary-500/30 transition-all"
+            title={viewMode === 'card' ? 'Xem danh sách' : 'Xem thẻ'}
           >
-            {viewMode === 'card' ? 'Xem danh sách' : 'Xem thẻ'}
+            {viewMode === 'card' ? <List size={13} /> : <Layers size={13} />}
+            {viewMode === 'card' ? 'Danh sách' : 'Thẻ'}
           </button>
+          {/* Export dropdown */}
           <div className="relative group">
-            <button className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium bg-surface-2 border border-line rounded-xl hover:bg-line transition-all">
+            <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-surface-2 border border-line rounded-lg hover:bg-line hover:border-primary-500/30 transition-all">
               <Download size={12} /> Xuất
             </button>
-            <div className="absolute right-0 top-full mt-1.5 bg-surface border border-line rounded-xl overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 min-w-[150px] shadow-xl shadow-black/20">
-              <button onClick={exportAnki} className="w-full px-4 py-2.5 text-xs text-left hover:bg-line transition-colors font-medium">Anki (.txt)</button>
-              <button onClick={exportQuizlet} className="w-full px-4 py-2.5 text-xs text-left hover:bg-line transition-colors font-medium">Quizlet (.txt)</button>
+            <div className="absolute right-0 top-full mt-1 bg-surface border border-line rounded-xl overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 min-w-[140px] shadow-xl shadow-black/20">
+              <button onClick={exportAnki} className="w-full px-4 py-2.5 text-xs text-left hover:bg-line transition-colors font-medium flex items-center gap-2">
+                <BookOpen size={11} className="text-muted" /> Anki (.txt)
+              </button>
+              <button onClick={exportQuizlet} className="w-full px-4 py-2.5 text-xs text-left hover:bg-line transition-colors font-medium flex items-center gap-2">
+                <Sparkles size={11} className="text-muted" /> Quizlet (.txt)
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {viewMode === 'card' ? (
-        /* Card mode */
-        <div className="flex flex-col items-center">
-          {/* Progress bar */}
-          <div className="w-full max-w-lg mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-muted">Tiến trình</span>
-              <span className="text-xs font-bold text-primary-400">{currentIndex + 1} / {total}</span>
-            </div>
-            <div className="w-full h-1.5 bg-surface-2 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-primary-600 to-primary-400 rounded-full transition-all duration-500"
-                style={{ width: `${((currentIndex + 1) / total) * 100}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Flashcard */}
-          <div
-            className={`flip-card w-full max-w-lg h-80 cursor-pointer mb-6 ${flipped ? 'flipped' : ''}`}
-            onClick={() => setFlipped(!flipped)}
-          >
-            <div className="flip-card-inner">
-              {/* Front - Question */}
-              <div className="flip-card-front bg-gradient-to-br from-surface to-surface-2 border border-line/80 rounded-2xl p-8 flex flex-col items-center justify-center relative shadow-lg shadow-black/5">
-                <span className="absolute top-4 left-4 text-xs text-accent-400 font-semibold flex items-center gap-1.5 bg-accent-500/10 px-2.5 py-1 rounded-lg">
-                  <Tag size={11} /> {currentCard?.tag || 'Câu hỏi'}
-                </span>
-                <button
-                  onClick={(e) => speakText(e, currentCard?.question || '')}
-                  className="absolute top-4 right-4 p-2 text-muted hover:text-txt bg-surface-2/80 hover:bg-line rounded-xl transition-all"
-                  title="Đọc câu hỏi"
-                >
-                  <Volume2 size={15} />
-                </button>
-                <div className="text-lg font-medium text-center leading-relaxed max-h-[180px] overflow-y-auto">
-                  <MarkdownRenderer content={currentCard?.question || ''} />
-                </div>
-                <span className="absolute bottom-4 text-[11px] text-muted/60 font-medium">Nhấn để xem đáp án</span>
-              </div>
-              {/* Back - Answer */}
-              <div className="flip-card-back bg-gradient-to-br from-primary-600/15 to-surface border border-primary-500/20 rounded-2xl p-8 flex flex-col items-center justify-center relative shadow-lg shadow-primary-600/5">
-                <span className="absolute top-4 left-4 text-xs text-primary-400 font-semibold bg-primary-500/10 px-2.5 py-1 rounded-lg">Đáp án</span>
-                <button
-                  onClick={(e) => speakText(e, currentCard?.answer || '')}
-                  className="absolute top-4 right-4 p-2 text-primary-400 hover:text-txt bg-primary-600/15 hover:bg-primary-600/30 rounded-xl transition-all"
-                  title="Đọc đáp án"
-                >
-                  <Volume2 size={15} />
-                </button>
-                <div className="text-base text-center leading-relaxed max-h-[180px] overflow-y-auto">
-                  <MarkdownRenderer content={currentCard?.answer || ''} />
-                </div>
-                <span className="absolute bottom-4 text-[11px] text-muted/60 font-medium">Nhấn để xem câu hỏi</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Spaced Repetition Grading */}
-          {flipped && (
+      {/* ─── Content ─── */}
+      <div className="flex-1 overflow-y-auto p-5">
+        {viewMode === 'card' ? (
+          /* ═══ Card mode ═══ */
+          <div className="flex flex-col items-center">
+            {/* Progress bar */}
             <div className="w-full max-w-lg mb-5">
-              {reviewResult ? (
-                <div className="text-center py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-                  <p className="text-sm text-emerald-400 font-medium">✓ Đã ghi nhận! Ôn lại sau {reviewResult.interval || 1} ngày</p>
-                </div>
-              ) : (
-                <div>
-                  <p className="text-xs text-muted text-center mb-3 font-medium">Bạn nhớ tốt đến đâu?</p>
-                  <div className="grid grid-cols-6 gap-2">
-                    {SR_GRADES.map(g => (
-                      <button
-                        key={g.grade}
-                        onClick={() => handleGrade(g.grade)}
-                        className={`${g.color} hover:opacity-90 rounded-xl py-2.5 text-center transition-all hover:scale-105 active:scale-95 shadow-sm`}
-                      >
-                        <div className="text-lg">{g.emoji}</div>
-                        <div className="text-[10px] font-semibold mt-0.5">{g.label}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-medium text-muted">Tiến trình</span>
+                <span className="text-[11px] font-bold text-primary-400">{currentIndex + 1} / {total}</span>
+              </div>
+              <div className="w-full h-1.5 bg-surface-2 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-accent-500 to-primary-500 rounded-full transition-all duration-500"
+                  style={{ width: `${((currentIndex + 1) / total) * 100}%` }}
+                />
+              </div>
             </div>
-          )}
 
-          {/* Controls */}
-          <div className="flex items-center gap-5">
-            <button
-              onClick={goPrev}
-              className="p-3.5 bg-surface-2 border border-line rounded-xl hover:bg-line hover:border-primary-500/30 transition-all"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <button
-              onClick={goNext}
-              className="p-3.5 bg-surface-2 border border-line rounded-xl hover:bg-line hover:border-primary-500/30 transition-all"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
-
-          {/* Progress dots */}
-          <div className="flex gap-1.5 mt-5 flex-wrap justify-center max-w-md">
-            {cards.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => { setCurrentIndex(i); setFlipped(false); }}
-                className={`rounded-full transition-all ${i === currentIndex ? 'w-6 h-2 bg-primary-400' : 'w-2 h-2 bg-line hover:bg-muted'
-                  }`}
-              />
-            ))}
-          </div>
-        </div>
-      ) : (
-        /* List mode */
-        <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
-          {cards.map((card, i) => (
+            {/* Flashcard */}
             <div
-              key={card.id || i}
-              className="bg-surface-2/60 border border-line/50 rounded-xl p-5 hover:border-primary-500/30 hover:bg-surface-2 transition-all"
+              className={`flip-card w-full max-w-lg h-80 cursor-pointer mb-5 ${flipped ? 'flipped' : ''}`}
+              onClick={() => setFlipped(!flipped)}
             >
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <span className="text-xs font-bold text-primary-400 bg-primary-500/10 px-2.5 py-1 rounded-lg">#{i + 1}</span>
-                {card.tag && (
-                  <span className="text-xs text-muted bg-surface px-2.5 py-1 rounded-lg font-medium">
-                    {card.tag}
+              <div className="flip-card-inner">
+                {/* Front — Question */}
+                <div className="flip-card-front bg-gradient-to-br from-surface to-surface-2 border border-line/60 rounded-2xl p-8 flex flex-col items-center justify-center relative shadow-lg shadow-black/5">
+                  <span className="absolute top-4 left-4 text-[10px] font-bold flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
+                    style={{ background: CARD_PALETTE[currentIndex % CARD_PALETTE.length].bg, color: CARD_PALETTE[currentIndex % CARD_PALETTE.length].fg }}>
+                    <Tag size={10} /> {currentCard?.tag || `Câu ${currentIndex + 1}`}
                   </span>
+                  <button
+                    onClick={(e) => speakText(e, currentCard?.question || '')}
+                    className="absolute top-4 right-4 p-2 text-muted hover:text-txt bg-surface-2/80 hover:bg-line rounded-lg transition-all"
+                    title="Đọc câu hỏi"
+                  >
+                    <Volume2 size={14} />
+                  </button>
+                  <div className="text-base font-medium text-center leading-relaxed max-h-[180px] overflow-y-auto px-4">
+                    <MarkdownRenderer content={currentCard?.question || ''} />
+                  </div>
+                  <span className="absolute bottom-4 text-[10px] text-muted/50 font-medium tracking-wide">Nhấn để xem đáp án</span>
+                </div>
+                {/* Back — Answer */}
+                <div className="flip-card-back rounded-2xl p-8 flex flex-col items-center justify-center relative shadow-lg border"
+                  style={{
+                    background: `linear-gradient(135deg, ${CARD_PALETTE[currentIndex % CARD_PALETTE.length].bg}, transparent)`,
+                    borderColor: CARD_PALETTE[currentIndex % CARD_PALETTE.length].fg + '30',
+                    boxShadow: `0 4px 24px ${CARD_PALETTE[currentIndex % CARD_PALETTE.length].glow}`,
+                  }}>
+                  <span className="absolute top-4 left-4 text-[10px] font-bold px-2.5 py-1 rounded-lg"
+                    style={{ background: CARD_PALETTE[currentIndex % CARD_PALETTE.length].fg + '15', color: CARD_PALETTE[currentIndex % CARD_PALETTE.length].fg }}>
+                    Đáp án
+                  </span>
+                  <button
+                    onClick={(e) => speakText(e, currentCard?.answer || '')}
+                    className="absolute top-4 right-4 p-2 rounded-lg transition-all"
+                    style={{ color: CARD_PALETTE[currentIndex % CARD_PALETTE.length].fg, background: CARD_PALETTE[currentIndex % CARD_PALETTE.length].bg }}
+                    title="Đọc đáp án"
+                  >
+                    <Volume2 size={14} />
+                  </button>
+                  <div className="text-sm text-center leading-relaxed max-h-[180px] overflow-y-auto px-4">
+                    <MarkdownRenderer content={currentCard?.answer || ''} />
+                  </div>
+                  <span className="absolute bottom-4 text-[10px] text-muted/50 font-medium tracking-wide">Nhấn để xem câu hỏi</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Spaced Repetition Grading */}
+            {flipped && (
+              <div className="w-full max-w-lg mb-4 animate-fade-in">
+                {reviewResult ? (
+                  <div className="text-center py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+                    <p className="text-sm text-emerald-400 font-semibold">✓ Đã ghi nhận! Ôn lại sau {reviewResult.interval || 1} ngày</p>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-[11px] text-muted text-center mb-2.5 font-medium">Bạn nhớ tốt đến đâu?</p>
+                    <div className="grid grid-cols-6 gap-1.5">
+                      {SR_GRADES.map(g => (
+                        <button
+                          key={g.grade}
+                          onClick={() => handleGrade(g.grade)}
+                          className={`${g.color} ${g.ring} ring-1 hover:opacity-90 rounded-xl py-2 text-center transition-all hover:scale-105 active:scale-95`}
+                        >
+                          <div className="text-base">{g.emoji}</div>
+                          <div className="text-[9px] font-bold mt-0.5 text-white/90">{g.label}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
-              <div className="text-sm font-medium mb-2"><MarkdownRenderer content={card.question} /></div>
-              <div className="text-sm text-muted leading-relaxed border-t border-line/50 pt-2 mt-2"><MarkdownRenderer content={card.answer} /></div>
+            )}
+
+            {/* Navigation */}
+            <div className="flex items-center gap-4">
+              <button
+                onClick={goPrev}
+                className="p-3 bg-surface-2 border border-line rounded-xl hover:bg-line hover:border-primary-500/30 transition-all active:scale-95"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                onClick={goNext}
+                className="p-3 bg-surface-2 border border-line rounded-xl hover:bg-line hover:border-primary-500/30 transition-all active:scale-95"
+              >
+                <ChevronRight size={18} />
+              </button>
             </div>
-          ))}
+
+            {/* Progress dots */}
+            <div className="flex gap-1 mt-4 flex-wrap justify-center max-w-md">
+              {cards.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => { setCurrentIndex(i); setFlipped(false); }}
+                  className={`rounded-full transition-all duration-300 ${
+                    i === currentIndex
+                      ? 'w-5 h-1.5 bg-primary-400'
+                      : 'w-1.5 h-1.5 bg-line hover:bg-muted'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        ) : (
+          /* ═══ List mode ═══ */
+          <div className="space-y-2.5 max-h-[500px] overflow-y-auto pr-1">
+            {cards.map((card, i) => {
+              const c = CARD_PALETTE[i % CARD_PALETTE.length];
+              return (
+                <div
+                  key={card.id || i}
+                  className="bg-surface border border-line/50 rounded-xl p-4 hover:border-line transition-all group"
+                  style={{ borderLeftWidth: 3, borderLeftColor: c.fg }}
+                >
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md" style={{ background: c.bg, color: c.fg }}>
+                      #{i + 1}
+                    </span>
+                    {card.tag && (
+                      <span className="text-[10px] text-muted bg-surface-2 px-2 py-0.5 rounded-md font-medium">
+                        {card.tag}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-sm font-medium mb-2"><MarkdownRenderer content={card.question} /></div>
+                  <div className="text-sm text-muted leading-relaxed border-t border-line/40 pt-2 mt-2"><MarkdownRenderer content={card.answer} /></div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ─── Hint bar at bottom ─── */}
+      {viewMode === 'card' && (
+        <div className="px-5 py-2 border-t border-line bg-surface-2/50 text-center">
+          <p className="text-[10px] text-muted font-medium">
+            <kbd className="px-1.5 py-0.5 bg-surface border border-line rounded text-[9px] font-mono">←</kbd>
+            <kbd className="px-1.5 py-0.5 bg-surface border border-line rounded text-[9px] font-mono ml-1">→</kbd>
+            <span className="ml-2">điều hướng</span>
+            <span className="mx-2 text-line">|</span>
+            <span>Nhấn thẻ để lật</span>
+          </p>
         </div>
       )}
     </div>
