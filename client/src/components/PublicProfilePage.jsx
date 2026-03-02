@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getPublicProfile } from '../api';
+import { getPublicProfile, getApiBaseUrl } from '../api';
 import { ArrowLeft, FileText, Brain, BookOpen, MessageCircle, Flame, Trophy, Calendar, Crown, Loader2, UserX, Globe } from 'lucide-react';
-
-const API_URL = import.meta.env.VITE_API_URL || '';
 
 const PLAN_BADGES = {
   free: { label: 'Free', color: 'bg-zinc-500/15 text-zinc-400 border-zinc-500/30' },

@@ -4,17 +4,15 @@ import {
   User, Settings, Shield, LogOut, ChevronDown, Crown, History,
   FileText, Clock, AlertTriangle, X, Loader2, CheckCircle2
 } from 'lucide-react';
-import { getDocumentHistory } from '../api';
+import { getDocumentHistory, getApiBaseUrl } from '../api';
 import ConfirmModal from './ConfirmModal';
-
-const API_URL = import.meta.env.VITE_API_URL || '';
 
 function UserAvatar({ user, size = 'sm' }) {
   const sizeClasses = size === 'sm' ? 'w-6 h-6 text-[10px]' : 'w-9 h-9 text-sm';
   const initials = (user.displayName || user.username || '?').slice(0, 2).toUpperCase();
 
   if (user.avatar_url) {
-    const src = user.avatar_url.startsWith('http') ? user.avatar_url : `${API_URL}${user.avatar_url}`;
+    const src = user.avatar_url.startsWith('http') ? user.avatar_url : `${getApiBaseUrl()}${user.avatar_url}`;
     return (
       <img
         src={src}

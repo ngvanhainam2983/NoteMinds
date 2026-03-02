@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { getCommunityDocuments, likeDocument, unlikeDocument, getComments, postComment, deleteComment, submitReport } from '../api';
+import { getCommunityDocuments, likeDocument, unlikeDocument, getComments, postComment, deleteComment, submitReport, getApiBaseUrl } from '../api';
 import { Globe, FileText, Search, Loader2, Calendar, Heart, MessageCircle, Send, Trash2, ChevronDown, ChevronUp, Flag, X } from 'lucide-react';
-
-const API_URL = import.meta.env.VITE_API_URL || '';
 
 export default function CommunityFeed({ user }) {
     const [documents, setDocuments] = useState([]);
@@ -204,7 +202,7 @@ export default function CommunityFeed({ user }) {
                                                 >
                                                     {doc.author_avatar ? (
                                                         <img
-                                                            src={doc.author_avatar.startsWith('http') ? doc.author_avatar : `${API_URL}${doc.author_avatar}`}
+                                                            src={doc.author_avatar.startsWith('http') ? doc.author_avatar : `${getApiBaseUrl()}${doc.author_avatar}`}
                                                             alt=""
                                                             className="w-5 h-5 rounded-full object-cover ring-1 ring-primary-500/30 hover:ring-primary-400 transition-all"
                                                         />
@@ -217,7 +215,7 @@ export default function CommunityFeed({ user }) {
                                             ) : (
                                                 doc.author_avatar ? (
                                                     <img
-                                                        src={doc.author_avatar.startsWith('http') ? doc.author_avatar : `${API_URL}${doc.author_avatar}`}
+                                                        src={doc.author_avatar.startsWith('http') ? doc.author_avatar : `${getApiBaseUrl()}${doc.author_avatar}`}
                                                         alt=""
                                                         className="w-5 h-5 rounded-full object-cover ring-1 ring-primary-500/30"
                                                     />

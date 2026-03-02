@@ -2,7 +2,7 @@ import axios from 'axios';
 import { encryptDataForServer, decryptDataFromServer } from './encryptionService.js';
 
 // Determine API base URL based on environment
-const getApiBaseUrl = () => {
+export const getApiBaseUrl = () => {
   // Local development - use /api prefix
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     return '/api';

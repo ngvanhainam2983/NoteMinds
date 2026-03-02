@@ -8,13 +8,11 @@ import {
     updateProfile, get2FAStatus, getPasskeyList, changePassword,
     setup2FA, enable2FA, disable2FA, regenerateRecoveryCodes,
     getPasskeyRegisterOptions, verifyPasskeyRegistration, deletePasskey,
-    resendVerification
+    resendVerification, getApiBaseUrl
 } from '../api';
 import { useTheme, THEMES } from '../ThemeContext';
 import ConfirmModal from './ConfirmModal';
 import { startRegistration } from '@simplewebauthn/browser';
-
-const API_URL = import.meta.env.VITE_API_URL || '';
 
 export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) {
     const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'security' | 'theme'
@@ -104,10 +102,11 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                 const formData = new FormData();
                 formData.append('avatar', avatarFile);
                 const token = localStorage.getItem('notemind_token');
-                const response = await fetch(`${API_URL}/api/users/profile/avatar`, {
+                const response = await fetch(`${getApiBaseUrl()}/users/profile/avatar`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` },
-                    body: formData
+                    body: formData,
+                    credentials: 'include'
                 });
                 if (!response.ok) {
                     const errorData = await response.json();
@@ -187,10 +186,11 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
             const formData = new FormData();
             formData.append('avatar', file);
             const token = localStorage.getItem('notemind_token');
-            const response = await fetch(`${API_URL}/api/users/profile/avatar`, {
+            const response = await fetch(`${getApiBaseUrl()}/users/profile/avatar`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` },
-                body: formData
+                body: formData,
+                credentials: 'include'
             });
             if (!response.ok) {
                 const errorData = await response.json();
