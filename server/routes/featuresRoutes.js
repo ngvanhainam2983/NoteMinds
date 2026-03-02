@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import Database from 'better-sqlite3';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { requireAuth, requireAdmin } from '../services/authService.js';
+import { requireAuth, requireAdmin, optionalAuth } from '../services/authService.js';
 import * as featureService from '../services/featureService.js';
 import * as advancedFeatureService from '../services/advancedFeatureService.js';
 import * as syncExportService from '../services/syncAndExportService.js';
@@ -695,7 +695,7 @@ router.get('/leaderboard', (req, res) => {
 // ANNOUNCEMENTS
 // ════════════════════════════════════════════════════════════
 
-router.get('/announcements', (req, res) => {
+router.get('/announcements', optionalAuth, (req, res) => {
   try {
     const db = new Database(DB_PATH);
     const userPlan = req.user ? req.user.plan : null;
