@@ -59,7 +59,7 @@ const BranchNode = memo(({ data }) => {
       <Handle type="source" position={Position.Right} className="!opacity-0 !w-2 !h-2" id="right" />
       <Handle type="source" position={Position.Left} className="!opacity-0 !w-2 !h-2" id="left" />
       <div
-        className="relative flex items-center gap-2.5 rounded-xl px-4 py-2.5 border-2 transition-all duration-300 group-hover:scale-[1.03] group-hover:shadow-lg"
+        className="relative flex items-center gap-2.5 rounded-xl px-4 py-2.5 border-2 transition-all duration-300 group-hover:scale-[1.03] group-hover:shadow-lg cursor-pointer"
         style={{
           background: c.bg,
           borderColor: c.fg + '50',
@@ -70,8 +70,8 @@ const BranchNode = memo(({ data }) => {
         <div className="w-2 h-2 rounded-full shrink-0" style={{ background: c.fg }} />
         <span className="font-semibold text-[13px] leading-snug max-w-[180px]">{data.label}</span>
         {data._childCount > 0 && (
-          <span className="ml-auto text-[10px] font-bold rounded-full px-1.5 py-0.5 opacity-60" style={{ background: c.fg + '20' }}>
-            {data._childCount}
+          <span className="ml-auto text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center" style={{ background: c.fg + '20' }}>
+            {data._collapsed ? '+' : data._childCount}
           </span>
         )}
       </div>
@@ -89,11 +89,14 @@ const SubNode = memo(({ data }) => {
       <Handle type="source" position={Position.Right} className="!opacity-0 !w-2 !h-2" id="right" />
       <Handle type="source" position={Position.Left} className="!opacity-0 !w-2 !h-2" id="left" />
       <div
-        className="flex items-center gap-2 rounded-lg px-3 py-2 border transition-all duration-300 group-hover:scale-[1.02] bg-surface-2 border-line"
+        className="flex items-center gap-2 rounded-lg px-3 py-2 border transition-all duration-300 group-hover:scale-[1.02] bg-surface-2 border-line cursor-pointer"
         style={{ borderLeftColor: c.fg, borderLeftWidth: 3 }}
       >
-        <ChevronRight size={12} className="shrink-0 text-muted opacity-50" />
+        <ChevronRight size={12} className={`shrink-0 text-muted transition-transform duration-200 ${data._collapsed ? '' : data._childCount > 0 ? 'rotate-90' : ''}`} style={{ opacity: data._childCount > 0 ? 0.7 : 0.3 }} />
         <span className="text-[12px] text-txt font-medium leading-snug max-w-[170px]">{data.label}</span>
+        {data._childCount > 0 && data._collapsed && (
+          <span className="text-[9px] font-bold rounded px-1 py-0.5 opacity-50" style={{ background: c.fg + '15', color: c.fg }}>+{data._childCount}</span>
+        )}
       </div>
     </div>
   );
@@ -119,13 +122,41 @@ LeafNode.displayName = 'LeafNode';
 
 const nodeTypes = { rootNode: RootNode, branchNode: BranchNode, subNode: SubNode, leafNode: LeafNode };
 
-/* ─── Layout & Conversion ─── */
-function convertToReactFlow(data) {
+/* ─── Recursive subtree-aware layout ─── */
+
+// Estimated node heights by level (used to calculate subtree vertical extent)
+const NODE_H = { 0: 52, 1: 40, 2: 36, 3: 30 };
+// Vertical gap between sibling nodes at each level
+const V_GAP  = { 1: 18, 2: 14, 3: 10 };
+// Horizontal distance between levels
+const H_GAP  = { 1: 320, 2: 250, 3: 220 };
+
+/**
+ * Calculate the total vertical space a subtree needs (recursive, bottom-up).
+ * For a leaf node it's just the node height.
+ * For a parent it's the sum of all children subtree heights + gaps between them.
+ */
+function measureHeight(node, level, collapsed) {
+  const selfH = NODE_H[level] || 30;
+  if (!node.children?.length || collapsed.has(node.id)) return selfH;
+
+  const childLevel = level + 1;
+  const gap = V_GAP[childLevel] || 10;
+  let total = 0;
+  node.children.forEach((ch, i) => {
+    if (i > 0) total += gap;
+    total += measureHeight(ch, childLevel, collapsed);
+  });
+  return Math.max(selfH, total);
+}
+
+function convertToReactFlow(data, collapsed) {
   if (!data?.nodes?.[0]) return { nodes: [], edges: [] };
 
   const rfNodes = [];
   const rfEdges = [];
   const root = data.nodes[0];
+  const collapsedSet = collapsed || new Set();
 
   rfNodes.push({
     id: root.id,
@@ -136,90 +167,128 @@ function convertToReactFlow(data) {
 
   if (!root.children?.length) return { nodes: rfNodes, edges: rfEdges };
 
-  const childCount = root.children.length;
-  const verticalGap = 160;
-  const horizontalGap = 340;
+  // Split children into left (even indices) and right (odd indices)
+  const leftBranches = root.children.filter((_, i) => i % 2 === 0);
+  const rightBranches = root.children.filter((_, i) => i % 2 !== 0);
 
-  root.children.forEach((branch, i) => {
-    const color = BRANCH_PALETTE[i % BRANCH_PALETTE.length];
-    const isLeft = i % 2 === 0;
-    const row = Math.floor(i / 2);
-    const totalRows = Math.ceil(childCount / 2);
-    const xOffset = isLeft ? -horizontalGap : horizontalGap;
-    const yOffset = (row - (totalRows - 1) / 2) * verticalGap;
+  const layoutSide = (branches, isLeft) => {
+    // Measure total height for this side
+    const sideGap = V_GAP[1];
+    const heights = branches.map(b => measureHeight(b, 1, collapsedSet));
+    const totalH = heights.reduce((s, h) => s + h, 0) + Math.max(0, heights.length - 1) * sideGap;
 
-    rfNodes.push({
-      id: branch.id,
-      type: 'branchNode',
-      data: { label: branch.label, _color: color, _childCount: branch.children?.length || 0 },
-      position: { x: xOffset, y: yOffset },
-    });
+    let cursorY = -totalH / 2;
 
-    rfEdges.push({
-      id: `e-${root.id}-${branch.id}`,
-      source: root.id,
-      target: branch.id,
-      sourceHandle: isLeft ? 'left' : undefined,
-      targetHandle: isLeft ? 'right-in' : undefined,
-      type: 'smoothstep',
-      animated: false,
-      style: { stroke: color.fg, strokeWidth: 2.5, opacity: 0.7 },
-      markerEnd: { type: MarkerType.ArrowClosed, color: color.fg, width: 16, height: 16 },
-    });
+    branches.forEach((branch, idx) => {
+      const origIdx = isLeft ? idx * 2 : idx * 2 + 1;
+      const color = BRANCH_PALETTE[origIdx % BRANCH_PALETTE.length];
+      const branchH = heights[idx];
+      const branchCenterY = cursorY + branchH / 2;
+      const xDir = isLeft ? -1 : 1;
+      const branchX = xDir * H_GAP[1];
+      const isCollapsed = collapsedSet.has(branch.id);
 
-    if (branch.children?.length) {
-      const subVertGap = 64;
-      branch.children.forEach((sub, j) => {
-        const subColor = color;
-        const subXOffset = isLeft ? -260 : 260;
-        const subX = xOffset + subXOffset;
-        const subY = yOffset + (j - (branch.children.length - 1) / 2) * subVertGap;
-
-        rfNodes.push({
-          id: sub.id,
-          type: 'subNode',
-          data: { label: sub.label, _color: subColor },
-          position: { x: subX, y: subY },
-        });
-
-        rfEdges.push({
-          id: `e-${branch.id}-${sub.id}`,
-          source: branch.id,
-          target: sub.id,
-          sourceHandle: isLeft ? 'left' : 'right',
-          targetHandle: isLeft ? 'right-in' : undefined,
-          type: 'smoothstep',
-          style: { stroke: color.fg, strokeWidth: 1.5, opacity: 0.5 },
-        });
-
-        if (sub.children?.length) {
-          const leafVertGap = 48;
-          sub.children.forEach((leaf, k) => {
-            const leafXOffset = isLeft ? -230 : 230;
-            const leafX = subX + leafXOffset;
-            const leafY = subY + (k - (sub.children.length - 1) / 2) * leafVertGap;
-
-            rfNodes.push({
-              id: leaf.id,
-              type: 'leafNode',
-              data: { label: leaf.label, _color: subColor },
-              position: { x: leafX, y: leafY },
-            });
-
-            rfEdges.push({
-              id: `e-${sub.id}-${leaf.id}`,
-              source: sub.id,
-              target: leaf.id,
-              sourceHandle: isLeft ? 'left' : 'right',
-              targetHandle: isLeft ? 'right-in' : undefined,
-              type: 'smoothstep',
-              style: { stroke: color.fg, strokeWidth: 1, opacity: 0.35 },
-            });
-          });
-        }
+      rfNodes.push({
+        id: branch.id,
+        type: 'branchNode',
+        data: {
+          label: branch.label,
+          _color: color,
+          _childCount: branch.children?.length || 0,
+          _collapsed: isCollapsed,
+        },
+        position: { x: branchX, y: branchCenterY },
       });
-    }
-  });
+
+      rfEdges.push({
+        id: `e-${root.id}-${branch.id}`,
+        source: root.id,
+        target: branch.id,
+        sourceHandle: isLeft ? 'left' : undefined,
+        targetHandle: isLeft ? 'right-in' : undefined,
+        type: 'smoothstep',
+        animated: false,
+        style: { stroke: color.fg, strokeWidth: 2.5, opacity: 0.7 },
+        markerEnd: { type: MarkerType.ArrowClosed, color: color.fg, width: 16, height: 16 },
+      });
+
+      // Layout level 2 children
+      if (branch.children?.length && !isCollapsed) {
+        const subHeights = branch.children.map(s => measureHeight(s, 2, collapsedSet));
+        const subGap = V_GAP[2];
+        const subTotalH = subHeights.reduce((s, h) => s + h, 0) + Math.max(0, subHeights.length - 1) * subGap;
+        let subCursorY = branchCenterY - subTotalH / 2;
+
+        branch.children.forEach((sub, j) => {
+          const subH = subHeights[j];
+          const subCenterY = subCursorY + subH / 2;
+          const subX = branchX + xDir * H_GAP[2];
+          const isSubCollapsed = collapsedSet.has(sub.id);
+
+          rfNodes.push({
+            id: sub.id,
+            type: 'subNode',
+            data: {
+              label: sub.label,
+              _color: color,
+              _childCount: sub.children?.length || 0,
+              _collapsed: isSubCollapsed,
+            },
+            position: { x: subX, y: subCenterY },
+          });
+
+          rfEdges.push({
+            id: `e-${branch.id}-${sub.id}`,
+            source: branch.id,
+            target: sub.id,
+            sourceHandle: isLeft ? 'left' : 'right',
+            targetHandle: isLeft ? 'right-in' : undefined,
+            type: 'smoothstep',
+            style: { stroke: color.fg, strokeWidth: 1.5, opacity: 0.5 },
+          });
+
+          // Layout level 3 children
+          if (sub.children?.length && !isSubCollapsed) {
+            const leafGap = V_GAP[3];
+            const leafH = NODE_H[3];
+            const leafTotalH = sub.children.length * leafH + Math.max(0, sub.children.length - 1) * leafGap;
+            let leafCursorY = subCenterY - leafTotalH / 2;
+
+            sub.children.forEach((leaf) => {
+              const leafCenterY = leafCursorY + leafH / 2;
+              const leafX = subX + xDir * H_GAP[3];
+
+              rfNodes.push({
+                id: leaf.id,
+                type: 'leafNode',
+                data: { label: leaf.label, _color: color },
+                position: { x: leafX, y: leafCenterY },
+              });
+
+              rfEdges.push({
+                id: `e-${sub.id}-${leaf.id}`,
+                source: sub.id,
+                target: leaf.id,
+                sourceHandle: isLeft ? 'left' : 'right',
+                targetHandle: isLeft ? 'right-in' : undefined,
+                type: 'smoothstep',
+                style: { stroke: color.fg, strokeWidth: 1, opacity: 0.35 },
+              });
+
+              leafCursorY += leafH + leafGap;
+            });
+          }
+
+          subCursorY += subH + subGap;
+        });
+      }
+
+      cursorY += branchH + sideGap;
+    });
+  };
+
+  layoutSide(leftBranches, true);
+  layoutSide(rightBranches, false);
 
   return { nodes: rfNodes, edges: rfEdges };
 }
@@ -248,22 +317,59 @@ function MindmapViewInner({ data, loading, error, onGenerate, isLocked }) {
   const containerRef = useRef(null);
   const [exporting, setExporting] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [collapsed, setCollapsed] = useState(new Set());
+
+  const rebuildGraph = useCallback((d, c) => {
+    if (!d) return { nodes: [], edges: [] };
+    return convertToReactFlow(d, c);
+  }, []);
 
   const { nodes: initialNodes, edges: initialEdges } = useMemo(
-    () => (data ? convertToReactFlow(data) : { nodes: [], edges: [] }),
-    [data]
+    () => rebuildGraph(data, collapsed),
+    [data, collapsed, rebuildGraph]
   );
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-  useMemo(() => {
+  useEffect(() => {
     if (data) {
-      const { nodes: n, edges: e } = convertToReactFlow(data);
+      const { nodes: n, edges: e } = rebuildGraph(data, collapsed);
       setNodes(n);
       setEdges(e);
+      // Re-fit after layout change
+      setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50);
     }
+  }, [data, collapsed, rebuildGraph]);
+
+  /* ── Toggle collapse on node click ── */
+  const onNodeClick = useCallback((_event, node) => {
+    if (node.type === 'branchNode' || node.type === 'subNode') {
+      const hasChildren = node.data._childCount > 0;
+      if (!hasChildren) return;
+      setCollapsed(prev => {
+        const next = new Set(prev);
+        if (next.has(node.id)) next.delete(node.id);
+        else next.add(node.id);
+        return next;
+      });
+    }
+  }, []);
+
+  /* ── Collapse / Expand all ── */
+  const collapseAll = useCallback(() => {
+    if (!data?.nodes?.[0]) return;
+    const ids = new Set();
+    const walk = (n) => { if (n.children?.length) { ids.add(n.id); n.children.forEach(walk); } };
+    data.nodes[0].children?.forEach(walk);
+    // Also add the branches themselves
+    data.nodes[0].children?.forEach(b => { if (b.children?.length) ids.add(b.id); });
+    setCollapsed(ids);
   }, [data]);
+
+  const expandAll = useCallback(() => {
+    setCollapsed(new Set());
+  }, []);
 
   const nodeCount = useMemo(() => countNodes(data), [data]);
 
@@ -468,6 +574,17 @@ function MindmapViewInner({ data, loading, error, onGenerate, isLocked }) {
             <Circle size={6} className="text-primary-400 fill-primary-400" />
             {nodeCount} nút
           </span>
+          {/* Collapse / Expand */}
+          {data?.nodes?.[0]?.children?.length > 0 && (
+            <div className="hidden sm:flex items-center gap-1">
+              <button onClick={collapseAll} className="text-[10px] text-muted hover:text-txt bg-surface-2 px-2 py-0.5 rounded-md border border-line transition-colors" title="Thu gọn tất cả">
+                Thu gọn
+              </button>
+              <button onClick={expandAll} className="text-[10px] text-muted hover:text-txt bg-surface-2 px-2 py-0.5 rounded-md border border-line transition-colors" title="Mở rộng tất cả">
+                Mở rộng
+              </button>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-1.5">
           {/* Zoom controls */}
@@ -523,6 +640,7 @@ function MindmapViewInner({ data, loading, error, onGenerate, isLocked }) {
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
+          onNodeClick={onNodeClick}
           nodeTypes={nodeTypes}
           fitView
           fitViewOptions={{ padding: 0.25, duration: 600 }}
