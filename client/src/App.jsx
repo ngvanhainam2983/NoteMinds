@@ -405,6 +405,9 @@ export default function App() {
                 <div className="flex items-center gap-4">
                   <button onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-txt transition-colors">Tính năng</button>
                   <button onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-txt transition-colors">Bảng giá</button>
+                  <a href="//www.dmca.com/Protection/Status.aspx?ID=ead8dfc7-7685-44c0-a909-f4072ff1ce07" title="DMCA.com Protection Status" className="dmca-badge" target="_blank" rel="noopener noreferrer">
+                    <img src="https://images.dmca.com/Badges/dmca-badge-w100-5x1-08.png?ID=ead8dfc7-7685-44c0-a909-f4072ff1ce07" alt="DMCA.com Protection Status" />
+                  </a>
                 </div>
               </div>
             </footer>
