@@ -1410,8 +1410,11 @@ app.post('/api/documents/:docId/chat', requireAuth, async (req, res) => {
     }
 
     const { message, history } = req.body;
-    if (!message) {
+    if (!message || typeof message !== 'string' || message.trim().length === 0) {
       return res.status(400).json({ error: 'Message is required' });
+    }
+    if (message.length > 3000) {
+      return res.status(400).json({ error: 'Message too long (max 3000 characters)' });
     }
 
     const reply = await chatWithDocument(doc.text, message, history || []);
@@ -1436,8 +1439,11 @@ app.post('/api/chat/multi', requireAuth, async (req, res) => {
     if (!docIds || !Array.isArray(docIds) || docIds.length === 0) {
       return res.status(400).json({ error: 'Array of docIds is required' });
     }
-    if (!message) {
+    if (!message || typeof message !== 'string' || message.trim().length === 0) {
       return res.status(400).json({ error: 'Message is required' });
+    }
+    if (message.length > 3000) {
+      return res.status(400).json({ error: 'Message too long (max 3000 characters)' });
     }
 
     // Verify all docs exist and are ready
@@ -1678,8 +1684,11 @@ app.post('/api/shared/:shareToken/chat', async (req, res) => {
     }
     const { share, doc } = result;
     const { message, history } = req.body;
-    if (!message) {
+    if (!message || typeof message !== 'string' || message.trim().length === 0) {
       return res.status(400).json({ error: 'Message is required' });
+    }
+    if (message.length > 3000) {
+      return res.status(400).json({ error: 'Message too long (max 3000 characters)' });
     }
 
     // Initialise counter on first chat
