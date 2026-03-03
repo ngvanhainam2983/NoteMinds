@@ -405,8 +405,8 @@ export default function App() {
                 <div className="flex items-center gap-4">
                   <button onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-txt transition-colors">Tính năng</button>
                   <button onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-txt transition-colors">Bảng giá</button>
-                  <a href="https://www.dmca.com/compliance/notemind.tech" title="DMCA Compliance information for notemind.tech" target="_blank" rel="noopener noreferrer">
-                    <img src="https://www.dmca.com/img/dmca-compliant-grayscale.png" alt="DMCA compliant image" />
+                  <a href="//www.dmca.com/Protection/Status.aspx?ID=ead8dfc7-7685-44c0-a909-f4072ff1ce07" title="DMCA.com Protection Status" className="dmca-badge" target="_blank" rel="noopener noreferrer">
+                    <img src="https://images.dmca.com/Badges/DMCA_badge_trn_60w.png?ID=ead8dfc7-7685-44c0-a909-f4072ff1ce07" alt="DMCA.com Protection Status" />
                   </a>
                 </div>
               </div>
