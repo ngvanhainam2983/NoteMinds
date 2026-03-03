@@ -436,7 +436,7 @@ export default function App() {
                   <div>
                     <h4 className="text-sm font-bold mb-3 text-txt">Liên kết</h4>
                     <ul className="space-y-2 text-xs text-muted">
-                      <li><a href="mailto:support@notemind.tech" className="hover:text-txt transition-colors">Liên hệ hỗ trợ</a></li>
+                      <li><a href="mailto:admin@notemind.tech" className="hover:text-txt transition-colors">Liên hệ hỗ trợ</a></li>
                       <li><a href="//www.dmca.com/Protection/Status.aspx?ID=ead8dfc7-7685-44c0-a909-f4072ff1ce07&refurl=https://notemind.tech" target="_blank" rel="noopener noreferrer" className="hover:text-txt transition-colors">DMCA Protection</a></li>
                     </ul>
                   </div>
