@@ -399,15 +399,64 @@ export default function App() {
 
           {/* Footer */}
           {view === 'home' && (
-            <footer className="border-t border-line mt-12">
-              <div className="max-w-6xl mx-auto px-4 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted">
-                <p>&copy; 2026 NoteMind @ Đội Đèn Giao Thông</p>
-                <div className="flex items-center gap-4">
-                  <button onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-txt transition-colors">Tính năng</button>
-                  <button onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-txt transition-colors">Bảng giá</button>
-                  <a href="//www.dmca.com/Protection/Status.aspx?ID=ead8dfc7-7685-44c0-a909-f4072ff1ce07&refurl=https://notemind.tech" title="DMCA.com Protection Status" className="dmca-badge" target="_blank" rel="noopener noreferrer">
-                    <img src="https://images.dmca.com/Badges/DMCA_badge_trn_60w.png?ID=ead8dfc7-7685-44c0-a909-f4072ff1ce07" alt="DMCA.com Protection Status" />
-                  </a>
+            <footer className="border-t border-line mt-16 bg-surface/50">
+              <div className="max-w-6xl mx-auto px-4 py-12">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 mb-10">
+                  {/* Brand */}
+                  <div className="col-span-2 sm:col-span-1">
+                    <h3 className="text-lg font-extrabold tracking-tight mb-3">
+                      <span className="gradient-text">NoteMinds</span>
+                    </h3>
+                    <p className="text-xs text-muted leading-relaxed">
+                      AI trợ lý học tập — biến mọi tài liệu thành kiến thức với Sơ đồ tư duy, Flashcard và Chat AI.
+                    </p>
+                  </div>
+
+                  {/* Sản phẩm */}
+                  <div>
+                    <h4 className="text-sm font-bold mb-3 text-txt">Sản phẩm</h4>
+                    <ul className="space-y-2 text-xs text-muted">
+                      <li><button onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-txt transition-colors">Tính năng</button></li>
+                      <li><button onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-txt transition-colors">Bảng giá</button></li>
+                      <li><button onClick={() => document.getElementById('upload')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-txt transition-colors">Bắt đầu ngay</button></li>
+                    </ul>
+                  </div>
+
+                  {/* Cộng đồng */}
+                  <div>
+                    <h4 className="text-sm font-bold mb-3 text-txt">Cộng đồng</h4>
+                    <ul className="space-y-2 text-xs text-muted">
+                      <li><button onClick={() => { setView('community'); window.history.pushState({}, '', '/community'); }} className="hover:text-txt transition-colors">Bài viết cộng đồng</button></li>
+                      <li><button onClick={() => { setView('leaderboard'); window.history.pushState({}, '', '/leaderboard'); }} className="hover:text-txt transition-colors">Bảng xếp hạng</button></li>
+                      <li><button onClick={() => { setView('stats'); window.history.pushState({}, '', '/stats'); }} className="hover:text-txt transition-colors">Thống kê hệ thống</button></li>
+                    </ul>
+                  </div>
+
+                  {/* Liên kết */}
+                  <div>
+                    <h4 className="text-sm font-bold mb-3 text-txt">Liên kết</h4>
+                    <ul className="space-y-2 text-xs text-muted">
+                      <li><a href="mailto:support@notemind.tech" className="hover:text-txt transition-colors">Liên hệ hỗ trợ</a></li>
+                      <li><a href="//www.dmca.com/Protection/Status.aspx?ID=ead8dfc7-7685-44c0-a909-f4072ff1ce07&refurl=https://notemind.tech" target="_blank" rel="noopener noreferrer" className="hover:text-txt transition-colors">DMCA Protection</a></li>
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Divider + bottom bar */}
+                <div className="border-t border-line pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <p className="text-xs text-muted">&copy; 2026 NoteMind @ Đội Đèn Giao Thông. All rights reserved.</p>
+                  <div className="flex items-center gap-4">
+                    <a href="//www.dmca.com/Protection/Status.aspx?ID=ead8dfc7-7685-44c0-a909-f4072ff1ce07&refurl=https://notemind.tech" title="DMCA.com Protection Status" className="dmca-badge" target="_blank" rel="noopener noreferrer">
+                      <img src="https://images.dmca.com/Badges/DMCA_badge_trn_60w.png?ID=ead8dfc7-7685-44c0-a909-f4072ff1ce07" alt="DMCA.com Protection Status" className="h-5 opacity-70 hover:opacity-100 transition-opacity" />
+                    </a>
+                    <button
+                      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                      className="text-xs text-muted hover:text-txt transition-colors flex items-center gap-1"
+                      title="Lên đầu trang"
+                    >
+                      ↑ Đầu trang
+                    </button>
+                  </div>
                 </div>
               </div>
             </footer>
