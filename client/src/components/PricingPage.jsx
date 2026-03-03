@@ -205,13 +205,54 @@ export default function PricingPage({ user, onLoginClick }) {
         </div>
 
         {/* FAQ / Info */}
-        <div className="mt-12 max-w-2xl mx-auto">
-          <h3 className="text-lg font-bold font-display text-center mb-6">Câu hỏi thường gặp</h3>
-          <div className="space-y-3">
-            <FaqItem q="Thanh toán bằng cách nào?" a="Hiện tại NoteMinds hỗ trợ thanh toán qua chuyển khoản ngân hàng, MoMo, ZaloPay. Sau khi thanh toán, admin sẽ kích hoạt gói cho bạn trong vòng 5 phút." />
-            <FaqItem q="Có thể hủy gói bất cứ lúc nào không?" a="Có. Bạn có thể liên hệ admin để hủy gói. Gói sẽ hết hiệu lực khi hết thời hạn đã thanh toán." />
-            <FaqItem q="Upload không giới hạn nghĩa là gì?" a="Gói Unlimited cho phép bạn upload không giới hạn số lượng file trong ngày, không bị ràng buộc bởi quota." />
-            <FaqItem q="Dữ liệu của tôi có an toàn không?" a="File tải lên được xử lý tự động và xóa sau khi bạn rời trang. Chúng tôi không lưu trữ nội dung tài liệu của bạn." />
+        <div className="mt-16 max-w-3xl mx-auto" id="faq">
+          <div className="text-center mb-8">
+            <h3 className="text-2xl font-extrabold font-display tracking-tight mb-2">Câu hỏi thường gặp</h3>
+            <p className="text-sm text-muted">Mọi thắc mắc về NoteMinds đều được giải đáp tại đây</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* Cột 1 - Sản phẩm */}
+            <div className="space-y-3">
+              <p className="text-xs font-semibold text-primary-400 uppercase tracking-wider px-1 mb-1">Về sản phẩm</p>
+              <FaqItem
+                q="NoteMinds hoạt động như thế nào?"
+                a="Bạn chỉ cần upload tài liệu (PDF, Word, PowerPoint, Excel, ảnh, ghi âm...), AI sẽ tự động phân tích và tạo Sơ đồ tư duy, Flashcard, Quiz và cho phép bạn Chat hỏi đáp trực tiếp với nội dung tài liệu."
+              />
+              <FaqItem
+                q="Hỗ trợ những định dạng file nào?"
+                a="NoteMinds hỗ trợ PDF, DOCX, PPTX, XLSX, TXT, MD, và các file ảnh (JPG, PNG — dùng OCR). Ngoài ra còn hỗ trợ file ghi âm MP3, WAV, M4A, OGG, WEBM với tính năng phiên âm tự động."
+              />
+              <FaqItem
+                q="Flashcard có xuất sang Anki/Quizlet được không?"
+                a="Có! Bạn có thể export flashcard sang định dạng Anki (.apkg) hoặc Quizlet-compatible CSV chỉ với 1 click."
+              />
+              <FaqItem
+                q="Dữ liệu của tôi có an toàn không?"
+                a="Hoàn toàn an toàn. Toàn bộ dữ liệu được mã hóa end-to-end (AES-256). Tài liệu của bạn chỉ bạn mới có thể truy cập, ngay cả admin cũng không thể đọc nội dung."
+              />
+            </div>
+
+            {/* Cột 2 - Thanh toán & Tài khoản */}
+            <div className="space-y-3">
+              <p className="text-xs font-semibold text-accent-400 uppercase tracking-wider px-1 mb-1">Thanh toán & Tài khoản</p>
+              <FaqItem
+                q="Thanh toán bằng cách nào?"
+                a="NoteMinds hỗ trợ thanh toán qua chuyển khoản ngân hàng, MoMo và ZaloPay. Sau khi thanh toán, admin sẽ kích hoạt gói cho bạn trong vòng 5 phút."
+              />
+              <FaqItem
+                q="Có thể hủy gói bất cứ lúc nào không?"
+                a="Có. Bạn có thể liên hệ admin để hủy gói. Gói sẽ tiếp tục hoạt động cho đến khi hết thời hạn đã thanh toán, không bị cắt giữa chừng."
+              />
+              <FaqItem
+                q="Upload không giới hạn nghĩa là gì?"
+                a="Gói Unlimited cho phép bạn upload không giới hạn số lượng file trong ngày, không bị ràng buộc bởi quota hàng ngày. File size tối đa cũng được nâng lên đáng kể."
+              />
+              <FaqItem
+                q="Gói Free có bị giới hạn tính năng không?"
+                a="Gói Free vẫn được truy cập đầy đủ các tính năng cốt lõi: Sơ đồ tư duy, Flashcard, Chat AI, Quiz. Chỉ giới hạn về số lượt upload mỗi ngày và dung lượng file."
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -231,16 +272,18 @@ export default function PricingPage({ user, onLoginClick }) {
 function FaqItem({ q, a }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="bg-surface border border-line rounded-xl overflow-hidden">
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between px-5 py-3.5 text-left">
-        <span className="text-sm font-medium">{q}</span>
-        <span className={`text-muted transition-transform ${open ? 'rotate-180' : ''}`}>▾</span>
+    <div className={`bg-surface border rounded-xl overflow-hidden transition-colors duration-300 ${open ? 'border-primary-500/30 shadow-sm shadow-primary-500/5' : 'border-line'}`}>
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between px-5 py-3.5 text-left gap-3 group">
+        <span className="text-sm font-medium group-hover:text-primary-400 transition-colors">{q}</span>
+        <span className={`text-muted transition-transform duration-300 shrink-0 ${open ? 'rotate-180' : ''}`}>▾</span>
       </button>
-      {open && (
-        <div className="px-5 pb-4 text-sm text-muted border-t border-line pt-3 animate-fade-in">
-          {a}
+      <div className={`grid transition-all duration-300 ease-in-out ${open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+        <div className="overflow-hidden">
+          <div className="px-5 pb-4 text-sm text-muted border-t border-line pt-3 leading-relaxed">
+            {a}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
