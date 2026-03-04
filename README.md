@@ -111,4 +111,8 @@ Bạn có thể dùng Docker để chuẩn hóa môi trường chạy/staging th
 
 Nếu bạn cần quyền truy cập, quyền sử dụng hoặc hợp tác, vui lòng liên hệ trực tiếp maintainer.
 
-<div><center><p>Được phát triển bởi đội Đèn Giao Thông</p></center></div>
+<div style="text-align: center; margin: 20px 0;">
+    <p style="font-family: Arial, sans-serif; color: #555;">
+        Được phát triển bởi <strong>đội Đèn Giao Thông</strong>
+    </p>
+</div>
