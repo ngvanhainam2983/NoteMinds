@@ -8,6 +8,7 @@ import * as featureService from '../services/featureService.js';
 import * as advancedFeatureService from '../services/advancedFeatureService.js';
 import * as syncExportService from '../services/syncAndExportService.js';
 import { logger, logAnalytic } from '../services/logger.js';
+import { logActivity } from '../services/statsService.js';
 import os from 'os';
 import fs from 'fs';
 
@@ -324,6 +325,7 @@ router.post('/flashcards/:flashcardId/review', requireAuth, (req, res) => {
 
     if (result.success) {
       logAnalytic(req.user.id, 'flashcard_review', documentId, { quality: qualityGrade });
+      logActivity(req.user.id, 'flashcards_reviewed');
     }
     res.json(result);
   } catch (error) {
@@ -512,7 +514,7 @@ router.get('/community/:docId/likes', (req, res) => {
       try {
         // Simple extraction — the actual auth check is in middleware
         const { optionalAuth } = require('../services/authService.js');
-      } catch (e) {}
+      } catch (e) { }
     }
     db.close();
     res.json({ likeCount: count.count });
@@ -700,7 +702,7 @@ router.get('/announcements', optionalAuth, (req, res) => {
     const db = new Database(DB_PATH);
     const userPlan = req.user ? req.user.plan : null;
     const isLoggedIn = !!req.user;
-    
+
     // Get all active, non-expired announcements
     const announcements = db.prepare(`
       SELECT a.*, u.display_name as author_name
@@ -710,7 +712,7 @@ router.get('/announcements', optionalAuth, (req, res) => {
       ORDER BY a.priority DESC, a.created_at DESC
       LIMIT 20
     `).all();
-    
+
     // Filter by target audience
     const filtered = announcements.filter(ann => {
       if (ann.target_audience === 'all') return true;
@@ -721,7 +723,7 @@ router.get('/announcements', optionalAuth, (req, res) => {
       }
       return false;
     });
-    
+
     db.close();
     res.json({ announcements: filtered });
   } catch (error) { res.status(500).json({ error: 'Failed to get announcements' }); }
@@ -756,12 +758,12 @@ router.post('/announcements', requireAuth, requireAdmin, (req, res) => {
       (id, title, content, type, created_by, expires_at, target_audience, dismissible, auto_dismiss_days, link_url, link_text, priority) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
-      id, 
-      title, 
-      content, 
-      type || 'info', 
-      req.user.id, 
-      expires_at || null, 
+      id,
+      title,
+      content,
+      type || 'info',
+      req.user.id,
+      expires_at || null,
       target_audience || 'registered',
       dismissible !== undefined ? dismissible : 1,
       auto_dismiss_days || null,
@@ -964,7 +966,7 @@ router.get('/export/markdown/:docId', requireAuth, (req, res) => {
     const sessions = {};
     const rows = db.prepare('SELECT session_type, data FROM document_sessions WHERE document_id = ?').all(req.params.docId);
     for (const row of rows) {
-      try { sessions[row.session_type] = JSON.parse(row.data); } catch (e) {}
+      try { sessions[row.session_type] = JSON.parse(row.data); } catch (e) { }
     }
 
     // Build markdown
@@ -1235,7 +1237,7 @@ router.get('/admin/system-health', requireAuth, requireAdmin, (req, res) => {
 
     // DB file size
     let dbSize = 0;
-    try { dbSize = fs.statSync(DB_PATH).size; } catch {}
+    try { dbSize = fs.statSync(DB_PATH).size; } catch { }
 
     // Uploads folder size
     let uploadsSize = 0;
@@ -1243,9 +1245,9 @@ router.get('/admin/system-health', requireAuth, requireAdmin, (req, res) => {
     try {
       const files = fs.readdirSync(uploadsDir);
       for (const f of files) {
-        try { uploadsSize += fs.statSync(path.join(uploadsDir, f)).size; } catch {}
+        try { uploadsSize += fs.statSync(path.join(uploadsDir, f)).size; } catch { }
       }
-    } catch {}
+    } catch { }
 
     // Recent errors from ai_usage_logs
     const db = new Database(DB_PATH);
@@ -1323,7 +1325,7 @@ router.post('/admin/email-blast', requireAuth, requireAdmin, async (req, res) =>
         const db2 = new Database(DB_PATH);
         db2.prepare('UPDATE email_blasts SET sent_count = ?, failed_count = ?, status = ?, completed_at = CURRENT_TIMESTAMP WHERE id = ?').run(sent, failed, 'completed', id);
         db2.close();
-      } catch {}
+      } catch { }
     })();
   } catch (error) { res.status(500).json({ error: 'Failed to send blast' }); }
 });

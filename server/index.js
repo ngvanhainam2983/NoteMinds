@@ -41,6 +41,8 @@ import { initializeEnhancedTables } from './services/enhancedDatabase.js';
 import { initDocumentCleanup } from './services/documentCleanup.js';
 import { logger, requestLoggerMiddleware } from './services/logger.js';
 import featureRoutes from './routes/featuresRoutes.js';
+import statsRoutes from './routes/statsRoutes.js';
+import { logActivity } from './services/statsService.js';
 import { validateShareToken } from './services/advancedFeatureService.js';
 import { sendVerificationEmail, sendPasswordResetEmail, generateVerificationToken, testEmailConnection } from './services/emailService.js';
 import Database from 'better-sqlite3';
@@ -97,7 +99,7 @@ const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
-    
+
     const originLower = origin.toLowerCase();
     if (allowedOriginsLower.includes(originLower)) {
       callback(null, true);
@@ -130,12 +132,12 @@ app.use((req, res, next) => {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   // Permissions policy
   res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
-  
+
   if (NODE_ENV === 'production') {
     // Enforce HTTPS in production
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   }
-  
+
   next();
 });
 
@@ -923,6 +925,7 @@ app.post('/api/upload', requireAuth, uploadRateLimitMiddleware, upload.single('f
         createdAt: new Date().toISOString()
       });
       persistDocumentToDB(docId, userId, filePath, originalName, 'ready', extractedText.length);
+      logActivity(userId, 'documents_uploaded');
       console.log(`Document ${docId} processed successfully (${extractedText.length} chars)`);
     } catch (err) {
       documents.set(docId, {
@@ -1099,7 +1102,7 @@ function verifyDocumentAccess(docId, userId, userRole) {
 app.get('/api/documents/:docId/sessions', requireAuth, (req, res) => {
   try {
     const docId = req.params.docId;
-    
+
     // Verify ownership
     const accessCheck = verifyDocumentAccess(docId, req.user.id, req.user.role);
     if (!accessCheck.allowed) {
@@ -1109,7 +1112,7 @@ app.get('/api/documents/:docId/sessions', requireAuth, (req, res) => {
     const db = new Database(DB_PATH);
     const doc = db.prepare('SELECT id, user_id, original_name, status, text_length, deleted_at, created_at FROM documents WHERE id = ?').get(docId);
     db.close();
-    
+
     if (!doc) {
       return res.status(404).json({ error: 'Document not found' });
     }
@@ -1156,26 +1159,26 @@ app.delete('/api/documents/:docId', requireAuth, (req, res) => {
     const docId = req.params.docId;
     const userId = req.user.id;
     const userRole = req.user.role;
-    
+
     // Verify user owns the document or is admin
     if (userRole !== 'admin') {
       const db = new Database(DB_PATH);
       const doc = db.prepare('SELECT id, user_id FROM uploaded_documents WHERE id = ?').get(docId);
       db.close();
-      
+
       if (!doc || doc.user_id !== userId) {
         return res.status(403).json({ error: 'You do not have permission to delete this document' });
       }
     }
-    
+
     // Remove from memory cache
     documents.delete(docId);
-    
+
     // Mark as deleted in database
     const db = new Database(DB_PATH);
     db.prepare('UPDATE uploaded_documents SET is_deleted = 1, deleted_at = CURRENT_TIMESTAMP WHERE id = ?').run(docId);
     db.close();
-    
+
     console.log(`[DELETE] Document ${docId} deleted by user ${userId}`);
     res.json({ success: true, message: 'Document deleted successfully' });
   } catch (err) {
@@ -1231,7 +1234,7 @@ function getAllDocumentSessions(docId) {
 app.get('/api/documents/:docId/download', requireAuth, async (req, res) => {
   try {
     const docId = req.params.docId;
-    
+
     // Verify ownership
     const accessCheck = verifyDocumentAccess(docId, req.user.id, req.user.role);
     if (!accessCheck.allowed) {
@@ -1392,6 +1395,9 @@ app.post('/api/documents/:docId/quiz', async (req, res) => {
     const quiz = await generateQuiz(doc.text, doc.fileName);
     saveDocumentSession(req.params.docId, 'quiz', quiz);
     broadcastDocEvent(req.params.docId, 'quiz', quiz);
+    if (req.user && req.user.id) {
+      logActivity(req.user.id, 'quizzes_completed');
+    }
     res.json(quiz);
   } catch (error) {
     console.error('Quiz generation error:', error);
@@ -1403,7 +1409,7 @@ app.post('/api/documents/:docId/quiz', async (req, res) => {
 app.post('/api/documents/:docId/chat', requireAuth, async (req, res) => {
   try {
     const docId = req.params.docId;
-    
+
     // Verify ownership first
     const accessCheck = verifyDocumentAccess(docId, req.user.id, req.user.role);
     if (!accessCheck.allowed) {
@@ -1447,6 +1453,7 @@ app.post('/api/documents/:docId/chat', requireAuth, async (req, res) => {
     const chatHistory = [...(history || []), { role: 'user', content: message }, { role: 'assistant', content: reply }].slice(-50);
     saveDocumentSession(req.params.docId, 'chat', chatHistory);
     broadcastDocEvent(req.params.docId, 'chat', chatHistory);
+    logActivity(req.user.id, 'chat_messages');
 
     res.json({ reply, chatCount: doc.chatCount, chatLimit });
   } catch (error) {
@@ -1541,16 +1548,19 @@ app.use('/api', (req, res, next) => {
             const decoded = jwt.verify(token, process.env.JWT_SECRET || 'notemind-secret-key-2024');
             if (decoded.role === 'admin') return next();
           }
-        } catch {}
+        } catch { }
         return res.status(503).json({ error: 'maintenance', message: 'Hệ thống đang bảo trì. Vui lòng quay lại sau.' });
       }
     }
-  } catch {}
+  } catch { }
   next();
 });
 
 // Feature routes - all advanced features (chat history, favorites, tags, search, analytics, sharing, spaced repetition, exports, sync, preferences)
 app.use('/api', featureRoutes);
+
+// Stats & Leaderboard routes
+app.use('/api', statsRoutes);
 
 // ── Share helper: validate token & ensure doc is in memory ──
 async function resolveSharedDocument(shareToken) {
@@ -1982,6 +1992,8 @@ if (fs.existsSync(publicDir)) {
     res.sendFile(path.join(publicDir, 'index.html'));
   });
 }
+
+
 
 // Health check endpoint (required by Docker)
 app.get('/health', (req, res) => {
