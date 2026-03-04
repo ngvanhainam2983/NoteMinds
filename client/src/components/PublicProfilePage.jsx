@@ -163,12 +163,10 @@ export default function PublicProfilePage({ username, onBack, user: currentUser 
                   </span>
                 )}
               </div>
-              <p className="text-muted text-sm">@{u.username}</p>
-              {u.isVerified && (
-                <div className="mt-1.5 flex items-center justify-center sm:justify-start">
-                  <CheckCircle2 size={15} className="text-emerald-400" />
-                </div>
-              )}
+              <div className="mt-0.5 flex items-center justify-center sm:justify-start gap-1.5 text-sm text-muted">
+                <span>@{u.username}</span>
+                {u.isVerified && <CheckCircle2 size={14} className="text-emerald-400" />}
+              </div>
               <p className="text-xs text-muted mt-1.5 flex items-center gap-1.5 justify-center sm:justify-start">
                 <Calendar size={12} />
                 Tham gia {new Date(u.joinedAt).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' })}
