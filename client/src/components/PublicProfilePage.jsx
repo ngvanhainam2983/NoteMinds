@@ -85,7 +85,7 @@ export default function PublicProfilePage({ username, onBack, user: currentUser 
   const statusMap = {
     online: { label: 'Online', dot: 'bg-green-400' },
     idle: { label: 'Idle', dot: 'bg-yellow-400' },
-    dnd: { label: 'Do Not Disturb', dot: 'bg-rose-400' },
+    dnd: { label: 'DND', dot: 'bg-rose-400' },
     offline: { label: 'Offline', dot: 'bg-zinc-300' },
     invisible: { label: 'Offline', dot: 'bg-zinc-300' },
   };
@@ -165,7 +165,11 @@ export default function PublicProfilePage({ username, onBack, user: currentUser 
               </div>
               <div className="mt-0.5 flex items-center justify-center sm:justify-start gap-1.5 text-sm text-muted">
                 <span>@{u.username}</span>
-                {u.isVerified && <CheckCircle2 size={14} className="text-emerald-400" />}
+                {u.isVerified && (
+                  <span title="Đã được xác minh" className="inline-flex items-center">
+                    <CheckCircle2 size={14} className="text-emerald-400" />
+                  </span>
+                )}
               </div>
               <p className="text-xs text-muted mt-1.5 flex items-center gap-1.5 justify-center sm:justify-start">
                 <Calendar size={12} />
