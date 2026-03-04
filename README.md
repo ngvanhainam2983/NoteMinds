@@ -63,7 +63,7 @@ Xem hướng dẫn đầy đủ tại `ENV_SETUP.md`.
 Tối thiểu cần tạo file:
 
 - `server/.env` (bắt buộc)
-- `client/.env` (tùy chọn)
+- `client/.env` (bắt buộc)
 
 Bạn có thể bắt đầu bằng cách copy từ `.env.example` tương ứng.
 
@@ -110,3 +110,5 @@ Bạn có thể dùng Docker để chuẩn hóa môi trường chạy/staging th
 **Tài liệu README này xác nhận dự án NoteMind là tài sản riêng, không open-source, và được duy trì bởi maintainer/chủ sở hữu hợp pháp.**
 
 Nếu bạn cần quyền truy cập, quyền sử dụng hoặc hợp tác, vui lòng liên hệ trực tiếp maintainer.
+
+<div><center><p>Được phát triển bởi đội Đèn Giao Thông</p></center></div>
