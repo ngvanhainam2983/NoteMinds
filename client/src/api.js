@@ -130,6 +130,11 @@ export async function getMe() {
   return response.data.user;
 }
 
+export async function sendPresenceHeartbeat() {
+  const response = await api.post('/auth/presence/heartbeat', {});
+  return response.data;
+}
+
 export function logout() {
   clearAuth();
 }

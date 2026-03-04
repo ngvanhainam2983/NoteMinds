@@ -15,12 +15,32 @@ export default function PublicProfilePage({ username, onBack, user: currentUser 
 
   useEffect(() => {
     if (!username) return;
+    let alive = true;
     setLoading(true);
     setError('');
-    getPublicProfile(username)
-      .then(data => setProfile(data))
-      .catch(err => setError(err.response?.data?.error || 'Không tìm thấy người dùng'))
-      .finally(() => setLoading(false));
+
+    const loadProfile = async (silent = false) => {
+      if (!silent) setLoading(true);
+      try {
+        const data = await getPublicProfile(username);
+        if (!alive) return;
+        setProfile(data);
+        setError('');
+      } catch (err) {
+        if (!alive) return;
+        setError(err.response?.data?.error || 'Không tìm thấy người dùng');
+      } finally {
+        if (!silent && alive) setLoading(false);
+      }
+    };
+
+    loadProfile(false);
+    const intervalId = setInterval(() => loadProfile(true), 30 * 1000);
+
+    return () => {
+      alive = false;
+      clearInterval(intervalId);
+    };
   }, [username]);
 
   if (loading) {
@@ -60,6 +80,15 @@ export default function PublicProfilePage({ username, onBack, user: currentUser 
 
   const { user: u, stats, recentDocs } = profile;
   const badge = PLAN_BADGES[u.plan] || PLAN_BADGES.free;
+  const lastSeenText = u.lastSeenAt
+    ? new Date(u.lastSeenAt).toLocaleString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    })
+    : null;
 
   const statCards = [
     { icon: FileText, label: 'Tài liệu công khai', value: stats.publicDocs, color: 'text-primary-400 bg-primary-500/10' },
@@ -112,12 +141,19 @@ export default function PublicProfilePage({ username, onBack, user: currentUser 
                   {u.plan === 'ultimate' && <Crown size={11} />}
                   {badge.label}
                 </span>
+                <span className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-full border flex items-center gap-1.5 ${u.isOnline ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-surface-2 text-muted border-line'}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${u.isOnline ? 'bg-emerald-400' : 'bg-muted'}`} />
+                  {u.isOnline ? 'Online' : 'Offline'}
+                </span>
               </div>
               <p className="text-muted text-sm">@{u.username}</p>
               <p className="text-xs text-muted mt-1.5 flex items-center gap-1.5 justify-center sm:justify-start">
                 <Calendar size={12} />
                 Tham gia {new Date(u.joinedAt).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' })}
               </p>
+              {!u.isOnline && lastSeenText && (
+                <p className="text-xs text-muted mt-1">Hoạt động lần cuối: {lastSeenText}</p>
+              )}
             </div>
           </div>
         </div>

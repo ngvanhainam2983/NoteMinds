@@ -651,8 +651,21 @@ app.put('/api/auth/passkey/:id', requireAuth, (req, res) => {
 app.get('/api/auth/me', requireAuth, (req, res) => {
   // Update IP on each auth check
   const ip = getClientIp(req);
-  updateLastIp(req.user.id, ip);
-  res.json({ user: req.user });
+  const refreshedUser = updateLastIp(req.user.id, ip);
+  res.json({ user: refreshedUser || req.user });
+});
+
+app.post('/api/auth/presence/heartbeat', requireAuth, (req, res) => {
+  try {
+    const ip = getClientIp(req);
+    const refreshedUser = updateLastIp(req.user.id, ip);
+    res.json({
+      ok: true,
+      seenAt: refreshedUser?.lastLoginAt || new Date().toISOString(),
+    });
+  } catch {
+    res.status(500).json({ error: 'Không thể cập nhật trạng thái online' });
+  }
 });
 
 // ============ USER PROFILE ============
@@ -1727,7 +1740,7 @@ app.get('/api/users/profile/:username', async (req, res) => {
   try {
     const db = new Database(DB_PATH);
     const user = db.prepare(`
-      SELECT id, username, display_name, avatar_url, plan, created_at
+      SELECT id, username, display_name, avatar_url, plan, created_at, last_login_at
       FROM users WHERE username = ? AND is_banned = 0
     `).get(req.params.username);
 
@@ -1763,6 +1776,10 @@ app.get('/api/users/profile/:username', async (req, res) => {
 
     db.close();
 
+    const ONLINE_WINDOW_MS = 5 * 60 * 1000;
+    const lastSeenAt = user.last_login_at || null;
+    const isOnline = !!(lastSeenAt && (Date.now() - new Date(lastSeenAt).getTime()) <= ONLINE_WINDOW_MS);
+
     res.json({
       user: {
         username: user.username,
@@ -1770,6 +1787,8 @@ app.get('/api/users/profile/:username', async (req, res) => {
         avatarUrl: user.avatar_url,
         plan: user.plan,
         joinedAt: user.created_at,
+        lastSeenAt,
+        isOnline,
       },
       stats: {
         publicDocs: docStats.public_docs,

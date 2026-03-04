@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import FileUpload from './components/FileUpload';
@@ -16,7 +16,7 @@ import LeaderboardPage from './components/LeaderboardPage';
 import StatsPage from './components/StatsPage';
 import AnnouncementBanner from './components/AnnouncementBanner';
 import OfflinePage from './components/OfflinePage';
-import { getStoredUser, logout as apiLogout, getMe, verifyEmailToken, resetPassword, getSystemSettings, getDocumentHistory, getFolders } from './api';
+import { getStoredUser, logout as apiLogout, getMe, verifyEmailToken, resetPassword, getSystemSettings, getDocumentHistory, getFolders, sendPresenceHeartbeat } from './api';
 import { CheckCircle2, XCircle, Loader2, Lock, Eye, EyeOff, ArrowLeft, Wrench, WifiOff } from 'lucide-react';
 
 export default function App() {
@@ -32,6 +32,7 @@ export default function App() {
   const [maintenance, setMaintenance] = useState(null);
   const [maintenanceChecked, setMaintenanceChecked] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const heartbeatInFlightRef = useRef(false);
 
   // Online/Offline detection
   useEffect(() => {
@@ -124,6 +125,39 @@ export default function App() {
       });
     }
   }, []);
+
+  // Presence heartbeat: keep online status fresh while user is active
+  useEffect(() => {
+    if (!user) return;
+
+    const sendHeartbeat = async () => {
+      if (heartbeatInFlightRef.current || !navigator.onLine) return;
+      heartbeatInFlightRef.current = true;
+      try {
+        await sendPresenceHeartbeat();
+      } catch {
+        // Ignore heartbeat failures silently
+      } finally {
+        heartbeatInFlightRef.current = false;
+      }
+    };
+
+    sendHeartbeat();
+    const intervalId = setInterval(sendHeartbeat, 60 * 1000);
+    const onFocus = () => sendHeartbeat();
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') sendHeartbeat();
+    };
+
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [user]);
 
   // Check maintenance mode
   useEffect(() => {

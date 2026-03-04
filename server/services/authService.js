@@ -310,8 +310,11 @@ export function isIpBanned(ip) {
 
 export function updateLastIp(userId, ip) {
   db.prepare(`
-    UPDATE users SET last_ip = ?, updated_at = datetime('now') WHERE id = ?
+    UPDATE users
+    SET last_ip = ?, last_login_at = datetime('now'), updated_at = datetime('now')
+    WHERE id = ?
   `).run(ip, userId);
+  return getUserById(userId);
 }
 
 export function updateUserProfile(userId, displayName, email) {
