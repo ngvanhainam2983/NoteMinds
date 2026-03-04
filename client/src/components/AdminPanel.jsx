@@ -2185,14 +2185,18 @@ function MaintenanceModePanel({ showToast }) {
       {/* Preview */}
       {maintenanceActive && (
         <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
-          <p className="text-xs font-semibold text-amber-400 mb-1 flex items-center gap-2"><AlertOctagon size={14} /> Preview: Người dùng sẽ thấy</p>
-          <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4 mt-2">
-            <div className="flex items-center gap-3">
-              <Wrench size={20} className="text-amber-400" />
-              <div>
-                <p className="text-sm font-medium text-amber-400">Đang bảo trì</p>
-                <p className="text-xs text-muted mt-0.5">{maintenanceMsg}</p>
+          <p className="text-xs font-semibold text-amber-400 mb-2 flex items-center gap-2"><AlertOctagon size={14} /> Preview: Người dùng sẽ thấy</p>
+          <div className="bg-surface border border-line rounded-xl p-4 mt-2 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-[11px] font-semibold text-amber-400">
+                <div className="w-1.5 h-1.5 bg-amber-400 rounded-full" />
+                MAINTENANCE MODE
               </div>
+              <Wrench size={16} className="text-amber-400" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold">NoteMind đang bảo trì</p>
+              <p className="text-xs text-muted mt-1">{maintenanceMsg}</p>
             </div>
           </div>
         </div>

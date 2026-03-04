@@ -253,32 +253,51 @@ export default function App() {
   // Show maintenance screen for non-admin users
   if (maintenance && (!user || user.role !== 'admin')) {
     return (
-      <div className="min-h-screen bg-bg flex items-center justify-center p-4">
-        <div className="w-full max-w-md text-center">
-          <div className="bg-surface border border-line rounded-2xl p-10 space-y-6">
-            <div className="w-20 h-20 mx-auto bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-center">
-              <Wrench size={36} className="text-amber-400" />
+      <div className="min-h-screen bg-bg flex items-center justify-center p-4 sm:p-6">
+        <div className="w-full max-w-lg">
+          <div className="bg-surface border border-line rounded-2xl p-6 sm:p-8 space-y-6">
+            <div className="flex items-center justify-between gap-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold">
+                <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
+                MAINTENANCE MODE
+              </div>
+              <div className="w-12 h-12 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center justify-center shrink-0">
+                <Wrench size={22} className="text-amber-400" />
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-extrabold tracking-tight mb-2">Đang bảo trì</h1>
+
+            <div className="space-y-2">
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">NoteMind đang bảo trì</h1>
               <p className="text-muted text-sm leading-relaxed">{maintenance}</p>
+              <p className="text-xs text-muted/90">Chúng tôi sẽ mở lại hệ thống ngay khi hoàn tất cập nhật.</p>
             </div>
-            <div className="flex items-center justify-center gap-2 text-xs text-muted">
-              <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
-              Hệ thống sẽ sớm hoạt động trở lại
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                onClick={() => window.location.reload()}
+                className="w-full py-2.5 rounded-xl bg-primary-600 hover:bg-primary-500 text-white text-sm font-semibold transition-colors"
+              >
+                Làm mới trang
+              </button>
+              <button
+                onClick={() => openAuthModal('login')}
+                className="w-full py-2.5 rounded-xl bg-surface-2 hover:bg-line border border-line text-txt text-sm font-medium transition-colors"
+              >
+                Đăng nhập Admin
+              </button>
+            </div>
+
+            <div className="text-xs text-muted border-t border-line pt-4">
+              Nếu tình trạng kéo dài, vui lòng thử lại sau vài phút.
             </div>
           </div>
-          <button
-            onClick={() => openAuthModal('login')}
-            className="mt-4 text-xs text-muted hover:text-txt transition-colors"
-          >
-            Đăng nhập Admin
-          </button>
+
           <AuthModal
             isOpen={showAuthModal}
             onClose={() => setShowAuthModal(false)}
             onAuthSuccess={handleAuthSuccess}
             defaultTab={authModalTab}
+            loginOnly
           />
         </div>
       </div>

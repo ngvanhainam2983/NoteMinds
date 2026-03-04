@@ -4,8 +4,9 @@ import { register, login, forgotPassword, resendVerification, verify2FA, verify2
 import { startAuthentication } from '@simplewebauthn/browser';
 import TurnstileModal from './TurnstileModal';
 
-export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab = 'login' }) {
-  const [tab, setTab] = useState(defaultTab);
+export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab = 'login', loginOnly = false }) {
+  const initialTab = loginOnly && defaultTab === 'register' ? 'login' : defaultTab;
+  const [tab, setTab] = useState(initialTab);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -37,6 +38,12 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
     displayName: '',
     forgotEmail: '',
   });
+
+  useEffect(() => {
+    if (loginOnly && tab === 'register') {
+      setTab('login');
+    }
+  }, [loginOnly, tab]);
 
   if (!isOpen) return null;
 
@@ -115,6 +122,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
         onAuthSuccess(result.user);
         onClose();
       } else if (action.type === 'register') {
+        if (loginOnly) {
+          setError('Chức năng đăng ký không khả dụng trong chế độ này');
+          setLoading(false);
+          return;
+        }
         if (action.formData.password !== action.formData.confirmPassword) {
           setError('Mật khẩu xác nhận không khớp');
           setLoading(false);
@@ -543,7 +555,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
               </h2>
               <p className="text-sm text-muted text-center mt-1">
                 {tab === 'login'
-                  ? 'Đăng nhập để có 5 lượt upload/ngày'
+                  ? (loginOnly ? 'Đăng nhập tài khoản quản trị để truy cập hệ thống' : 'Đăng nhập để có 5 lượt upload/ngày')
                   : 'Tạo tài khoản miễn phí để sử dụng nhiều hơn'}
               </p>
             </div>
@@ -552,22 +564,24 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
             <div className="flex mx-6 mb-4 bg-bg rounded-lg p-1">
               <button
                 onClick={() => switchTab('login')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-all ${tab === 'login'
+                className={`${loginOnly ? 'w-full' : 'flex-1'} flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-all ${tab === 'login'
                   ? 'bg-primary-600 text-white shadow-lg'
                   : 'text-muted hover:text-txt'
                   }`}
               >
                 <LogIn size={15} /> Đăng nhập
               </button>
-              <button
-                onClick={() => switchTab('register')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-all ${tab === 'register'
-                  ? 'bg-primary-600 text-white shadow-lg'
-                  : 'text-muted hover:text-txt'
-                  }`}
-              >
-                <UserPlus size={15} /> Đăng ký
-              </button>
+              {!loginOnly && (
+                <button
+                  onClick={() => switchTab('register')}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-all ${tab === 'register'
+                    ? 'bg-primary-600 text-white shadow-lg'
+                    : 'text-muted hover:text-txt'
+                    }`}
+                >
+                  <UserPlus size={15} /> Đăng ký
+                </button>
+              )}
             </div>
 
             {/* Error */}
