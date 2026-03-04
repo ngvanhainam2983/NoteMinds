@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Upload, FileText, Mic, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { uploadFile, getDocumentStatus, getRateLimit } from '../api';
+import { useLanguage } from '../LanguageContext';
 
 export default function FileUpload({ onUploadComplete, user, onAuthRequired }) {
   const [dragActive, setDragActive] = useState(false);
@@ -9,6 +10,7 @@ export default function FileUpload({ onUploadComplete, user, onAuthRequired }) {
   const [status, setStatus] = useState(null); // 'uploading' | 'processing' | 'ready' | 'error'
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
+  const { t } = useLanguage();
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -43,12 +45,12 @@ export default function FileUpload({ onUploadComplete, user, onAuthRequired }) {
         if (rl.isGuest) {
           // Guest hit limit — prompt to register
           setStatus('error');
-          setError('Bạn đã dùng hết lượt upload miễn phí. Đăng ký tài khoản để có 5 lượt/ngày!');
+          setError(t('upload.guestLimitReached'));
           setUploading(false);
           return;
         }
         setStatus('error');
-        setError(`Đã dùng hết ${rl.uploadLimit} lượt upload hôm nay. Thử lại vào ngày mai.`);
+        setError(t('upload.dailyLimitReached', { limit: rl.uploadLimit }));
         return;
       }
     } catch { /* proceed anyway */ }
@@ -110,7 +112,7 @@ export default function FileUpload({ onUploadComplete, user, onAuthRequired }) {
       setStatus('error');
       // If server says auth required, show register prompt
       if (err.response?.status === 429 && err.response?.data?.requireAuth) {
-        setError('Bạn đã dùng hết lượt upload miễn phí. Đăng ký tài khoản để có 5 lượt/ngày!');
+        setError(t('upload.guestLimitReached'));
       } else {
         setError(err.response?.data?.error || err.message);
       }
@@ -159,17 +161,17 @@ export default function FileUpload({ onUploadComplete, user, onAuthRequired }) {
               <Upload size={32} className={`text-primary-400 transition-transform duration-300 ${dragActive ? '-translate-y-2 animate-pulse' : ''}`} />
             </div>
             <h3 className="text-xl font-bold mb-3 text-txt">
-              Kéo thả file vào đây hoặc <span className="text-primary-400">chọn file</span>
+              {t('upload.dragDrop')} <span className="text-primary-400">{t('upload.selectFile')}</span>
             </h3>
             <p className="text-sm text-muted mb-6 font-medium">
-              Hỗ trợ PDF, DOCX, PPTX, XLSX, TXT, MD, MP3, WAV (tối đa 50MB)
+              {t('upload.supportedFormats')}
             </p>
             <div className="flex items-center justify-center gap-6 text-xs text-muted">
               <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-line">
-                <FileText size={14} className="text-primary-400" /> Tài liệu Text/PDF
+                <FileText size={14} className="text-primary-400" /> {t('upload.textDocPdf')}
               </span>
               <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-line">
-                <Mic size={14} className="text-accent-400" /> Ghi âm bài giảng
+                <Mic size={14} className="text-accent-400" /> {t('upload.audioLecture')}
               </span>
             </div>
           </div>
@@ -181,7 +183,7 @@ export default function FileUpload({ onUploadComplete, user, onAuthRequired }) {
               <Loader2 size={32} className="text-primary-400 animate-spin relative z-10" />
               <div className="absolute inset-0 bg-primary-500/30 blur-xl rounded-full animate-pulse" />
             </div>
-            <p className="font-medium text-lg text-txt">Đang tải lên... {uploadProgress}%</p>
+            <p className="font-medium text-lg text-txt">{t('upload.uploading')} {uploadProgress}%</p>
             <div className="w-full max-w-sm mx-auto bg-surface-2 border border-line rounded-full h-3 p-0.5 overflow-hidden">
               <div
                 className="bg-primary-600 h-full rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(99,102,241,0.5)] relative"
@@ -202,9 +204,9 @@ export default function FileUpload({ onUploadComplete, user, onAuthRequired }) {
               </div>
             </div>
             <p className="font-medium text-lg text-accent-400">
-              Đang xử lý tài liệu<span className="loading-dots"></span>
+              {t('upload.processing')}<span className="loading-dots"></span>
             </p>
-            <p className="text-sm text-muted">AI đang trích xuất và phân tích nội dung</p>
+            <p className="text-sm text-muted">{t('upload.aiAnalyzing')}</p>
           </div>
         )}
 
@@ -214,17 +216,17 @@ export default function FileUpload({ onUploadComplete, user, onAuthRequired }) {
               <CheckCircle2 size={40} className="text-green-400 relative z-10" />
               <div className="absolute inset-0 bg-green-500/30 blur-xl rounded-full animate-pulse" />
             </div>
-            <p className="font-bold text-xl text-green-400">Tài liệu đã sẵn sàng!</p>
+            <p className="font-bold text-xl text-green-400">{t('upload.ready')}</p>
           </div>
         )}
 
         {status === 'error' && (
           <div className="space-y-4">
             <AlertCircle size={32} className="mx-auto text-red-400" />
-            <p className="font-medium text-red-400">Lỗi xử lý</p>
+            <p className="font-medium text-red-400">{t('upload.error')}</p>
             <p className="text-sm text-muted">{error}</p>
             <div className="flex items-center justify-center gap-3">
-              {!user && error.includes('Đăng ký') && onAuthRequired && (
+              {!user && error.includes(t('upload.registerNow').split(' ')[0]) && onAuthRequired && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -232,7 +234,7 @@ export default function FileUpload({ onUploadComplete, user, onAuthRequired }) {
                   }}
                   className="px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-sm font-medium transition-colors shadow-lg shadow-primary-600/25"
                 >
-                  Đăng ký ngay
+                  {t('upload.registerNow')}
                 </button>
               )}
               <button
@@ -244,7 +246,7 @@ export default function FileUpload({ onUploadComplete, user, onAuthRequired }) {
                 }}
                 className="text-sm text-primary-400 underline"
               >
-                Thử lại
+                {t('upload.retry')}
               </button>
             </div>
           </div>

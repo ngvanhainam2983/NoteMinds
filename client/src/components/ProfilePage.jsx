@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import {
     ArrowLeft, User, Mail, Shield, ShieldCheck, Crown, Calendar, Clock,
     CheckCircle2, XCircle, Fingerprint, KeyRound, Loader2, Edit3,
-    Save, X, Lock, ShieldOff, RefreshCw, Copy, Palette, AlertCircle, Plus, Trash2, Download, Moon, Sun, Monitor, Camera, Send
+    Save, X, Lock, ShieldOff, RefreshCw, Copy, Palette, AlertCircle, Plus, Trash2, Download, Moon, Sun, Monitor, Camera, Send, Languages
 } from 'lucide-react';
 import {
     updateProfile, get2FAStatus, getPasskeyList, changePassword,
@@ -11,12 +11,14 @@ import {
     resendVerification, getApiBaseUrl, updatePresenceStatus, updatePlanBadgeVisibility
 } from '../api';
 import { useTheme, THEMES } from '../ThemeContext';
+import { useLanguage } from '../LanguageContext';
 import ConfirmModal from './ConfirmModal';
 import TurnstileModal from './TurnstileModal';
 import { startRegistration } from '@simplewebauthn/browser';
 
 export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) {
-    const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'security' | 'theme'
+    const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'security' | 'theme' | 'language'
+    const { t, language: currentLang, setLanguage } = useLanguage();
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -389,13 +391,13 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                     <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-surface border border-line flex items-center justify-center">
                         <User size={36} className="text-muted" />
                     </div>
-                    <h2 className="text-xl font-bold mb-2">Chưa đăng nhập</h2>
-                    <p className="text-sm text-muted mb-6">Đăng nhập để xem thông tin tài khoản</p>
+                    <h2 className="text-xl font-bold mb-2">{t('profile.notLoggedIn')}</h2>
+                    <p className="text-sm text-muted mb-6">{t('profile.loginToView')}</p>
                     <button
                         onClick={() => onOpenAuth?.('login')}
                         className="px-6 py-2.5 bg-primary-600 hover:bg-primary-700 rounded-xl text-sm font-semibold transition-colors"
                     >
-                        Đăng nhập
+                        {t('auth.login')}
                     </button>
                 </div>
             </div>
@@ -403,8 +405,8 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
     }
 
     const initials = (user.displayName || user.username || '?').slice(0, 2).toUpperCase();
-    const memberSince = user.createdAt ? new Date(user.createdAt).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A';
-    const lastLogin = user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString('vi-VN') : 'N/A';
+    const memberSince = user.createdAt ? new Date(user.createdAt).toLocaleDateString(currentLang === 'vi' ? 'vi-VN' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A';
+    const lastLogin = user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString(currentLang === 'vi' ? 'vi-VN' : 'en-US') : 'N/A';
     const planColors = {
         free: 'from-gray-400 to-gray-500',
         pro: 'from-blue-400 to-blue-600',
@@ -416,7 +418,7 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
         <div className="max-w-4xl mx-auto px-4 py-8 animate-fade-in">
             <button onClick={onBack} className="flex items-center gap-2 text-sm text-muted hover:text-txt transition-colors mb-6 group">
                 <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-                Quay lại
+                {t('profile.goBack')}
             </button>
 
             {/* ── Profile Header ── */}
@@ -475,7 +477,7 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                             <p className="text-sm text-muted mt-0.5">@{user.username}</p>
                             <div className="flex items-center gap-3 mt-2 flex-wrap text-xs text-muted">
                                 <span className="flex items-center gap-1"><Mail size={12} /> {user.email} {user.emailVerified ? <CheckCircle2 size={12} className="text-green-400" /> : <XCircle size={12} className="text-amber-400" />}</span>
-                                <span className="flex items-center gap-1"><Calendar size={12} /> Tham gia {memberSince}</span>
+                                <span className="flex items-center gap-1"><Calendar size={12} /> {t('profile.joinedDate')} {memberSince}</span>
                             </div>
                         </div>
                     </div>
@@ -490,15 +492,19 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
             <div className="flex border-b border-line mb-6 overflow-x-auto hide-scrollbar">
                 <button onClick={() => { setActiveTab('overview'); setError(''); setSuccess(''); }}
                     className={`px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'overview' ? 'border-primary-500 text-primary-400' : 'border-transparent text-muted hover:text-txt'}`}>
-                    <User size={16} /> Tổng quan
+                    <User size={16} /> {t('profile.overview')}
                 </button>
                 <button onClick={() => { setActiveTab('security'); setError(''); setSuccess(''); setTwoFAStep('status'); }}
                     className={`px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'security' ? 'border-primary-500 text-primary-400' : 'border-transparent text-muted hover:text-txt'}`}>
-                    <Shield size={16} /> Bảo mật & Đăng nhập
+                    <Shield size={16} /> {t('profile.security')}
                 </button>
                 <button onClick={() => { setActiveTab('theme'); setError(''); setSuccess(''); }}
                     className={`px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'theme' ? 'border-primary-500 text-primary-400' : 'border-transparent text-muted hover:text-txt'}`}>
-                    <Palette size={16} /> Giao diện
+                    <Palette size={16} /> {t('profile.appearance')}
+                </button>
+                <button onClick={() => { setActiveTab('language'); setError(''); setSuccess(''); }}
+                    className={`px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'language' ? 'border-primary-500 text-primary-400' : 'border-transparent text-muted hover:text-txt'}`}>
+                    <Languages size={16} /> {t('profile.language')}
                 </button>
             </div>
 

@@ -16,19 +16,22 @@ import {
 import { generateMindmap, generateFlashcards, generateQuiz, getRateLimit, getDocumentSessions, downloadDocument, toggleDocumentPublic, exportMarkdown } from '../api';
 import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts';
 import Joyride, { STATUS } from 'react-joyride';
-
-const TABS = [
-  { id: 'mindmap', label: 'Sơ đồ tư duy', icon: Map },
-  { id: 'flashcard', label: 'Flashcard', icon: CreditCard },
-  { id: 'quiz', label: 'Kiểm tra', icon: FileText },
-];
-
-const WELCOME_MESSAGE = {
-  role: 'assistant',
-  content: 'Xin chào! Mình là trợ lý học tập NoteMinds 🧠\n\nHãy hỏi mình bất kỳ điều gì về tài liệu bạn vừa upload nhé! Ví dụ:\n- "Tóm tắt nội dung chính"\n- "Giải thích khái niệm X"\n- "So sánh A và B"'
-};
+import { useLanguage } from '../LanguageContext';
 
 export default function Dashboard({ doc, user }) {
+  const { t } = useLanguage();
+
+  const TABS = [
+    { id: 'mindmap', label: t('dashboard.mindmap'), icon: Map },
+    { id: 'flashcard', label: t('dashboard.flashcard'), icon: CreditCard },
+    { id: 'quiz', label: t('dashboard.quiz'), icon: FileText },
+  ];
+
+  const WELCOME_MESSAGE = {
+    role: 'assistant',
+    content: t('dashboard.welcomeMessage')
+  };
+
   const [activeTab, setActiveTab] = useState('mindmap');
   const [mindmapData, setMindmapData] = useState(null);
   const [flashcardData, setFlashcardData] = useState(null);
@@ -40,7 +43,7 @@ export default function Dashboard({ doc, user }) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [showPomodoro, setShowPomodoro] = useState(false);
   const [docDetails, setDocDetails] = useState({
-    fileName: doc?.fileName || 'Tài liệu',
+    fileName: doc?.fileName || t('dashboard.document'),
     textLength: doc?.textLength || 0,
     isLocked: false,
   });
@@ -54,20 +57,20 @@ export default function Dashboard({ doc, user }) {
   const [tourSteps] = useState([
     {
       target: '.tour-doc-info',
-      content: 'Đây là tài liệu của bạn. Tại đây bạn có thể đổi trạng thái Công khai/Riêng tư, Thêm vào Yêu thích, và bật Chế độ Tập trung.',
+      content: t('dashboard.tourDocInfo'),
       disableBeacon: true,
     },
     {
       target: '.tour-tools',
-      content: 'Thanh công cụ giúp bạn tải về, tìm kiếm, xem phân tích và tinh chỉnh tài liệu.',
+      content: t('dashboard.tourTools'),
     },
     {
       target: '.tour-tabs',
-      content: 'Chuyển đổi giữa Sơ đồ tư duy, hệ thống Flashcard và bài Trắc nghiệm để học một cách hiệu quả nhất!',
+      content: t('dashboard.tourTabs'),
     },
     {
       target: '.tour-chat-fab',
-      content: 'Tại đây, bạn luôn có một Trợ lý AI sẵn sàng giải đáp và tóm tắt mọi thắc mắc ngay tức thì!',
+      content: t('dashboard.tourChat'),
     }
   ]);
 
@@ -134,7 +137,7 @@ export default function Dashboard({ doc, user }) {
       .then(({ document, sessions }) => {
         if (document) {
           setDocDetails({
-            fileName: document.original_name || doc.fileName || 'Tài liệu đã lưu',
+            fileName: document.original_name || doc.fileName || t('dashboard.savedDoc'),
             textLength: document.text_length || doc.textLength || 0,
             isLocked: !!document.isFileDeleted
           });
@@ -235,7 +238,7 @@ export default function Dashboard({ doc, user }) {
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
-      alert(err.response?.data?.error || 'Lỗi khi tải xuống tài liệu');
+      alert(err.response?.data?.error || t('dashboard.downloadError'));
     } finally {
       setIsDownloading(false);
     }
@@ -248,7 +251,7 @@ export default function Dashboard({ doc, user }) {
       const data = await toggleDocumentPublic(doc.docId, !isPublic);
       setIsPublic(data.is_public);
     } catch (err) {
-      alert(err.response?.data?.error || 'Lỗi khi cập nhật trạng thái');
+      alert(err.response?.data?.error || t('dashboard.togglePublicError'));
     } finally {
       setIsTogglingPublic(false);
     }
@@ -267,7 +270,7 @@ export default function Dashboard({ doc, user }) {
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
-      alert(err.response?.data?.error || 'Lỗi khi xuất Markdown');
+      alert(err.response?.data?.error || t('dashboard.exportError'));
     } finally {
       setIsExporting(false);
     }
@@ -295,7 +298,7 @@ export default function Dashboard({ doc, user }) {
           buttonNext: { backgroundColor: '#6366f1', borderRadius: '8px' },
           buttonBack: { color: '#9496a1', marginRight: 10 }
         }}
-        locale={{ back: 'Quay lại', close: 'Đóng', last: 'Hoàn tất', next: 'Tiếp theo', skip: 'Bỏ qua' }}
+        locale={{ back: t('dashboard.tourBack'), close: t('dashboard.tourClose'), last: t('dashboard.tourDone'), next: t('dashboard.tourNext'), skip: t('dashboard.tourSkip') }}
       />
 
       {/* Document info bar */}
@@ -306,11 +309,11 @@ export default function Dashboard({ doc, user }) {
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold truncate text-txt">
             {docDetails.fileName}
-            {docDetails.isLocked && <span className="ml-2 px-2 py-0.5 rounded-md bg-red-500/10 text-red-400 text-[10px] border border-red-500/20 font-medium">Đã xóa gốc</span>}
+            {docDetails.isLocked && <span className="ml-2 px-2 py-0.5 rounded-md bg-red-500/10 text-red-400 text-[10px] border border-red-500/20 font-medium">{t('dashboard.deletedSource')}</span>}
           </p>
           <p className="text-xs text-muted mt-0.5">
-            {docDetails.textLength ? `${(docDetails.textLength / 1000).toFixed(1)}k ký tự` : 'Đã xử lý'}
-            {sessionLoading && <span className="ml-2 text-primary-400">• Đang tải dữ liệu...</span>}
+            {docDetails.textLength ? `${(docDetails.textLength / 1000).toFixed(1)}k ${t('dashboard.chars')}` : t('dashboard.processed')}
+            {sessionLoading && <span className="ml-2 text-primary-400">• {t('dashboard.loadingData')}</span>}
           </p>
         </div>
 
@@ -322,10 +325,10 @@ export default function Dashboard({ doc, user }) {
               ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
               : 'bg-surface border-line hover:bg-line text-muted'
               } disabled:opacity-50`}
-            title={isPublic ? "Đang công khai" : "Chỉ mình tôi"}
+            title={isPublic ? t('dashboard.currentlyPublic') : t('dashboard.onlyMe')}
           >
             {isTogglingPublic ? <Loader2 size={14} className="animate-spin" /> : isPublic ? <Globe size={14} /> : <Lock size={14} />}
-            <span className="hidden sm:inline">{isPublic ? 'Công khai' : 'Riêng tư'}</span>
+            <span className="hidden sm:inline">{isPublic ? t('dashboard.public') : t('dashboard.private')}</span>
           </button>
 
           <FavoriteButton documentId={doc.docId} />
@@ -339,7 +342,7 @@ export default function Dashboard({ doc, user }) {
             title="Focus Mode (Pomodoro)"
           >
             <Focus size={14} />
-            <span className="hidden sm:inline">Tập trung</span>
+            <span className="hidden sm:inline">{t('dashboard.focus')}</span>
           </button>
         </div>
       </div>
@@ -349,15 +352,14 @@ export default function Dashboard({ doc, user }) {
         <button
           onClick={handleDownload}
           disabled={isDownloading || docDetails.isLocked}
-          className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium border rounded-xl transition-all disabled:opacity-50 ${
-            docDetails.isLocked
+          className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium border rounded-xl transition-all disabled:opacity-50 ${docDetails.isLocked
               ? 'bg-surface border-line text-muted cursor-not-allowed'
               : 'bg-primary-600/10 border-primary-500/20 text-primary-400 hover:bg-primary-600/20'
-          }`}
-          title={docDetails.isLocked ? 'File gốc đã bị xóa' : ''}
+            }`}
+          title={docDetails.isLocked ? t('dashboard.sourceDeletedTitle') : ''}
         >
           {isDownloading ? <Loader2 size={14} className="animate-spin" /> : docDetails.isLocked ? <Lock size={14} /> : <Download size={14} />}
-          <span className="hidden sm:inline">{isDownloading ? 'Đang tải...' : docDetails.isLocked ? 'Đã xóa gốc' : 'Tải file gốc'}</span>
+          <span className="hidden sm:inline">{isDownloading ? t('dashboard.downloading') : docDetails.isLocked ? t('dashboard.sourceDeleted') : t('dashboard.downloadOriginal')}</span>
         </button>
 
         <button
@@ -366,18 +368,18 @@ export default function Dashboard({ doc, user }) {
           className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 hover:bg-emerald-500/20 transition-all disabled:opacity-50"
         >
           {isExporting ? <Loader2 size={14} className="animate-spin" /> : <FileDown size={14} />}
-          <span className="hidden sm:inline">{isExporting ? 'Đang xuất...' : 'Xuất Markdown'}</span>
+          <span className="hidden sm:inline">{isExporting ? t('dashboard.exporting') : t('dashboard.exportMarkdown')}</span>
         </button>
 
         <div className="w-px h-5 bg-line mx-0.5 hidden sm:block"></div>
 
         {[
-          { icon: Search, label: 'Tìm kiếm', onClick: () => setShowSearch(true) },
-          { icon: BarChart3, label: 'Phân tích', onClick: () => setShowAnalytics(true) },
-          { icon: Share2, label: 'Chia sẻ', onClick: () => setShowShare(true) },
-          { icon: Tag, label: 'Nhãn', onClick: () => setShowTags(true) },
-          { icon: StickyNote, label: 'Ghi chú', onClick: () => setShowNotes(true) },
-          { icon: Settings, label: 'Cài đặt', onClick: () => setShowPreferences(true) },
+          { icon: Search, label: t('dashboard.search'), onClick: () => setShowSearch(true) },
+          { icon: BarChart3, label: t('dashboard.analytics'), onClick: () => setShowAnalytics(true) },
+          { icon: Share2, label: t('dashboard.share'), onClick: () => setShowShare(true) },
+          { icon: Tag, label: t('dashboard.tags'), onClick: () => setShowTags(true) },
+          { icon: StickyNote, label: t('dashboard.notes'), onClick: () => setShowNotes(true) },
+          { icon: Settings, label: t('dashboard.settings'), onClick: () => setShowPreferences(true) },
         ].map((btn, i) => (
           <button
             key={i}
@@ -398,8 +400,8 @@ export default function Dashboard({ doc, user }) {
           <Upload size={12} />
           <span className="hidden sm:inline">
             {rateLimit.uploadsRemaining > 0
-              ? `${rateLimit.uploadsRemaining}/${rateLimit.uploadLimit} lượt upload`
-              : rateLimit.isGuest ? 'Hết lượt miễn phí' : 'Hết lượt upload'
+              ? t('dashboard.uploadsRemaining', { remaining: rateLimit.uploadsRemaining, limit: rateLimit.uploadLimit })
+              : rateLimit.isGuest ? t('dashboard.guestLimitReached') : t('dashboard.limitReached')
             }
           </span>
         </div>
@@ -473,8 +475,8 @@ export default function Dashboard({ doc, user }) {
                 <MessageCircle size={16} className="text-primary-400" />
               </div>
               <div>
-                <span className="font-semibold text-sm block leading-tight">Trợ lý AI</span>
-                <span className="text-[10px] text-muted">Hỏi đáp về tài liệu</span>
+                <span className="font-semibold text-sm block leading-tight">{t('dashboard.aiAssistant')}</span>
+                <span className="text-[10px] text-muted">{t('dashboard.askAboutDoc')}</span>
               </div>
             </div>
             <button onClick={() => setShowChat(false)} className="p-1.5 rounded-lg hover:bg-surface text-muted hover:text-txt transition-colors">
@@ -497,12 +499,11 @@ export default function Dashboard({ doc, user }) {
         <button
           onClick={() => setShowChat(true)}
           disabled={docDetails.isLocked && chatMessages.length <= 1}
-          className={`tour-chat-fab fixed bottom-6 right-6 z-30 w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl transition-all group ${
-            docDetails.isLocked && chatMessages.length <= 1
+          className={`tour-chat-fab fixed bottom-6 right-6 z-30 w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl transition-all group ${docDetails.isLocked && chatMessages.length <= 1
               ? 'bg-gray-600 cursor-not-allowed opacity-50 shadow-none'
               : 'bg-gradient-to-br from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white shadow-primary-600/30 hover:scale-105 active:scale-95'
-          }`}
-          title={docDetails.isLocked && chatMessages.length <= 1 ? 'Tài liệu gốc đã bị xóa' : 'Trò chuyện với AI'}
+            }`}
+          title={docDetails.isLocked && chatMessages.length <= 1 ? t('dashboard.sourceDocDeleted') : t('dashboard.chatWithAI')}
         >
           <MessageCircle size={22} className="group-hover:scale-110 transition-transform" />
           {!(docDetails.isLocked && chatMessages.length <= 1) && <span className="absolute -top-1 -right-1 w-3 h-3 bg-accent-500 rounded-full ring-2 ring-bg animate-pulse" />}

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { getDocumentHistory, getApiBaseUrl } from '../api';
 import ConfirmModal from './ConfirmModal';
+import { useLanguage } from '../LanguageContext';
 
 function UserAvatar({ user, size = 'sm' }) {
   const sizeClasses = size === 'sm' ? 'w-6 h-6 text-[10px]' : 'w-9 h-9 text-sm';
@@ -34,6 +35,7 @@ export default function UserDropdown({ user, onLogout, onOpenAdmin, onOpenPricin
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const ref = useRef(null);
+  const { t } = useLanguage();
 
   // Close on click outside
   useEffect(() => {
@@ -80,17 +82,17 @@ export default function UserDropdown({ user, onLogout, onOpenAdmin, onOpenPricin
                 <p className="text-sm font-medium truncate">{user.displayName || user.username}</p>
                 <p className="text-xs text-muted truncate">{user.email}</p>
                 <div className="flex items-center gap-1.5 mt-1">
-                <span
-                  className="text-xs px-2 py-0.5 rounded-full font-medium"
-                  style={{
-                    backgroundColor: planColor ? `${planColor}15` : '#242736',
-                    color: planColor || '#9496a1',
-                    border: `1px solid ${planColor ? `${planColor}30` : '#2e3144'}`,
-                  }}
-                >
-                  {planBadge || '📦'} Gói {user.planLabel || 'Free'}
-                </span>
-              </div>
+                  <span
+                    className="text-xs px-2 py-0.5 rounded-full font-medium"
+                    style={{
+                      backgroundColor: planColor ? `${planColor}15` : '#242736',
+                      color: planColor || '#9496a1',
+                      border: `1px solid ${planColor ? `${planColor}30` : '#2e3144'}`,
+                    }}
+                  >
+                    {planBadge || '📦'} {t('user.plan')} {user.planLabel || 'Free'}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -98,23 +100,23 @@ export default function UserDropdown({ user, onLogout, onOpenAdmin, onOpenPricin
             <div className="py-1">
               <DropdownItem
                 icon={<Settings size={15} />}
-                label="Cài đặt & Hồ sơ"
+                label={t('user.settingsProfile')}
                 onClick={() => { setOpen(false); onOpenProfile?.(); }}
               />
               <DropdownItem
                 icon={<History size={15} />}
-                label="Lịch sử tài liệu"
+                label={t('user.documentHistory')}
                 onClick={() => { setOpen(false); setShowHistory(true); }}
               />
               <DropdownItem
                 icon={<Crown size={15} />}
-                label="Nâng cấp gói"
+                label={t('user.upgradePlan')}
                 onClick={() => { setOpen(false); onOpenPricing?.(); }}
               />
               {user.role === 'admin' && (
                 <DropdownItem
                   icon={<Shield size={15} />}
-                  label="Quản trị Admin"
+                  label={t('user.adminPanel')}
                   onClick={() => { setOpen(false); onOpenAdmin?.(); }}
                   accent
                 />
@@ -122,7 +124,7 @@ export default function UserDropdown({ user, onLogout, onOpenAdmin, onOpenPricin
               <div className="border-t border-line my-1" />
               <DropdownItem
                 icon={<LogOut size={15} />}
-                label="Đăng xuất"
+                label={t('user.logout')}
                 onClick={() => { setOpen(false); setShowLogoutConfirm(true); }}
                 danger
               />
@@ -141,9 +143,9 @@ export default function UserDropdown({ user, onLogout, onOpenAdmin, onOpenPricin
 
       <ConfirmModal
         open={showLogoutConfirm}
-        title="Đăng xuất"
-        message="Bạn có chắc chắn muốn đăng xuất khỏi tài khoản?"
-        confirmLabel="Đăng xuất"
+        title={t('user.logoutConfirmTitle')}
+        message={t('user.logoutConfirmMsg')}
+        confirmLabel={t('user.logout')}
         variant="warning"
         onConfirm={() => { setShowLogoutConfirm(false); onLogout(); }}
         onCancel={() => setShowLogoutConfirm(false)}
@@ -172,6 +174,7 @@ function DropdownItem({ icon, label, onClick, accent, danger }) {
 function HistoryModal({ onClose, onOpenDocument }) {
   const [docs, setDocs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { t, language } = useLanguage();
 
   useEffect(() => {
     getDocumentHistory()
@@ -190,10 +193,10 @@ function HistoryModal({ onClose, onOpenDocument }) {
   };
 
   const statusLabel = (doc) => {
-    if (isExpired(doc)) return 'Đã xoá';
-    if (doc.status === 'ready') return 'Hoàn thành';
-    if (doc.status === 'error') return 'Lỗi';
-    return 'Đang xử lý';
+    if (isExpired(doc)) return t('user.deleted');
+    if (doc.status === 'ready') return t('user.completed');
+    if (doc.status === 'error') return t('user.errorStatus');
+    return t('user.processingStatus');
   };
 
   const timeRemaining = (doc) => {
@@ -201,17 +204,17 @@ function HistoryModal({ onClose, onOpenDocument }) {
     const created = new Date(doc.created_at).getTime();
     const expiresAt = created + 24 * 60 * 60 * 1000;
     const remaining = expiresAt - Date.now();
-    if (remaining <= 0) return 'Sắp xoá';
+    if (remaining <= 0) return t('user.aboutToDelete');
     const hours = Math.floor(remaining / (60 * 60 * 1000));
     const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
-    if (hours > 0) return `Còn ${hours}h${minutes}m`;
-    return `Còn ${minutes} phút`;
+    if (hours > 0) return `${t('user.remaining')} ${hours}h${minutes}m`;
+    return `${t('user.remaining')} ${minutes} ${t('user.minutes')}`;
   };
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
     const d = new Date(dateStr);
-    return d.toLocaleDateString('vi-VN', {
+    return d.toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', {
       day: '2-digit', month: '2-digit', year: 'numeric',
       hour: '2-digit', minute: '2-digit'
     });
@@ -224,7 +227,7 @@ function HistoryModal({ onClose, onOpenDocument }) {
         <div className="flex items-center justify-between px-6 pt-5 pb-3">
           <div className="flex items-center gap-2">
             <History size={20} className="text-primary-400" />
-            <h2 className="text-lg font-bold font-display">Lịch sử tài liệu</h2>
+            <h2 className="text-lg font-bold font-display">{t('user.documentHistoryTitle')}</h2>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-surface-2 text-muted hover:text-txt">
             <X size={18} />
@@ -251,7 +254,7 @@ function HistoryModal({ onClose, onOpenDocument }) {
                     <FileText size={18} className={`shrink-0 mt-0.5 ${expired ? 'text-[#444]' : 'text-primary-400'}`} />
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-medium truncate ${expired ? 'text-muted/60 line-through' : ''}`}>
-                        {doc.original_name || 'Tài liệu không tên'}
+                        {doc.original_name || t('user.untitledDoc')}
                       </p>
                       <div className="flex items-center gap-3 mt-1">
                         <span className={`flex items-center gap-1 text-xs ${expired ? 'text-muted/60' : 'text-muted'}`}>
@@ -260,7 +263,7 @@ function HistoryModal({ onClose, onOpenDocument }) {
                         </span>
                         {doc.text_length > 0 && !expired && (
                           <span className="text-xs text-muted">
-                            {(doc.text_length / 1000).toFixed(1)}k ký tự
+                            {(doc.text_length / 1000).toFixed(1)}k {t('user.chars')}
                           </span>
                         )}
                         {ttl && (
@@ -273,7 +276,7 @@ function HistoryModal({ onClose, onOpenDocument }) {
                         <Clock size={11} className="text-[#666]" />
                         <span className="text-[11px] text-[#666]">{formatDate(doc.created_at)}</span>
                         {expired && (
-                          <span className="text-[10px] text-muted/60 ml-2">• Đã xoá {formatDate(doc.deleted_at)}</span>
+                          <span className="text-[10px] text-muted/60 ml-2">• {t('user.deletedAt')} {formatDate(doc.deleted_at)}</span>
                         )}
                       </div>
                     </div>
@@ -284,8 +287,8 @@ function HistoryModal({ onClose, onOpenDocument }) {
           ) : (
             <div className="text-center py-12">
               <FileText size={40} className="text-line mx-auto mb-3" />
-              <p className="text-sm text-muted">Chưa có tài liệu nào</p>
-              <p className="text-xs text-[#666] mt-1">Upload tài liệu để bắt đầu</p>
+              <p className="text-sm text-muted">{t('user.noDocuments')}</p>
+              <p className="text-xs text-[#666] mt-1">{t('user.uploadToStart')}</p>
             </div>
           )}
         </div>

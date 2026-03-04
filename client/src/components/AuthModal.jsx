@@ -3,6 +3,7 @@ import { X, User, Mail, Lock, Eye, EyeOff, LogIn, UserPlus, Loader2, ArrowLeft, 
 import { register, login, forgotPassword, resendVerification, verify2FA, verify2FARecovery, getPasskeyAuthOptions, verifyPasskeyAuth, getPasskeyLoginOptions, verifyPasskeyLogin } from '../api';
 import { startAuthentication } from '@simplewebauthn/browser';
 import TurnstileModal from './TurnstileModal';
+import { useLanguage } from '../LanguageContext';
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab = 'login', loginOnly = false }) {
   const initialTab = loginOnly && defaultTab === 'register' ? 'login' : defaultTab;
@@ -15,6 +16,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
   const [tempToken, setTempToken] = useState('');
   const [totpEnabled, setTotpEnabled] = useState(false);
   const [passkeyEnabled, setPasskeyEnabled] = useState(false);
+  const { t } = useLanguage();
 
   // 2FA code input (6 digits)
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
@@ -123,12 +125,12 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
         onClose();
       } else if (action.type === 'register') {
         if (loginOnly) {
-          setError('Chức năng đăng ký không khả dụng trong chế độ này');
+          setError(t('auth.registerNotAvailable'));
           setLoading(false);
           return;
         }
         if (action.formData.password !== action.formData.confirmPassword) {
-          setError('Mật khẩu xác nhận không khớp');
+          setError(t('auth.passwordMismatch'));
           setLoading(false);
           return;
         }
@@ -147,7 +149,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
         setSuccess(resp.message);
       }
     } catch (err) {
-      setError(err.response?.data?.error || err.message || 'Đã xảy ra lỗi');
+      setError(err.response?.data?.error || err.message || t('auth.errorOccurred'));
       setTurnstileToken(null);
     } finally {
       setLoading(false);
@@ -165,7 +167,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
   const handle2FAVerify = async () => {
     const code = otpDigits.join('');
     if (code.length !== 6) {
-      setError('Vui lòng nhập đầy đủ 6 chữ số');
+      setError(t('auth.enterOtp'));
       return;
     }
     setError('');
@@ -175,7 +177,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
       onAuthSuccess(result.user);
       onClose();
     } catch (err) {
-      setError(err.response?.data?.error || err.message || 'Mã xác thực không đúng');
+      setError(err.response?.data?.error || err.message || t('auth.authCodeInvalid'));
       setOtpDigits(['', '', '', '', '', '']);
       otpRefs[0].current?.focus();
     } finally {
@@ -194,9 +196,9 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
       onClose();
     } catch (err) {
       if (err.name === 'NotAllowedError') {
-        setError('Xác thực passkey bị hủy');
+        setError(t('auth.passkeyAuthCanceled'));
       } else {
-        setError(err.response?.data?.error || err.message || 'Xác thực passkey thất bại');
+        setError(err.response?.data?.error || err.message || t('auth.passkeyAuthFailed'));
       }
     } finally {
       setLoading(false);
@@ -214,9 +216,9 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
       onClose();
     } catch (err) {
       if (err.name === 'NotAllowedError') {
-        setError('Xác thực passkey bị hủy');
+        setError(t('auth.passkeyLoginCanceled'));
       } else {
-        setError(err.response?.data?.error || err.message || 'Đăng nhập passkey thất bại');
+        setError(err.response?.data?.error || err.message || t('auth.passkeyLoginFailed'));
       }
     } finally {
       setLoading(false);
@@ -225,7 +227,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
 
   const handle2FARecovery = async () => {
     if (!recoveryCode.trim()) {
-      setError('Vui lòng nhập mã khôi phục');
+      setError(t('auth.enterRecoveryCode'));
       return;
     }
     setError('');
@@ -235,7 +237,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
       onAuthSuccess(result.user);
       onClose();
     } catch (err) {
-      setError(err.response?.data?.error || err.message || 'Mã khôi phục không đúng');
+      setError(err.response?.data?.error || err.message || t('auth.recoveryCodeInvalid'));
     } finally {
       setLoading(false);
     }
@@ -288,16 +290,16 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
               onClick={() => switchTab('login')}
               className="flex items-center gap-1 text-sm text-muted hover:text-txt transition-colors mb-4"
             >
-              <ArrowLeft size={14} /> Quay lại đăng nhập
+              <ArrowLeft size={14} /> {t('auth.backToLogin')}
             </button>
 
             <div className="text-center mb-6">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary-600/20 flex items-center justify-center">
                 <ShieldCheck size={32} className="text-primary-400" />
               </div>
-              <h2 className="text-xl font-bold mb-1">Xác thực hai bước</h2>
+              <h2 className="text-xl font-bold mb-1">{t('auth.twoFactor')}</h2>
               <p className="text-sm text-muted">
-                {totpEnabled ? 'Nhập mã 6 chữ số từ ứng dụng xác thực của bạn' : 'Sử dụng passkey để xác thực'}
+                {totpEnabled ? t('auth.twoFactorOtpDesc') : t('auth.twoFactorPasskeyDesc')}
               </p>
             </div>
 
@@ -318,11 +320,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                   {loading ? (
                     <>
                       <Loader2 size={16} className="animate-spin" />
-                      Đang xác thực...
+                      {t('auth.verifying')}
                     </>
                   ) : (
                     <>
-                      <Fingerprint size={18} /> Xác thực bằng Passkey
+                      <Fingerprint size={18} /> {t('auth.verifyWithPasskey')}
                     </>
                   )}
                 </button>
@@ -330,7 +332,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                 {totpEnabled && (
                   <div className="flex items-center gap-3 my-4">
                     <div className="flex-1 h-px bg-line" />
-                    <span className="text-xs text-muted">hoặc nhập mã OTP</span>
+                    <span className="text-xs text-muted">{t('auth.orEnterOtp')}</span>
                     <div className="flex-1 h-px bg-line" />
                   </div>
                 )}
@@ -365,11 +367,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                   {loading ? (
                     <>
                       <Loader2 size={16} className="animate-spin" />
-                      Đang xác thực...
+                      {t('auth.verifying')}
                     </>
                   ) : (
                     <>
-                      <ShieldCheck size={16} /> Xác thực
+                      <ShieldCheck size={16} /> {t('auth.verify')}
                     </>
                   )}
                 </button>
@@ -382,7 +384,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                   onClick={() => { setTab('2fa-recovery'); setError(''); }}
                   className="text-xs text-primary-400 hover:text-primary-300 transition-colors flex items-center justify-center gap-1 mx-auto"
                 >
-                  <KeyRound size={12} /> Sử dụng mã khôi phục
+                  <KeyRound size={12} /> {t('auth.useRecoveryCode')}
                 </button>
               )}
             </div>
@@ -396,16 +398,16 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
               onClick={() => { setTab('2fa-verify'); setError(''); setOtpDigits(['', '', '', '', '', '']); }}
               className="flex items-center gap-1 text-sm text-muted hover:text-txt transition-colors mb-4"
             >
-              <ArrowLeft size={14} /> Quay lại nhập mã OTP
+              <ArrowLeft size={14} /> {t('auth.backToOtp')}
             </button>
 
             <div className="text-center mb-6">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-500/20 flex items-center justify-center">
                 <KeyRound size={32} className="text-amber-400" />
               </div>
-              <h2 className="text-xl font-bold mb-1">Mã khôi phục</h2>
+              <h2 className="text-xl font-bold mb-1">{t('auth.recoveryCode')}</h2>
               <p className="text-sm text-muted">
-                Nhập một trong các mã khôi phục bạn đã lưu khi bật 2FA
+                {t('auth.recoveryCodeDesc')}
               </p>
             </div>
 
@@ -420,7 +422,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                 type="text"
                 value={recoveryCode}
                 onChange={(e) => { setRecoveryCode(e.target.value); setError(''); }}
-                placeholder="Nhập mã khôi phục (VD: a1b2c3d4)"
+                placeholder={t('auth.recoveryCodePlaceholder')}
                 className="w-full bg-bg border border-line rounded-xl px-4 py-3 text-sm text-center font-mono tracking-wider focus:outline-none focus:border-primary-500 transition-colors placeholder:text-muted/50"
                 autoFocus
               />
@@ -434,17 +436,17 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
               {loading ? (
                 <>
                   <Loader2 size={16} className="animate-spin" />
-                  Đang xác thực...
+                  {t('auth.verifying')}
                 </>
               ) : (
                 <>
-                  <KeyRound size={16} /> Xác thực mã khôi phục
+                  <KeyRound size={16} /> {t('auth.verifyRecoveryCode')}
                 </>
               )}
             </button>
 
             <p className="mt-3 text-xs text-muted text-center">
-              ⚠️ Mỗi mã khôi phục chỉ sử dụng được một lần
+              {t('auth.recoveryCodeOneTime')}
             </p>
           </div>
         )}
@@ -455,10 +457,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary-600/20 flex items-center justify-center">
               <MailCheck size={32} className="text-primary-400" />
             </div>
-            <h2 className="text-xl font-bold mb-2">Kiểm tra email của bạn!</h2>
+            <h2 className="text-xl font-bold mb-2">{t('auth.checkEmail')}</h2>
             <p className="text-sm text-muted mb-4 leading-relaxed">
-              Chúng tôi đã gửi email xác minh đến <strong className="text-primary-400">{registeredEmail}</strong>.
-              Vui lòng kiểm tra hộp thư (bao gồm thư rác) và nhấn vào link xác minh.
+              {t('auth.verificationSent')} <strong className="text-primary-400">{registeredEmail}</strong>.
+              {' '}{t('auth.checkSpam')}
             </p>
             {error && (
               <div className="mb-3 px-4 py-2.5 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-400">
@@ -476,13 +478,13 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
               className="w-full py-2.5 bg-surface-2 hover:bg-line rounded-xl text-sm font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
-              Gửi lại email xác minh
+              {t('auth.resendVerification')}
             </button>
             <button
               onClick={onClose}
               className="mt-3 text-sm text-muted hover:text-txt transition-colors"
             >
-              Đóng
+              {t('auth.close')}
             </button>
           </div>
         )}
@@ -495,11 +497,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                 onClick={() => switchTab('login')}
                 className="flex items-center gap-1 text-sm text-muted hover:text-txt transition-colors mb-3"
               >
-                <ArrowLeft size={14} /> Quay lại đăng nhập
+                <ArrowLeft size={14} /> {t('auth.backToLogin')}
               </button>
-              <h2 className="text-xl font-bold font-display">Quên mật khẩu</h2>
+              <h2 className="text-xl font-bold font-display">{t('auth.forgotPasswordTitle')}</h2>
               <p className="text-sm text-muted mt-1">
-                Nhập email để nhận link đặt lại mật khẩu
+                {t('auth.forgotPasswordSubtitle')}
               </p>
             </div>
 
@@ -520,7 +522,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                 icon={<Mail size={16} />}
                 name="forgotEmail"
                 type="email"
-                placeholder="Nhập email đã đăng ký"
+                placeholder={t('auth.forgotEmailPlaceholder')}
                 value={formData.forgotEmail}
                 onChange={handleChange}
                 autoFocus
@@ -533,11 +535,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                 {loading ? (
                   <>
                     <Loader2 size={16} className="animate-spin" />
-                    Đang gửi...
+                    {t('auth.sending')}
                   </>
                 ) : (
                   <>
-                    <Mail size={16} /> Gửi link đặt lại
+                    <Mail size={16} /> {t('auth.sendResetLink')}
                   </>
                 )}
               </button>
@@ -551,12 +553,12 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
             {/* Header */}
             <div className="px-6 pt-6 pb-4">
               <h2 className="text-xl font-bold font-display text-center">
-                {tab === 'login' ? 'Đăng nhập' : 'Đăng ký tài khoản'}
+                {tab === 'login' ? t('auth.login') : t('auth.registerAccount')}
               </h2>
               <p className="text-sm text-muted text-center mt-1">
                 {tab === 'login'
-                  ? (loginOnly ? 'Đăng nhập tài khoản quản trị để truy cập hệ thống' : 'Đăng nhập để có 5 lượt upload/ngày')
-                  : 'Tạo tài khoản miễn phí để sử dụng nhiều hơn'}
+                  ? (loginOnly ? t('auth.loginAdminSubtitle') : t('auth.loginSubtitle'))
+                  : t('auth.registerSubtitle')}
               </p>
             </div>
 
@@ -569,7 +571,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                   : 'text-muted hover:text-txt'
                   }`}
               >
-                <LogIn size={15} /> Đăng nhập
+                <LogIn size={15} /> {t('auth.login')}
               </button>
               {!loginOnly && (
                 <button
@@ -579,7 +581,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                     : 'text-muted hover:text-txt'
                     }`}
                 >
-                  <UserPlus size={15} /> Đăng ký
+                  <UserPlus size={15} /> {t('auth.register')}
                 </button>
               )}
             </div>
@@ -598,7 +600,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                   <InputField
                     icon={<User size={16} />}
                     name="login"
-                    placeholder="Tên đăng nhập hoặc email"
+                    placeholder={t('auth.usernameOrEmail')}
                     value={formData.login}
                     onChange={handleChange}
                     autoFocus
@@ -607,7 +609,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                     icon={<Lock size={16} />}
                     name="password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Mật khẩu"
+                    placeholder={t('auth.password')}
                     value={formData.password}
                     onChange={handleChange}
                     suffix={
@@ -625,7 +627,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                     onClick={() => switchTab('forgot')}
                     className="text-xs text-primary-400 hover:text-primary-300 transition-colors"
                   >
-                    Quên mật khẩu?
+                    {t('auth.forgotPassword')}
                   </button>
                 </>
               ) : (
@@ -633,7 +635,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                   <InputField
                     icon={<User size={16} />}
                     name="username"
-                    placeholder="Tên đăng nhập"
+                    placeholder={t('auth.usernamePlaceholder')}
                     value={formData.username}
                     onChange={handleChange}
                     autoFocus
@@ -642,14 +644,14 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                     icon={<Mail size={16} />}
                     name="email"
                     type="email"
-                    placeholder="Email"
+                    placeholder={t('auth.email')}
                     value={formData.email}
                     onChange={handleChange}
                   />
                   <InputField
                     icon={<User size={16} />}
                     name="displayName"
-                    placeholder="Tên hiển thị (tuỳ chọn)"
+                    placeholder={t('auth.displayName')}
                     value={formData.displayName}
                     onChange={handleChange}
                   />
@@ -657,7 +659,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                     icon={<Lock size={16} />}
                     name="password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Mật khẩu (ít nhất 6 ký tự)"
+                    placeholder={t('auth.passwordMinLength')}
                     value={formData.password}
                     onChange={handleChange}
                     suffix={
@@ -674,7 +676,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                     icon={<Lock size={16} />}
                     name="confirmPassword"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Nhập lại mật khẩu"
+                    placeholder={t('auth.confirmPassword')}
                     value={formData.confirmPassword}
                     onChange={handleChange}
                   />
@@ -689,15 +691,15 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                 {loading ? (
                   <>
                     <Loader2 size={16} className="animate-spin" />
-                    Đang xử lý...
+                    {t('auth.processing')}
                   </>
                 ) : tab === 'login' ? (
                   <>
-                    <LogIn size={16} /> Đăng nhập
+                    <LogIn size={16} /> {t('auth.login')}
                   </>
                 ) : (
                   <>
-                    <UserPlus size={16} /> Đăng ký
+                    <UserPlus size={16} /> {t('auth.register')}
                   </>
                 )}
               </button>
@@ -706,7 +708,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                 <>
                   <div className="flex items-center gap-3 mt-4">
                     <div className="flex-1 h-px bg-line" />
-                    <span className="text-xs text-muted">hoặc</span>
+                    <span className="text-xs text-muted">{t('auth.or')}</span>
                     <div className="flex-1 h-px bg-line" />
                   </div>
                   <button
@@ -718,11 +720,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, defaultTab =
                     {loading ? (
                       <>
                         <Loader2 size={16} className="animate-spin" />
-                        Đang xác thực...
+                        {t('auth.verifying')}
                       </>
                     ) : (
                       <>
-                        <Fingerprint size={18} /> Đăng nhập bằng Passkey
+                        <Fingerprint size={18} /> {t('auth.loginWithPasskey')}
                       </>
                     )}
                   </button>

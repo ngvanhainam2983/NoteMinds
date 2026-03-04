@@ -1,23 +1,25 @@
 import { useState } from 'react';
 import { BrainCircuit, ArrowLeft, LogIn, Menu, X, History, Globe, Trophy, BarChart3, Sparkles } from 'lucide-react';
 import UserDropdown from './UserDropdown';
-
-// Landing-page scroll links (only on home)
-const HOME_NAV = [
-  { label: 'Tính năng', target: 'features' },
-  { label: 'Bảng giá', target: 'pricing' },
-];
-
-// App-level page links (icon-first, compact)
-const APP_NAV = [
-  { label: 'Cộng đồng', target: 'community', icon: Globe, requireAuth: false },
-  { label: 'Xếp hạng', target: 'leaderboard', icon: Trophy, requireAuth: false },
-  { label: 'Thống kê', target: 'stats', icon: BarChart3, requireAuth: true },
-  { label: 'Lịch sử', target: 'history', icon: History, requireAuth: true },
-];
+import { useLanguage } from '../LanguageContext';
 
 export default function Header({ onBackHome, showBack, user, onLoginClick, onLogout, onOpenAdmin, onOpenPricing, onUserUpdate, onOpenDocument, onOpenHistory, onOpenProfile, onOpenLeaderboard, onOpenStats, currentView }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { t } = useLanguage();
+
+  // Landing-page scroll links (only on home)
+  const HOME_NAV = [
+    { label: t('nav.features'), target: 'features' },
+    { label: t('nav.pricing'), target: 'pricing' },
+  ];
+
+  // App-level page links (icon-first, compact)
+  const APP_NAV = [
+    { label: t('nav.community'), target: 'community', icon: Globe, requireAuth: false },
+    { label: t('nav.leaderboard'), target: 'leaderboard', icon: Trophy, requireAuth: false },
+    { label: t('nav.stats'), target: 'stats', icon: BarChart3, requireAuth: true },
+    { label: t('nav.history'), target: 'history', icon: History, requireAuth: true },
+  ];
 
   const handleNav = (target) => {
     setMobileOpen(false);
@@ -58,7 +60,7 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
             <button
               onClick={onBackHome}
               className="p-1.5 rounded-lg hover:bg-surface-2 transition-colors"
-              title="Về trang chủ"
+              title={t('nav.backHome')}
             >
               <ArrowLeft size={18} />
             </button>
@@ -138,7 +140,7 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
               className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 rounded-lg text-sm font-semibold transition-all shadow-lg shadow-primary-600/25 hover:shadow-primary-500/30"
             >
               <LogIn size={15} />
-              <span className="hidden sm:inline">Đăng nhập</span>
+              <span className="hidden sm:inline">{t('nav.login')}</span>
             </button>
           )}
 

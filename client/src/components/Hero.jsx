@@ -1,6 +1,9 @@
 import { Sparkles, ArrowDown, Brain, CreditCard, MessageCircle, Zap } from 'lucide-react';
+import { useLanguage } from '../LanguageContext';
 
 export default function Hero() {
+  const { t } = useLanguage();
+
   const scrollToUpload = () => {
     document.getElementById('upload')?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -21,25 +24,26 @@ export default function Hero() {
             <div className="w-2 h-2 rounded-full bg-primary-400" />
             <div className="absolute inset-0 w-2 h-2 rounded-full bg-primary-400 animate-ping" />
           </div>
-          <span className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-accent-400">Trợ lý học tập AI tự động 100%</span>
+          <span className="text-sm font-semibold text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-accent-400">{t('hero.badge')}</span>
         </div>
 
         {/* Heading */}
         <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold font-display leading-[1.08] mb-7 tracking-tight">
-          Biến tài liệu thành{' '}
+          {t('hero.heading1')}{' '}
           <span className="relative inline-block">
             <span className="absolute -inset-2 rounded-xl bg-gradient-to-r from-primary-600 to-accent-600 opacity-20 blur-2xl animate-pulse"></span>
-            <span className="relative gradient-text">kiến thức</span>
+            <span className="relative gradient-text">{t('hero.heading2')}</span>
           </span>
-          <br />chỉ trong vài phút
+          <br />{t('hero.heading3')}
         </h1>
 
         {/* Subtitle */}
         <p className="text-base sm:text-lg text-muted max-w-2xl mx-auto mb-10 leading-relaxed">
-          Upload bài giảng PDF hoặc file dạng text — NoteMinds sẽ tự động tạo
-          <strong className="text-txt font-medium"> Sơ đồ tư duy</strong>,{' '}
-          <strong className="text-txt font-medium">Flashcard</strong> và cho phép bạn{' '}
-          <strong className="text-txt font-medium">hỏi đáp trực tiếp</strong> với tài liệu một cách chuẩn xác.
+          {t('hero.subtitle1')}
+          <strong className="text-txt font-medium"> {t('hero.subtitleMindmap')}</strong>,{' '}
+          <strong className="text-txt font-medium">{t('hero.subtitleFlashcard')}</strong> và{' '}
+          <strong className="text-txt font-medium">{t('hero.subtitleChat')}</strong>{' '}
+          {t('hero.subtitleEnd')}
         </p>
 
         {/* CTA Button */}
@@ -48,16 +52,16 @@ export default function Hero() {
           className="group inline-flex items-center gap-2.5 px-8 py-4 bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white rounded-2xl text-base font-semibold shadow-xl shadow-primary-600/25 hover:shadow-2xl hover:shadow-primary-600/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 mb-12"
         >
           <Zap size={20} className="group-hover:animate-pulse" />
-          Bắt đầu ngay — Miễn phí
+          {t('hero.cta')}
           <ArrowDown size={18} className="group-hover:translate-y-1 transition-transform" />
         </button>
 
         {/* Feature Pills */}
         <div className="flex flex-wrap items-center justify-center gap-3">
           {[
-            { icon: Brain, label: 'Sơ đồ tư duy AI', color: 'primary' },
-            { icon: CreditCard, label: 'Flashcard thông minh', color: 'accent' },
-            { icon: MessageCircle, label: 'Chat với tài liệu', color: 'primary' },
+            { icon: Brain, label: t('hero.pill1'), color: 'primary' },
+            { icon: CreditCard, label: t('hero.pill2'), color: 'accent' },
+            { icon: MessageCircle, label: t('hero.pill3'), color: 'primary' },
           ].map((item, i) => (
             <div
               key={i}
