@@ -145,11 +145,11 @@ export default function PublicProfilePage({ username, onBack, user: currentUser 
                   {(u.displayName || u.username || '?').charAt(0).toUpperCase()}
                 </div>
               )}
-              <div
-                className="absolute -right-1 -bottom-1 w-5 h-5 rounded-full bg-surface border-2 border-surface flex items-center justify-center"
-                title={statusMeta.label}
-              >
+              <div className="group absolute -right-1 -bottom-1 w-5 h-5 rounded-full bg-surface border-2 border-surface flex items-center justify-center cursor-default">
                 <span className={`w-2.5 h-2.5 rounded-full ${statusMeta.dot}`} />
+                <span className="pointer-events-none absolute bottom-full mb-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md border border-line bg-surface px-2 py-1 text-[11px] text-txt opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
+                  {statusMeta.label}
+                </span>
               </div>
             </div>
 
@@ -166,8 +166,11 @@ export default function PublicProfilePage({ username, onBack, user: currentUser 
               <div className="mt-0.5 flex items-center justify-center sm:justify-start gap-1.5 text-sm text-muted">
                 <span>@{u.username}</span>
                 {u.isVerified && (
-                  <span title="Đã được xác minh" className="inline-flex items-center">
+                  <span className="group relative inline-flex items-center cursor-default">
                     <CheckCircle2 size={14} className="text-emerald-400" />
+                    <span className="pointer-events-none absolute bottom-full mb-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md border border-line bg-surface px-2 py-1 text-[11px] text-txt opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
+                      Đã được xác minh
+                    </span>
                   </span>
                 )}
               </div>
