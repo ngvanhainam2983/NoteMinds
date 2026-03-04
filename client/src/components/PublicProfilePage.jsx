@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getPublicProfile, getApiBaseUrl } from '../api';
-import { ArrowLeft, FileText, Brain, BookOpen, MessageCircle, Flame, Trophy, Calendar, Crown, Loader2, UserX, Globe } from 'lucide-react';
+import { ArrowLeft, FileText, Brain, BookOpen, MessageCircle, Flame, Trophy, Calendar, Crown, Loader2, UserX, Globe, CheckCircle2 } from 'lucide-react';
 
 const PLAN_BADGES = {
   free: { label: 'Free', color: 'bg-zinc-500/15 text-zinc-400 border-zinc-500/30' },
@@ -80,6 +80,15 @@ export default function PublicProfilePage({ username, onBack, user: currentUser 
 
   const { user: u, stats, recentDocs } = profile;
   const badge = PLAN_BADGES[u.plan] || PLAN_BADGES.free;
+  const statusMap = {
+    online: { label: 'Online', cls: 'bg-green-500/10 text-green-400 border-green-500/30', dot: 'bg-green-400' },
+    idle: { label: 'Idle', cls: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30', dot: 'bg-yellow-400' },
+    dnd: { label: 'Do Not Disturb', cls: 'bg-rose-500/10 text-rose-400 border-rose-500/30', dot: 'bg-rose-400' },
+    offline: { label: 'Offline', cls: 'bg-zinc-500/10 text-zinc-300 border-zinc-500/20', dot: 'bg-zinc-300' },
+    invisible: { label: 'Invisible', cls: 'bg-zinc-500/10 text-zinc-300 border-zinc-500/20', dot: 'bg-zinc-300' },
+  };
+  const presenceStatus = statusMap[u.presenceStatus] ? u.presenceStatus : (u.isOnline ? 'online' : 'offline');
+  const statusMeta = statusMap[presenceStatus];
   const lastSeenText = u.lastSeenAt
     ? new Date(u.lastSeenAt).toLocaleString('vi-VN', {
       hour: '2-digit',
@@ -141,9 +150,14 @@ export default function PublicProfilePage({ username, onBack, user: currentUser 
                   {u.plan === 'ultimate' && <Crown size={11} />}
                   {badge.label}
                 </span>
-                <span className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-full border flex items-center gap-1.5 ${u.isOnline ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-surface-2 text-muted border-line'}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${u.isOnline ? 'bg-emerald-400' : 'bg-muted'}`} />
-                  {u.isOnline ? 'Online' : 'Offline'}
+                {u.isVerified && (
+                  <span className="px-2.5 py-0.5 text-[11px] font-semibold rounded-full border bg-emerald-500/15 border-emerald-500/30 text-emerald-400 flex items-center gap-1">
+                    <CheckCircle2 size={11} /> Verified
+                  </span>
+                )}
+                <span className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-full border flex items-center gap-1.5 ${statusMeta.cls}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${statusMeta.dot}`} />
+                  {statusMeta.label}
                 </span>
               </div>
               <p className="text-muted text-sm">@{u.username}</p>
@@ -151,7 +165,7 @@ export default function PublicProfilePage({ username, onBack, user: currentUser 
                 <Calendar size={12} />
                 Tham gia {new Date(u.joinedAt).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' })}
               </p>
-              {!u.isOnline && lastSeenText && (
+              {presenceStatus === 'offline' && lastSeenText && (
                 <p className="text-xs text-muted mt-1">Hoạt động lần cuối: {lastSeenText}</p>
               )}
             </div>

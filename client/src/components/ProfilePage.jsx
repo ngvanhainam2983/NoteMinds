@@ -8,7 +8,7 @@ import {
     updateProfile, get2FAStatus, getPasskeyList, changePassword,
     setup2FA, enable2FA, disable2FA, regenerateRecoveryCodes,
     getPasskeyRegisterOptions, verifyPasskeyRegistration, deletePasskey,
-    resendVerification, getApiBaseUrl
+    resendVerification, getApiBaseUrl, updatePresenceStatus
 } from '../api';
 import { useTheme, THEMES } from '../ThemeContext';
 import ConfirmModal from './ConfirmModal';
@@ -34,6 +34,8 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
     const [newEmail, setNewEmail] = useState(user?.email || '');
     const [emailSaving, setEmailSaving] = useState(false);
     const [verificationSending, setVerificationSending] = useState(false);
+    const [presenceStatus, setPresenceStatus] = useState(user?.presenceStatus || 'online');
+    const [presenceSaving, setPresenceSaving] = useState(false);
 
     // Password
     const [oldPw, setOldPw] = useState('');
@@ -73,6 +75,28 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
             setPasskeys(pkData.passkeys || []);
         }).finally(() => setLoading(false));
     }, [user]);
+
+    useEffect(() => {
+        setPresenceStatus(user?.presenceStatus || 'online');
+    }, [user?.presenceStatus]);
+
+    const handlePresenceChange = async (nextStatus) => {
+        if (!user || nextStatus === presenceStatus || presenceSaving) return;
+        setError('');
+        setSuccess('');
+        setPresenceSaving(true);
+        try {
+            const result = await updatePresenceStatus(nextStatus);
+            onUserUpdate?.(result.user);
+            setPresenceStatus(result.user?.presenceStatus || nextStatus);
+            setSuccess('Đã cập nhật trạng thái hiển thị');
+            setTimeout(() => setSuccess(''), 2500);
+        } catch (err) {
+            setError(err.response?.data?.error || err.message || 'Không thể cập nhật trạng thái');
+        } finally {
+            setPresenceSaving(false);
+        }
+    };
 
     const load2FAStatus = async () => {
         try {
@@ -422,6 +446,7 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                                     </>
                                 )}
                                 {user.role === 'admin' && <span className="px-2 py-0.5 bg-purple-500/20 border border-purple-500/30 rounded-md text-[10px] font-bold text-purple-400 uppercase">Admin</span>}
+                                {user.role === 'admin' && <span className="px-2 py-0.5 bg-emerald-500/15 border border-emerald-500/30 rounded-md text-[10px] font-bold text-emerald-400 uppercase">Verified</span>}
                             </div>
                             <p className="text-sm text-muted mt-0.5">@{user.username}</p>
                             <div className="flex items-center gap-3 mt-2 flex-wrap text-xs text-muted">
@@ -490,6 +515,31 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                             <InfoRow label="Username" value={`@${user.username}`} />
                             <InfoRow label="Tên hiển thị" value={user.displayName || '—'} />
                         </div>
+                    </div>
+
+                    <div className="bg-surface border border-line rounded-xl p-5">
+                        <h3 className="text-sm font-semibold mb-4 flex items-center gap-2"><Clock size={16} className="text-primary-400" /> Trạng thái hiển thị</h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            {[
+                                { key: 'online', label: 'Online', active: 'bg-green-500/15 border-green-500/30 text-green-400' },
+                                { key: 'idle', label: 'Idle', active: 'bg-yellow-500/15 border-yellow-500/30 text-yellow-400' },
+                                { key: 'dnd', label: 'Do Not Disturb', active: 'bg-rose-500/15 border-rose-500/30 text-rose-400' },
+                                { key: 'invisible', label: 'Invisible', active: 'bg-zinc-500/15 border-zinc-500/30 text-zinc-300' },
+                            ].map((option) => (
+                                <button
+                                    key={option.key}
+                                    onClick={() => handlePresenceChange(option.key)}
+                                    disabled={presenceSaving}
+                                    className={`py-2 rounded-xl border text-xs font-semibold transition-colors disabled:opacity-60 ${presenceStatus === option.key ? option.active : 'border-line bg-bg text-muted hover:text-txt hover:border-primary-500/30'}`}
+                                >
+                                    <span className="inline-flex items-center gap-1.5">
+                                        <span className={`w-1.5 h-1.5 rounded-full ${presenceStatus === option.key ? 'bg-current' : 'bg-muted'}`} />
+                                        {option.label}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                        <p className="text-[11px] text-muted mt-3">Trạng thái sẽ hiển thị ở hồ sơ công khai của bạn.</p>
                     </div>
 
                     {/* ── Email Change ── */}

@@ -374,6 +374,15 @@ export async function updateProfile(displayName, email) {
   return response.data;
 }
 
+export async function updatePresenceStatus(status) {
+  const response = await api.put('/auth/presence/status', { status });
+  const { user } = response.data;
+  if (user) {
+    storeAuth(getStoredToken(), user);
+  }
+  return response.data;
+}
+
 export async function changePassword(oldPassword, newPassword) {
   const response = await api.put('/auth/password', { oldPassword, newPassword });
   return response.data;

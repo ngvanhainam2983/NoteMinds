@@ -21,7 +21,7 @@ import {
   getUploadCount, logUpload, getUploadLimit, getChatLimit,
   getAllUsers, setUserPlan, setUserRole,
   updateUserProfile, changePassword, ensureAdmin,
-  banUser, unbanUser, banIp, unbanIp, getBannedIps, isIpBanned, updateLastIp,
+  banUser, unbanUser, banIp, unbanIp, getBannedIps, isIpBanned, updateLastIp, updatePresenceStatus,
   setVerificationToken, verifyEmail, getUserByEmail, setResetToken, resetPasswordWithToken,
   getRegistrationCount, logRegistration,
   generate2FATempToken, verify2FATempToken,
@@ -665,6 +665,16 @@ app.post('/api/auth/presence/heartbeat', requireAuth, (req, res) => {
     });
   } catch {
     res.status(500).json({ error: 'Không thể cập nhật trạng thái online' });
+  }
+});
+
+app.put('/api/auth/presence/status', requireAuth, (req, res) => {
+  try {
+    const status = String(req.body?.status || '').toLowerCase();
+    const updated = updatePresenceStatus(req.user.id, status);
+    res.json({ user: updated });
+  } catch (err) {
+    res.status(400).json({ error: err.message || 'Không thể cập nhật trạng thái' });
   }
 });
 
@@ -1740,7 +1750,7 @@ app.get('/api/users/profile/:username', async (req, res) => {
   try {
     const db = new Database(DB_PATH);
     const user = db.prepare(`
-      SELECT id, username, display_name, avatar_url, plan, created_at, last_login_at
+      SELECT id, username, display_name, avatar_url, plan, role, created_at, last_login_at, presence_status, presence_visible
       FROM users WHERE username = ? AND is_banned = 0
     `).get(req.params.username);
 
@@ -1776,9 +1786,27 @@ app.get('/api/users/profile/:username', async (req, res) => {
 
     db.close();
 
-    const ONLINE_WINDOW_MS = 5 * 60 * 1000;
-    const lastSeenAt = user.last_login_at || null;
-    const isOnline = !!(lastSeenAt && (Date.now() - new Date(lastSeenAt).getTime()) <= ONLINE_WINDOW_MS);
+    const ONLINE_WINDOW_MS = 60 * 1000;
+    const toUtcMs = (value) => {
+      if (!value) return NaN;
+      const normalized = value.includes('T')
+        ? (value.endsWith('Z') ? value : `${value}Z`)
+        : `${value.replace(' ', 'T')}Z`;
+      return new Date(normalized).getTime();
+    };
+    const rawStatus = ['online', 'idle', 'dnd', 'invisible'].includes(user.presence_status)
+      ? user.presence_status
+      : 'online';
+    const lastSeenMs = toUtcMs(user.last_login_at);
+    const lastSeenAt = Number.isNaN(lastSeenMs) ? null : new Date(lastSeenMs).toISOString();
+    const hasRecentHeartbeat = !!(lastSeenAt && (Date.now() - lastSeenMs) <= ONLINE_WINDOW_MS);
+    let presenceStatus = 'offline';
+    if (rawStatus === 'invisible' || user.presence_visible === 0) {
+      presenceStatus = 'invisible';
+    } else if (hasRecentHeartbeat) {
+      presenceStatus = rawStatus;
+    }
+    const isOnline = presenceStatus === 'online' || presenceStatus === 'idle' || presenceStatus === 'dnd';
 
     res.json({
       user: {
@@ -1786,9 +1814,12 @@ app.get('/api/users/profile/:username', async (req, res) => {
         displayName: user.display_name,
         avatarUrl: user.avatar_url,
         plan: user.plan,
+        role: user.role || 'user',
+        isVerified: user.role === 'admin',
         joinedAt: user.created_at,
         lastSeenAt,
         isOnline,
+        presenceStatus,
       },
       stats: {
         publicDocs: docStats.public_docs,

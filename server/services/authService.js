@@ -45,6 +45,15 @@ export const PLANS = {
 const GUEST_DAILY_LIMIT = 1;
 const GUEST_CHAT_LIMIT = 5;
 
+function normalizeDbDateTime(value) {
+  if (!value || typeof value !== 'string') return value || null;
+  if (value.includes('T') && value.endsWith('Z')) return value;
+  const utcCandidate = value.includes(' ') ? value.replace(' ', 'T') + 'Z' : value;
+  const parsed = new Date(utcCandidate);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toISOString();
+}
+
 // ── User CRUD ──────────────────────────────────────────
 
 function formatUser(user) {
@@ -63,7 +72,9 @@ function formatUser(user) {
     planColor: planInfo.color,
     planExpiresAt: user.plan_expires_at || null,
     lastIp: user.last_ip || null,
-    lastLoginAt: user.last_login_at || null,
+    lastLoginAt: normalizeDbDateTime(user.last_login_at),
+    presenceStatus: user.presence_status || 'online',
+    presenceVisible: user.presence_visible !== 0,
     isBanned: !!user.is_banned,
     banReason: user.ban_reason || null,
     bannedAt: user.banned_at || null,
@@ -71,7 +82,7 @@ function formatUser(user) {
     totpEnabled: !!user.totp_enabled,
     passkeyEnabled: !!user.passkey_enabled,
     avatar_url: user.avatar_url || null,
-    createdAt: user.created_at,
+    createdAt: normalizeDbDateTime(user.created_at),
   };
 }
 
@@ -314,6 +325,20 @@ export function updateLastIp(userId, ip) {
     SET last_ip = ?, last_login_at = datetime('now'), updated_at = datetime('now')
     WHERE id = ?
   `).run(ip, userId);
+  return getUserById(userId);
+}
+
+export function updatePresenceStatus(userId, status) {
+  const allowed = ['online', 'idle', 'dnd', 'invisible'];
+  if (!allowed.includes(status)) {
+    throw new Error('Trạng thái không hợp lệ');
+  }
+  const visible = status === 'invisible' ? 0 : 1;
+  db.prepare(`
+    UPDATE users
+    SET presence_status = ?, presence_visible = ?, updated_at = datetime('now')
+    WHERE id = ?
+  `).run(status, visible, userId);
   return getUserById(userId);
 }
 
