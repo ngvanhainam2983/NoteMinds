@@ -883,20 +883,59 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                     <h4 className="text-sm font-medium mb-1">Màu chủ đạo (Accent Color)</h4>
                     <p className="text-xs text-muted mb-4">Lựa chọn màu nhấn cho NoteMinds. Giao diện được lưu trực tiếp trên trình duyệt của bạn.</p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                        {Object.entries(THEMES).map(([key, t]) => (
+                        {Object.entries(THEMES).map(([key, thm]) => (
                             <button
                                 key={key}
                                 onClick={() => setTheme(key)}
                                 className={`flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all hover:scale-105 ${currentTheme === key ? 'border-primary-500 bg-primary-600/10 shadow-lg shadow-primary-500/10' : 'border-line bg-bg hover:border-line'}`}
                             >
                                 <div className="flex gap-1">
-                                    <div className="w-5 h-5 rounded-full shadow-sm" style={{ background: t.primary['500'] }} />
-                                    <div className="w-3 h-3 rounded-full opacity-70" style={{ background: t.primary['400'] }} />
+                                    <div className="w-5 h-5 rounded-full shadow-sm" style={{ background: thm.primary['500'] }} />
+                                    <div className="w-3 h-3 rounded-full opacity-70" style={{ background: thm.primary['400'] }} />
                                 </div>
-                                <span className="text-sm font-medium flex items-center gap-1.5">{t.emoji} {t.label}</span>
+                                <span className="text-sm font-medium flex items-center gap-1.5">{thm.emoji} {thm.label}</span>
                                 {currentTheme === key && <CheckCircle2 size={14} className="text-primary-400 absolute top-2 right-2" />}
                             </button>
                         ))}
+                    </div>
+                </div>
+            )}
+
+            {/* ── Tab Content: Language ── */}
+            {activeTab === 'language' && (
+                <div className="bg-surface border border-line rounded-xl p-6">
+                    <h3 className="text-lg font-semibold mb-2 flex items-center gap-2"><Languages size={18} className="text-primary-400" /> {t('profile.languageLabel')}</h3>
+                    <p className="text-xs text-muted mb-6">{t('profile.languageDesc')}</p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md">
+                        <button
+                            onClick={() => setLanguage('vi')}
+                            className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all hover:scale-[1.02] ${currentLang === 'vi'
+                                    ? 'border-primary-500 bg-primary-600/10 shadow-lg shadow-primary-500/10'
+                                    : 'border-line bg-bg hover:border-primary-500/30'
+                                }`}
+                        >
+                            <span className="text-2xl">🇻🇳</span>
+                            <div className="text-left">
+                                <p className="text-sm font-semibold">Tiếng Việt</p>
+                                <p className="text-[11px] text-muted">Vietnamese</p>
+                            </div>
+                            {currentLang === 'vi' && <CheckCircle2 size={16} className="text-primary-400 ml-auto" />}
+                        </button>
+                        <button
+                            onClick={() => setLanguage('en')}
+                            className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all hover:scale-[1.02] ${currentLang === 'en'
+                                    ? 'border-primary-500 bg-primary-600/10 shadow-lg shadow-primary-500/10'
+                                    : 'border-line bg-bg hover:border-primary-500/30'
+                                }`}
+                        >
+                            <span className="text-2xl">🇬🇧</span>
+                            <div className="text-left">
+                                <p className="text-sm font-semibold">English</p>
+                                <p className="text-[11px] text-muted">Tiếng Anh</p>
+                            </div>
+                            {currentLang === 'en' && <CheckCircle2 size={16} className="text-primary-400 ml-auto" />}
+                        </button>
                     </div>
                 </div>
             )}
