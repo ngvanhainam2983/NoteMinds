@@ -4,8 +4,10 @@ import { ArrowLeft, FileText, Brain, BookOpen, MessageCircle, Flame, Trophy, Cal
 
 const PLAN_BADGES = {
   free: { label: 'Free', color: 'bg-zinc-500/15 text-zinc-400 border-zinc-500/30' },
+  basic: { label: 'Basic', color: 'bg-sky-500/15 text-sky-400 border-sky-500/30' },
   pro: { label: 'Pro', color: 'bg-primary-500/15 text-primary-400 border-primary-500/30' },
   ultimate: { label: 'Ultimate', color: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
+  unlimited: { label: 'Unlimited', color: 'bg-rose-500/15 text-rose-400 border-rose-500/30' },
 };
 
 export default function PublicProfilePage({ username, onBack, user: currentUser }) {
@@ -81,11 +83,11 @@ export default function PublicProfilePage({ username, onBack, user: currentUser 
   const { user: u, stats, recentDocs } = profile;
   const badge = PLAN_BADGES[u.plan] || PLAN_BADGES.free;
   const statusMap = {
-    online: { label: 'Online', cls: 'bg-green-500/10 text-green-400 border-green-500/30', dot: 'bg-green-400' },
-    idle: { label: 'Idle', cls: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30', dot: 'bg-yellow-400' },
-    dnd: { label: 'Do Not Disturb', cls: 'bg-rose-500/10 text-rose-400 border-rose-500/30', dot: 'bg-rose-400' },
-    offline: { label: 'Offline', cls: 'bg-zinc-500/10 text-zinc-300 border-zinc-500/20', dot: 'bg-zinc-300' },
-    invisible: { label: 'Invisible', cls: 'bg-zinc-500/10 text-zinc-300 border-zinc-500/20', dot: 'bg-zinc-300' },
+    online: { label: 'Online', dot: 'bg-green-400' },
+    idle: { label: 'Idle', dot: 'bg-yellow-400' },
+    dnd: { label: 'Do Not Disturb', dot: 'bg-rose-400' },
+    offline: { label: 'Offline', dot: 'bg-zinc-300' },
+    invisible: { label: 'Offline', dot: 'bg-zinc-300' },
   };
   const presenceStatus = statusMap[u.presenceStatus] ? u.presenceStatus : (u.isOnline ? 'online' : 'offline');
   const statusMeta = statusMap[presenceStatus];
@@ -131,36 +133,35 @@ export default function PublicProfilePage({ username, onBack, user: currentUser 
 
           <div className="relative flex flex-col sm:flex-row items-center sm:items-end gap-5 pt-4">
             {/* Avatar */}
-            {u.avatarUrl ? (
-              <img
-                src={u.avatarUrl.startsWith('http') ? u.avatarUrl : `${getApiBaseUrl()}${u.avatarUrl}`}
-                alt={u.displayName}
-                className="w-24 h-24 rounded-2xl object-cover border-4 border-surface ring-2 ring-primary-500/30 shadow-xl"
-              />
-            ) : (
-              <div className="w-24 h-24 rounded-2xl bg-gradient-to-tr from-primary-500 to-accent-500 flex items-center justify-center text-3xl font-extrabold text-white border-4 border-surface shadow-xl">
-                {(u.displayName || u.username || '?').charAt(0).toUpperCase()}
+            <div className="relative">
+              {u.avatarUrl ? (
+                <img
+                  src={u.avatarUrl.startsWith('http') ? u.avatarUrl : `${getApiBaseUrl()}${u.avatarUrl}`}
+                  alt={u.displayName}
+                  className="w-24 h-24 rounded-2xl object-cover border-4 border-surface ring-2 ring-primary-500/30 shadow-xl"
+                />
+              ) : (
+                <div className="w-24 h-24 rounded-2xl bg-gradient-to-tr from-primary-500 to-accent-500 flex items-center justify-center text-3xl font-extrabold text-white border-4 border-surface shadow-xl">
+                  {(u.displayName || u.username || '?').charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="absolute -right-1 -bottom-1 w-5 h-5 rounded-full bg-surface border-2 border-surface flex items-center justify-center">
+                <span className={`w-2.5 h-2.5 rounded-full ${statusMeta.dot}`} />
               </div>
-            )}
+            </div>
 
             <div className="text-center sm:text-left flex-1">
               <div className="flex flex-col sm:flex-row items-center sm:items-center gap-2 mb-1">
                 <h1 className="text-2xl font-extrabold tracking-tight">{u.displayName || u.username}</h1>
                 <span className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-full border ${badge.color} flex items-center gap-1`}>
-                  {u.plan === 'ultimate' && <Crown size={11} />}
+                  {(u.plan === 'ultimate' || u.plan === 'unlimited') && <Crown size={11} />}
                   {badge.label}
                 </span>
                 {u.isVerified && (
-                  <span className="px-2.5 py-0.5 text-[11px] font-semibold rounded-full border bg-emerald-500/15 border-emerald-500/30 text-emerald-400 flex items-center gap-1">
-                    <CheckCircle2 size={11} /> Verified
-                  </span>
+                  <CheckCircle2 size={15} className="text-emerald-400" />
                 )}
-                <span className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-full border flex items-center gap-1.5 ${statusMeta.cls}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${statusMeta.dot}`} />
-                  {statusMeta.label}
-                </span>
               </div>
-              <p className="text-muted text-sm">@{u.username}</p>
+              <p className="text-muted text-sm">@{u.username} <span className="text-xs">• {statusMeta.label}</span></p>
               <p className="text-xs text-muted mt-1.5 flex items-center gap-1.5 justify-center sm:justify-start">
                 <Calendar size={12} />
                 Tham gia {new Date(u.joinedAt).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' })}

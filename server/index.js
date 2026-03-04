@@ -1801,9 +1801,7 @@ app.get('/api/users/profile/:username', async (req, res) => {
     const lastSeenAt = Number.isNaN(lastSeenMs) ? null : new Date(lastSeenMs).toISOString();
     const hasRecentHeartbeat = !!(lastSeenAt && (Date.now() - lastSeenMs) <= ONLINE_WINDOW_MS);
     let presenceStatus = 'offline';
-    if (rawStatus === 'invisible' || user.presence_visible === 0) {
-      presenceStatus = 'invisible';
-    } else if (hasRecentHeartbeat) {
+    if (rawStatus !== 'invisible' && user.presence_visible !== 0 && hasRecentHeartbeat) {
       presenceStatus = rawStatus;
     }
     const isOnline = presenceStatus === 'online' || presenceStatus === 'idle' || presenceStatus === 'dnd';
