@@ -156,19 +156,19 @@ export default function PublicProfilePage({ username, onBack, user: currentUser 
             <div className="text-center sm:text-left flex-1">
               <div className="flex flex-col sm:flex-row items-center sm:items-center gap-2 mb-1">
                 <h1 className="text-2xl font-extrabold tracking-tight">{u.displayName || u.username}</h1>
-              </div>
-              <p className="text-muted text-sm">@{u.username}</p>
-              <div className="mt-1.5 flex items-center justify-center sm:justify-start gap-2">
-                <span className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-full border ${badge.color} flex items-center gap-1`}>
-                  {(u.plan === 'ultimate' || u.plan === 'unlimited') && <Crown size={11} />}
-                  {badge.label}
-                </span>
-                {u.isVerified && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border bg-emerald-500/15 border-emerald-500/30 text-emerald-400 text-[11px] font-semibold">
-                    <CheckCircle2 size={12} /> Verified
+                {u.showPlanBadge !== false && (
+                  <span className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-full border ${badge.color} flex items-center gap-1`}>
+                    {(u.plan === 'ultimate' || u.plan === 'unlimited') && <Crown size={11} />}
+                    {badge.label}
                   </span>
                 )}
               </div>
+              <p className="text-muted text-sm">@{u.username}</p>
+              {u.isVerified && (
+                <div className="mt-1.5 flex items-center justify-center sm:justify-start">
+                  <CheckCircle2 size={15} className="text-emerald-400" />
+                </div>
+              )}
               <p className="text-xs text-muted mt-1.5 flex items-center gap-1.5 justify-center sm:justify-start">
                 <Calendar size={12} />
                 Tham gia {new Date(u.joinedAt).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' })}

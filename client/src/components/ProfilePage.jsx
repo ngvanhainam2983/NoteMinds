@@ -8,7 +8,7 @@ import {
     updateProfile, get2FAStatus, getPasskeyList, changePassword,
     setup2FA, enable2FA, disable2FA, regenerateRecoveryCodes,
     getPasskeyRegisterOptions, verifyPasskeyRegistration, deletePasskey,
-    resendVerification, getApiBaseUrl, updatePresenceStatus
+    resendVerification, getApiBaseUrl, updatePresenceStatus, updatePlanBadgeVisibility
 } from '../api';
 import { useTheme, THEMES } from '../ThemeContext';
 import ConfirmModal from './ConfirmModal';
@@ -36,6 +36,8 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
     const [verificationSending, setVerificationSending] = useState(false);
     const [presenceStatus, setPresenceStatus] = useState(user?.presenceStatus || 'online');
     const [presenceSaving, setPresenceSaving] = useState(false);
+    const [showPlanBadge, setShowPlanBadge] = useState(user?.showPlanBadge !== false);
+    const [planBadgeSaving, setPlanBadgeSaving] = useState(false);
 
     // Password
     const [oldPw, setOldPw] = useState('');
@@ -80,6 +82,10 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
         setPresenceStatus(user?.presenceStatus || 'online');
     }, [user?.presenceStatus]);
 
+    useEffect(() => {
+        setShowPlanBadge(user?.showPlanBadge !== false);
+    }, [user?.showPlanBadge]);
+
     const handlePresenceChange = async (nextStatus) => {
         if (!user || nextStatus === presenceStatus || presenceSaving) return;
         setError('');
@@ -95,6 +101,24 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
             setError(err.response?.data?.error || err.message || 'Không thể cập nhật trạng thái');
         } finally {
             setPresenceSaving(false);
+        }
+    };
+
+    const handlePlanBadgeVisibilityChange = async (visible) => {
+        if (!user || planBadgeSaving || visible === showPlanBadge) return;
+        setError('');
+        setSuccess('');
+        setPlanBadgeSaving(true);
+        try {
+            const result = await updatePlanBadgeVisibility(visible);
+            onUserUpdate?.(result.user);
+            setShowPlanBadge(result.user?.showPlanBadge !== false);
+            setSuccess('Đã cập nhật hiển thị badge gói');
+            setTimeout(() => setSuccess(''), 2500);
+        } catch (err) {
+            setError(err.response?.data?.error || err.message || 'Không thể cập nhật hiển thị badge gói');
+        } finally {
+            setPlanBadgeSaving(false);
         }
     };
 
@@ -540,6 +564,23 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                             ))}
                         </div>
                         <p className="text-[11px] text-muted mt-3">Trạng thái sẽ hiển thị ở hồ sơ công khai của bạn.</p>
+                    </div>
+
+                    <div className="bg-surface border border-line rounded-xl p-5">
+                        <h3 className="text-sm font-semibold mb-4 flex items-center gap-2"><Crown size={16} className="text-primary-400" /> Hiển thị badge gói</h3>
+                        <div className="flex items-center justify-between gap-3">
+                            <div>
+                                <p className="text-sm font-medium">Hiển thị badge gói ở hồ sơ công khai</p>
+                                <p className="text-[11px] text-muted mt-1">Bạn có thể bật/tắt badge như Unlimited, Pro, Basic trên trang hồ sơ công khai.</p>
+                            </div>
+                            <button
+                                onClick={() => handlePlanBadgeVisibilityChange(!showPlanBadge)}
+                                disabled={planBadgeSaving}
+                                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors disabled:opacity-60 ${showPlanBadge ? 'bg-primary-600' : 'bg-surface-2 border border-line'}`}
+                            >
+                                <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${showPlanBadge ? 'translate-x-6' : 'translate-x-1'}`} />
+                            </button>
+                        </div>
                     </div>
 
                     {/* ── Email Change ── */}

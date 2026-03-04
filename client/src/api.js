@@ -383,6 +383,15 @@ export async function updatePresenceStatus(status) {
   return response.data;
 }
 
+export async function updatePlanBadgeVisibility(showPlanBadge) {
+  const response = await api.put('/auth/profile', { showPlanBadge });
+  const { user } = response.data;
+  if (user) {
+    storeAuth(getStoredToken(), user);
+  }
+  return response.data;
+}
+
 export async function changePassword(oldPassword, newPassword) {
   const response = await api.put('/auth/password', { oldPassword, newPassword });
   return response.data;

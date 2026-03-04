@@ -75,6 +75,7 @@ function formatUser(user) {
     lastLoginAt: normalizeDbDateTime(user.last_login_at),
     presenceStatus: user.presence_status || 'online',
     presenceVisible: user.presence_visible !== 0,
+    showPlanBadge: user.show_plan_badge !== 0,
     isBanned: !!user.is_banned,
     banReason: user.ban_reason || null,
     bannedAt: user.banned_at || null,
@@ -342,7 +343,7 @@ export function updatePresenceStatus(userId, status) {
   return getUserById(userId);
 }
 
-export function updateUserProfile(userId, displayName, email) {
+export function updateUserProfile(userId, displayName, email, showPlanBadge) {
   if (email) {
     const existing = db.prepare('SELECT id FROM users WHERE email = ? AND id != ?').get(email.toLowerCase(), userId);
     if (existing) throw new Error('Email đã được sử dụng');
@@ -357,6 +358,9 @@ export function updateUserProfile(userId, displayName, email) {
     if (emailChanged) {
       db.prepare('UPDATE users SET email_verified = 0, updated_at = datetime(\'now\') WHERE id = ?').run(userId);
     }
+  }
+  if (typeof showPlanBadge === 'boolean') {
+    db.prepare('UPDATE users SET show_plan_badge = ?, updated_at = datetime(\'now\') WHERE id = ?').run(showPlanBadge ? 1 : 0, userId);
   }
   return getUserById(userId);
 }

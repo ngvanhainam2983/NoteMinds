@@ -34,6 +34,7 @@ db.exec(`
     last_login_at TEXT,
     presence_status TEXT DEFAULT 'online',
     presence_visible INTEGER DEFAULT 1,
+    show_plan_badge INTEGER DEFAULT 1,
     is_banned INTEGER DEFAULT 0,
     ban_reason TEXT,
     banned_at TEXT,
@@ -91,6 +92,9 @@ if (!cols.includes('presence_status')) {
 }
 if (!cols.includes('presence_visible')) {
   db.exec("ALTER TABLE users ADD COLUMN presence_visible INTEGER DEFAULT 1");
+}
+if (!cols.includes('show_plan_badge')) {
+  db.exec("ALTER TABLE users ADD COLUMN show_plan_badge INTEGER DEFAULT 1");
 }
 if (!cols.includes('is_banned')) {
   db.exec("ALTER TABLE users ADD COLUMN is_banned INTEGER DEFAULT 0");

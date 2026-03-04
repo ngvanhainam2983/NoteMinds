@@ -682,9 +682,9 @@ app.put('/api/auth/presence/status', requireAuth, (req, res) => {
 
 app.put('/api/auth/profile', requireAuth, async (req, res) => {
   try {
-    const { displayName, email } = req.body;
+    const { displayName, email, showPlanBadge } = req.body;
     const oldEmail = req.user.email?.toLowerCase();
-    const updated = updateUserProfile(req.user.id, displayName, email);
+    const updated = updateUserProfile(req.user.id, displayName, email, typeof showPlanBadge === 'boolean' ? showPlanBadge : undefined);
 
     // If email changed, send verification email to the new address
     if (email && email.toLowerCase() !== oldEmail) {
@@ -1750,7 +1750,7 @@ app.get('/api/users/profile/:username', async (req, res) => {
   try {
     const db = new Database(DB_PATH);
     const user = db.prepare(`
-      SELECT id, username, display_name, avatar_url, plan, role, created_at, last_login_at, presence_status, presence_visible
+      SELECT id, username, display_name, avatar_url, plan, role, created_at, last_login_at, presence_status, presence_visible, show_plan_badge
       FROM users WHERE username = ? AND is_banned = 0
     `).get(req.params.username);
 
@@ -1812,6 +1812,7 @@ app.get('/api/users/profile/:username', async (req, res) => {
         displayName: user.display_name,
         avatarUrl: user.avatar_url,
         plan: user.plan,
+        showPlanBadge: user.show_plan_badge !== 0,
         role: user.role || 'user',
         isVerified: user.role === 'admin',
         joinedAt: user.created_at,
