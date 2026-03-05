@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
 import { reviewFlashcard } from '../api';
+import { useLanguage } from '../LanguageContext';
 
 /* ─── colour palette (shared with mindmap style) ─── */
 const CARD_PALETTE = [
@@ -29,6 +30,7 @@ const SR_GRADES = [
 ];
 
 export default function FlashcardView({ data, loading, error, onGenerate, docId, isLocked }) {
+  const { t } = useLanguage();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [viewMode, setViewMode] = useState('card'); // 'card' | 'list'
@@ -93,7 +95,7 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
           <div className="w-56 bg-line/50 h-1.5 rounded-full mt-4 overflow-hidden">
             <div className="h-full bg-gradient-to-r from-accent-500 to-accent-400 rounded-full animate-[slide_2.5s_ease-in-out_infinite_alternate]" style={{ width: '40%' }} />
           </div>
-          <p className="text-[11px] text-muted mt-3">Flashcard đang được AI tạo...</p>
+          <p className="text-[11px] text-muted mt-3">{t('flashcard.generating')}</p>
         </div>
       </div>
     );
@@ -109,14 +111,14 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
           </div>
         </div>
         <div className="text-center">
-          <p className="font-bold text-lg text-red-400 mb-1">Lỗi tạo Flashcard</p>
+          <p className="font-bold text-lg text-red-400 mb-1">{t('flashcard.errorGenerating')}</p>
           <p className="text-sm text-muted max-w-md">{error}</p>
         </div>
         <button
           onClick={onGenerate}
           className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-primary-600 to-primary-500 rounded-xl text-sm font-semibold text-white hover:shadow-lg hover:shadow-primary-600/20 transition-all active:scale-95"
         >
-          <RefreshCw size={14} /> Thử lại
+          <RefreshCw size={14} /> {t('quiz.tryAgain')}
         </button>
       </div>
     );
@@ -128,11 +130,10 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
         {/* Pulsing glow icon */}
         <div className="relative group">
           <div className={`absolute -inset-2 rounded-2xl blur-lg opacity-40 transition-opacity duration-500 ${isLocked ? 'bg-gray-500/15' : 'bg-accent-500/15 group-hover:opacity-70'}`} />
-          <div className={`relative w-16 h-16 rounded-2xl shadow-lg border flex items-center justify-center ${
-            isLocked 
+          <div className={`relative w-16 h-16 rounded-2xl shadow-lg border flex items-center justify-center ${isLocked
               ? 'bg-gradient-to-br from-gray-600 to-gray-500 shadow-gray-600/25 border-gray-400/20'
               : 'bg-gradient-to-br from-accent-600 to-accent-500 shadow-accent-600/25 border-accent-400/20'
-          }`}>
+            }`}>
             {isLocked ? <Lock size={28} className="text-white" /> : <CreditCard size={28} className="text-white" />}
           </div>
         </div>
@@ -143,13 +144,12 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
         <button
           onClick={onGenerate}
           disabled={isLocked}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all font-semibold text-white text-sm active:scale-95 ${
-            isLocked
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all font-semibold text-white text-sm active:scale-95 ${isLocked
               ? 'bg-gray-600 cursor-not-allowed opacity-50'
               : 'bg-gradient-to-r from-accent-600 to-accent-500 hover:shadow-lg hover:shadow-accent-600/20'
-          }`}
+            }`}
         >
-          <RefreshCw size={14} /> Tạo Flashcard
+          <RefreshCw size={14} /> {t('flashcard.generating').split(' ')[0]} Flashcard
         </button>
       </div>
     );
@@ -244,7 +244,7 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
           </div>
           <div className="min-w-0">
             <h3 className="font-bold text-sm truncate">{data.title || 'Flashcards'}</h3>
-            <p className="text-[11px] text-muted">{total} thẻ ghi nhớ</p>
+            <p className="text-[11px] text-muted">{t('flashcard.cardOf').replace('{current}', currentIndex + 1).replace('{total}', total)}</p>
           </div>
         </div>
         <div className="flex items-center gap-1.5">
@@ -282,7 +282,7 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
             {/* Progress bar */}
             <div className="w-full max-w-lg mb-5">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-medium text-muted">Tiến trình</span>
+                <span className="text-[11px] font-medium text-muted">{t('flashcard.progress')}</span>
                 <span className="text-[11px] font-bold text-primary-400">{currentIndex + 1} / {total}</span>
               </div>
               <div className="w-full h-1.5 bg-surface-2 rounded-full overflow-hidden">
@@ -315,7 +315,7 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
                   <div className="text-base font-medium text-center leading-relaxed max-h-[180px] overflow-y-auto px-4">
                     <MarkdownRenderer content={currentCard?.question || ''} />
                   </div>
-                  <span className="absolute bottom-4 text-[10px] text-muted/50 font-medium tracking-wide">Nhấn để xem đáp án</span>
+                  <span className="absolute bottom-4 text-[10px] text-muted/50 font-medium tracking-wide">{t('flashcard.clickToFlip')}</span>
                 </div>
                 {/* Back — Answer */}
                 <div className="flip-card-back rounded-2xl p-8 flex flex-col items-center justify-center relative shadow-lg border"
@@ -339,7 +339,7 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
                   <div className="text-sm text-center leading-relaxed max-h-[180px] overflow-y-auto px-4">
                     <MarkdownRenderer content={currentCard?.answer || ''} />
                   </div>
-                  <span className="absolute bottom-4 text-[10px] text-muted/50 font-medium tracking-wide">Nhấn để xem câu hỏi</span>
+                  <span className="absolute bottom-4 text-[10px] text-muted/50 font-medium tracking-wide">{t('flashcard.clickToSeeQuestion')}</span>
                 </div>
               </div>
             </div>
@@ -353,7 +353,7 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
                   </div>
                 ) : (
                   <div>
-                    <p className="text-[11px] text-muted text-center mb-2.5 font-medium">Bạn nhớ tốt đến đâu?</p>
+                    <p className="text-[11px] text-muted text-center mb-2.5 font-medium">{t('flashcard.howWellRemember')}</p>
                     <div className="grid grid-cols-6 gap-1.5">
                       {SR_GRADES.map(g => (
                         <button
@@ -393,11 +393,10 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
                 <button
                   key={i}
                   onClick={() => { setCurrentIndex(i); setFlipped(false); }}
-                  className={`rounded-full transition-all duration-300 ${
-                    i === currentIndex
+                  className={`rounded-full transition-all duration-300 ${i === currentIndex
                       ? 'w-5 h-1.5 bg-primary-400'
                       : 'w-1.5 h-1.5 bg-line hover:bg-muted'
-                  }`}
+                    }`}
                 />
               ))}
             </div>
@@ -438,9 +437,9 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
           <p className="text-[10px] text-muted font-medium">
             <kbd className="px-1.5 py-0.5 bg-surface border border-line rounded text-[9px] font-mono">←</kbd>
             <kbd className="px-1.5 py-0.5 bg-surface border border-line rounded text-[9px] font-mono ml-1">→</kbd>
-            <span className="ml-2">điều hướng</span>
+            <span className="ml-2">{t('flashcard.navigate')}</span>
             <span className="mx-2 text-line">|</span>
-            <span>Nhấn thẻ để lật</span>
+            <span>{t('flashcard.clickCardToFlip')}</span>
           </p>
         </div>
       )}

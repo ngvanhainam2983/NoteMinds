@@ -6,10 +6,12 @@ import {
     Brain, FileQuestion,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { useLanguage } from '../LanguageContext';
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 export default function QuizView({ data, loading, error, onGenerate, isLocked }) {
+    const { t } = useLanguage();
     const [currentIdx, setCurrentIdx] = useState(0);
     const [answers, setAnswers] = useState({});
     const [submitted, setSubmitted] = useState(false);
@@ -139,7 +141,7 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
                     <div className="w-56 bg-line/50 h-1.5 rounded-full mt-4 overflow-hidden">
                         <div className="h-full bg-gradient-to-r from-primary-500 to-primary-400 rounded-full animate-[slide_2.5s_ease-in-out_infinite_alternate]" style={{ width: '40%' }} />
                     </div>
-                    <p className="text-[11px] text-muted mt-3">Bài kiểm tra đang được AI tạo...</p>
+                    <p className="text-[11px] text-muted mt-3">{t('quiz.generating')}</p>
                 </div>
             </div>
         );
@@ -152,11 +154,10 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
             <div className="flex flex-col items-center justify-center min-h-[500px] gap-5 animate-fade-in">
                 <div className="relative group">
                     <div className={`absolute -inset-2 rounded-2xl blur-lg opacity-50 ${isError ? 'bg-red-500/15' : isLocked ? 'bg-gray-500/10' : 'bg-primary-500/15 group-hover:opacity-70'}`} />
-                    <div className={`relative w-16 h-16 rounded-2xl shadow-lg border flex items-center justify-center ${
-                        isError ? 'bg-gradient-to-br from-red-600 to-red-500 shadow-red-600/25 border-red-400/20'
-                        : isLocked ? 'bg-gradient-to-br from-gray-600 to-gray-500 shadow-gray-600/25 border-gray-400/20'
-                        : 'bg-gradient-to-br from-primary-600 to-primary-500 shadow-primary-600/25 border-primary-400/20'
-                    }`}>
+                    <div className={`relative w-16 h-16 rounded-2xl shadow-lg border flex items-center justify-center ${isError ? 'bg-gradient-to-br from-red-600 to-red-500 shadow-red-600/25 border-red-400/20'
+                            : isLocked ? 'bg-gradient-to-br from-gray-600 to-gray-500 shadow-gray-600/25 border-gray-400/20'
+                                : 'bg-gradient-to-br from-primary-600 to-primary-500 shadow-primary-600/25 border-primary-400/20'
+                        }`}>
                         {isError ? <AlertCircle size={28} className="text-white" /> : isLocked ? <Lock size={28} className="text-white" /> : <Presentation size={28} className="text-white" />}
                     </div>
                 </div>
@@ -168,10 +169,9 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
                         {isError ? "Vui lòng thử lại sau" : isLocked ? "Không thể tạo mới vì file gốc không còn tồn tại" : "Tạo bài kiểm tra từ nội dung tài liệu"}
                     </p>
                 </div>
-                <button onClick={onGenerate} disabled={isLocked && !isError} className={`flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all active:scale-95 font-semibold text-sm text-white ${
-                    isLocked && !isError ? 'bg-gray-600 cursor-not-allowed opacity-50' : 'bg-gradient-to-r from-primary-600 to-primary-500 hover:shadow-lg hover:shadow-primary-600/20'
-                }`}>
-                    <RefreshCw size={14} /> {isError ? "Thử lại" : "Tạo Bài Kiểm Tra"}
+                <button onClick={onGenerate} disabled={isLocked && !isError} className={`flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all active:scale-95 font-semibold text-sm text-white ${isLocked && !isError ? 'bg-gray-600 cursor-not-allowed opacity-50' : 'bg-gradient-to-r from-primary-600 to-primary-500 hover:shadow-lg hover:shadow-primary-600/20'
+                    }`}>
+                    <RefreshCw size={14} /> {isError ? t('quiz.tryAgain') : t('quiz.startQuiz')}
                 </button>
             </div>
         );
@@ -187,11 +187,10 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
         return (
             <div className="max-w-2xl mx-auto py-6 px-4 animate-fade-in">
                 {/* Hero Section */}
-                <div className={`relative rounded-2xl overflow-hidden mb-5 bg-gradient-to-br ${
-                    gradeColor === 'emerald' ? 'from-emerald-600/20 via-emerald-500/5 to-transparent' :
-                    gradeColor === 'amber' ? 'from-amber-600/20 via-amber-500/5 to-transparent' :
-                    'from-red-600/20 via-red-500/5 to-transparent'
-                } border border-line`}>
+                <div className={`relative rounded-2xl overflow-hidden mb-5 bg-gradient-to-br ${gradeColor === 'emerald' ? 'from-emerald-600/20 via-emerald-500/5 to-transparent' :
+                        gradeColor === 'amber' ? 'from-amber-600/20 via-amber-500/5 to-transparent' :
+                            'from-red-600/20 via-red-500/5 to-transparent'
+                    } border border-line`}>
                     {/* Decorative circles */}
                     <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-primary-500/5" />
                     <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-primary-500/5" />
@@ -244,8 +243,8 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
                 {/* Score breakdown bar */}
                 <div className="bg-surface border border-line rounded-xl p-4 mb-5">
                     <div className="flex items-center justify-between text-xs font-medium text-muted mb-2.5">
-                        <span>Tỉ lệ trả lời</span>
-                        <span>{score}/{qLen} câu đúng</span>
+                        <span>{t('quiz.answerRate')}</span>
+                        <span>{score}/{qLen} {t('quiz.correct')}</span>
                     </div>
                     <div className="h-3 bg-surface-2 rounded-full overflow-hidden flex">
                         {score > 0 && (
@@ -259,15 +258,15 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
                         )}
                     </div>
                     <div className="flex items-center gap-4 mt-2.5 text-[11px] font-medium">
-                        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Đúng</span>
-                        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /> Sai</span>
-                        {unansweredCount > 0 && <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-line" /> Bỏ qua</span>}
+                        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> {t('quiz.correct')}</span>
+                        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /> {t('quiz.wrong')}</span>
+                        {unansweredCount > 0 && <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-line" /> {t('quiz.skipped')}</span>}
                     </div>
                 </div>
 
                 {/* Question Grid */}
                 <div className="bg-surface border border-line rounded-xl p-4 mb-5">
-                    <p className="text-xs text-muted font-semibold uppercase tracking-wider mb-3">Chi tiết từng câu</p>
+                    <p className="text-xs text-muted font-semibold uppercase tracking-wider mb-3">{t('quiz.questionDetails')}</p>
                     <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
                         {data.questions.map((q, i) => {
                             const correct = answers[i] === q.correctAnswerIndex;
@@ -277,11 +276,10 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
                                     key={i}
                                     onClick={() => { setView('review'); setCurrentIdx(i); }}
                                     title={`Câu ${i + 1}: ${unanswered ? 'Bỏ qua' : correct ? 'Đúng' : 'Sai'}`}
-                                    className={`aspect-square rounded-lg text-xs font-bold transition-all hover:scale-110 hover:shadow-md flex items-center justify-center ${
-                                        unanswered ? 'bg-surface-2 text-muted border border-line'
-                                        : correct ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                                        : 'bg-red-500/15 text-red-400 border border-red-500/30'
-                                    }`}
+                                    className={`aspect-square rounded-lg text-xs font-bold transition-all hover:scale-110 hover:shadow-md flex items-center justify-center ${unanswered ? 'bg-surface-2 text-muted border border-line'
+                                            : correct ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                                                : 'bg-red-500/15 text-red-400 border border-red-500/30'
+                                        }`}
                                 >
                                     {unanswered ? <span className="opacity-40">{i + 1}</span> : correct ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
                                 </button>
@@ -400,11 +398,10 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
                                     return (
                                         <button key={i} onClick={() => handleSelect(i)} disabled={submitted} className={base}>
                                             {/* Letter badge */}
-                                            <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold shrink-0 transition-colors ${
-                                                !showResult
+                                            <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold shrink-0 transition-colors ${!showResult
                                                     ? selected ? 'bg-gradient-to-br from-primary-600 to-primary-500 text-white' : 'bg-surface text-muted border border-line group-hover:text-primary-400 group-hover:border-primary-500/30'
                                                     : correct ? 'bg-emerald-500 text-white' : selected ? 'bg-red-500 text-white' : 'bg-surface text-muted border border-line'
-                                            }`}>
+                                                }`}>
                                                 {OPTION_LETTERS[i]}
                                             </span>
 
@@ -424,7 +421,7 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
                                     <div className="flex items-center gap-2 mb-2">
                                         <Sparkles size={13} className={selectedOpt === currentQ.correctAnswerIndex ? 'text-emerald-400' : 'text-amber-400'} />
                                         <span className={`text-[11px] font-bold uppercase tracking-wider ${selectedOpt === currentQ.correctAnswerIndex ? 'text-emerald-400' : 'text-amber-400'}`}>
-                                            Giải thích
+                                            {t('quiz.explanation')}
                                         </span>
                                     </div>
                                     <p className="leading-relaxed text-muted text-[13px]">{currentQ.explanation}</p>
@@ -442,7 +439,7 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
                     disabled={currentIdx === 0}
                     className="px-3 py-2 rounded-lg font-medium disabled:opacity-20 bg-surface-2 border border-line hover:bg-line hover:border-primary-500/30 transition-all flex items-center gap-1.5 text-xs"
                 >
-                    <ChevronLeft size={14} /> Trước
+                    <ChevronLeft size={14} /> {t('quiz.prevQuestion')}
                 </button>
 
                 {/* Center actions */}
@@ -469,7 +466,7 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
                     disabled={currentIdx === qLen - 1}
                     className="px-3 py-2 rounded-lg font-medium disabled:opacity-20 bg-surface-2 border border-line hover:bg-line hover:border-primary-500/30 transition-all flex items-center gap-1.5 text-xs"
                 >
-                    Tiếp <ChevronRight size={14} />
+                    {t('quiz.nextQuestion')} <ChevronRight size={14} />
                 </button>
             </div>
         </div>

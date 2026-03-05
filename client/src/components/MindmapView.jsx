@@ -21,6 +21,7 @@ import {
   Lock, Maximize2, Minimize2, ZoomIn, ZoomOut, Crosshair,
   GitBranch, Circle, ChevronRight, Sparkles, Network,
 } from 'lucide-react';
+import { useLanguage } from '../LanguageContext';
 
 /* ─── colour palette ─── */
 const BRANCH_PALETTE = [
@@ -127,9 +128,9 @@ function getLayoutConfig(totalNodes) {
   // Scale factor: 1.0 for small maps, gently shrinks for large ones
   const s = totalNodes <= 20 ? 1 : totalNodes <= 40 ? 0.9 : totalNodes <= 70 ? 0.8 : totalNodes <= 120 ? 0.7 : 0.6;
   return {
-    nodeH:  { 0: 56, 1: Math.round(48 * s), 2: Math.round(44 * s), 3: Math.round(38 * s) },
-    vGap:   { 1: Math.round(28 * s), 2: Math.round(22 * s), 3: Math.round(16 * s) },
-    hGap:   { 1: Math.round(360 * Math.max(s, 0.7)), 2: Math.round(280 * Math.max(s, 0.65)), 3: Math.round(240 * Math.max(s, 0.6)) },
+    nodeH: { 0: 56, 1: Math.round(48 * s), 2: Math.round(44 * s), 3: Math.round(38 * s) },
+    vGap: { 1: Math.round(28 * s), 2: Math.round(22 * s), 3: Math.round(16 * s) },
+    hGap: { 1: Math.round(360 * Math.max(s, 0.7)), 2: Math.round(280 * Math.max(s, 0.65)), 3: Math.round(240 * Math.max(s, 0.6)) },
   };
 }
 
@@ -327,6 +328,7 @@ export default function MindmapView({ data, loading, error, onGenerate, isLocked
 }
 
 function MindmapViewInner({ data, loading, error, onGenerate, isLocked }) {
+  const { t } = useLanguage();
   const reactFlowInstance = useReactFlow();
   const { getNodes, fitView, zoomIn, zoomOut } = reactFlowInstance;
   const containerRef = useRef(null);
@@ -417,9 +419,9 @@ function MindmapViewInner({ data, loading, error, onGenerate, isLocked }) {
   const toggleFullscreen = useCallback(() => {
     if (!containerRef.current) return;
     if (!document.fullscreenElement) {
-      containerRef.current.requestFullscreen?.().then(() => setIsFullscreen(true)).catch(() => {});
+      containerRef.current.requestFullscreen?.().then(() => setIsFullscreen(true)).catch(() => { });
     } else {
-      document.exitFullscreen?.().then(() => setIsFullscreen(false)).catch(() => {});
+      document.exitFullscreen?.().then(() => setIsFullscreen(false)).catch(() => { });
     }
   }, []);
 
@@ -541,7 +543,7 @@ function MindmapViewInner({ data, loading, error, onGenerate, isLocked }) {
           <div className="w-56 bg-line/50 h-1.5 rounded-full mt-4 overflow-hidden">
             <div className="h-full bg-gradient-to-r from-primary-500 to-primary-400 rounded-full animate-[slide_2.5s_ease-in-out_infinite_alternate]" style={{ width: '40%' }} />
           </div>
-          <p className="text-[11px] text-muted mt-3">Sơ đồ tư duy đang được AI tạo...</p>
+          <p className="text-[11px] text-muted mt-3">{t('mindmap.generating')}</p>
         </div>
       </div>
     );
@@ -555,7 +557,7 @@ function MindmapViewInner({ data, loading, error, onGenerate, isLocked }) {
           <AlertCircle size={30} className="text-red-400" />
         </div>
         <div className="text-center">
-          <p className="text-red-400 font-semibold mb-1">Lỗi tạo sơ đồ tư duy</p>
+          <p className="text-red-400 font-semibold mb-1">{t('mindmap.errorGenerating')}</p>
           <p className="text-sm text-muted max-w-md">{error}</p>
         </div>
         <button
@@ -585,11 +587,10 @@ function MindmapViewInner({ data, loading, error, onGenerate, isLocked }) {
         <button
           onClick={onGenerate}
           disabled={isLocked}
-          className={`group flex items-center gap-2.5 px-8 py-3.5 rounded-xl text-sm font-semibold transition-all shadow-lg ${
-            isLocked
+          className={`group flex items-center gap-2.5 px-8 py-3.5 rounded-xl text-sm font-semibold transition-all shadow-lg ${isLocked
               ? 'bg-gray-600 cursor-not-allowed opacity-50 shadow-none'
               : 'bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 shadow-primary-600/25 hover:shadow-xl hover:scale-[1.02]'
-          }`}
+            }`}
         >
           <Sparkles size={16} className={isLocked ? '' : 'group-hover:animate-spin'} />
           Tạo Sơ đồ tư duy
@@ -648,7 +649,7 @@ function MindmapViewInner({ data, loading, error, onGenerate, isLocked }) {
             title="Xuất PNG"
           >
             {exporting ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
-            <span className="hidden sm:inline">Xuất PNG</span>
+            <span className="hidden sm:inline">{t('mindmap.exportPng')}</span>
           </button>
 
           {/* Fullscreen */}
@@ -664,11 +665,11 @@ function MindmapViewInner({ data, loading, error, onGenerate, isLocked }) {
 
       {/* Hint bar */}
       <div className="px-4 py-1.5 bg-surface-2/20 border-b border-line/50 text-[10px] text-muted flex items-center gap-4 shrink-0">
-        <span>Kéo để di chuyển</span>
+        <span>{t('mindmap.dragToMove')}</span>
         <span>•</span>
-        <span>Cuộn để zoom</span>
+        <span>{t('mindmap.scrollToZoom')}</span>
         <span>•</span>
-        <span className="hidden sm:inline">Ctrl+Shift+F toàn màn hình</span>
+        <span className="hidden sm:inline">{t('mindmap.ctrlFullscreen')}</span>
       </div>
 
       {/* Canvas */}
