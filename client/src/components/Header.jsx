@@ -133,6 +133,8 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
               onUserUpdate={onUserUpdate}
               onOpenDocument={onOpenDocument}
               onOpenProfile={onOpenProfile}
+              onOpenLeaderboard={onOpenLeaderboard}
+              onOpenStats={onOpenStats}
             />
           ) : (
             <button

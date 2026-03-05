@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
   User, Settings, Shield, LogOut, ChevronDown, Crown, History,
-  FileText, Clock, AlertTriangle, X, Loader2, CheckCircle2
+  FileText, Clock, AlertTriangle, X, Loader2, CheckCircle2, BarChart3, Trophy
 } from 'lucide-react';
 import { getDocumentHistory, getApiBaseUrl } from '../api';
 import ConfirmModal from './ConfirmModal';
@@ -30,7 +30,7 @@ function UserAvatar({ user, size = 'sm' }) {
   );
 }
 
-export default function UserDropdown({ user, onLogout, onOpenAdmin, onOpenPricing, onUserUpdate, onOpenDocument, onOpenProfile }) {
+export default function UserDropdown({ user, onLogout, onOpenAdmin, onOpenPricing, onUserUpdate, onOpenDocument, onOpenProfile, onOpenLeaderboard, onOpenStats }) {
   const [open, setOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -102,6 +102,16 @@ export default function UserDropdown({ user, onLogout, onOpenAdmin, onOpenPricin
                 icon={<Settings size={15} />}
                 label={t('user.settingsProfile')}
                 onClick={() => { setOpen(false); onOpenProfile?.(); }}
+              />
+              <DropdownItem
+                icon={<BarChart3 size={15} />}
+                label={t('nav.stats')}
+                onClick={() => { setOpen(false); onOpenStats?.(); }}
+              />
+              <DropdownItem
+                icon={<Trophy size={15} />}
+                label={t('nav.leaderboard')}
+                onClick={() => { setOpen(false); onOpenLeaderboard?.(); }}
               />
               <DropdownItem
                 icon={<History size={15} />}
