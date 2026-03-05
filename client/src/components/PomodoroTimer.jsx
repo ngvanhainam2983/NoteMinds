@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause, RotateCcw, X, Focus, SkipForward, Settings, Coffee, Brain, Zap, ChevronUp, ChevronDown, Volume2, VolumeX, Minimize2 } from 'lucide-react';
 import { trackActivity } from '../api';
+import { useLanguage } from '../LanguageContext';
 
 const QUOTES = [
   'Tập trung là nghệ thuật loại bỏ mọi thứ không quan trọng.',
@@ -14,6 +15,7 @@ const QUOTES = [
 ];
 
 export default function PomodoroTimer({ onClose }) {
+  const { t } = useLanguage();
   const [mode, setMode] = useState('focus');
   const [isActive, setIsActive] = useState(false);
   const [cycles, setCycles] = useState(0);
@@ -37,7 +39,7 @@ export default function PomodoroTimer({ onClose }) {
 
   const MODES = {
     focus: {
-      label: 'Tập trung',
+      label: t('pomodoro.focusTime'),
       time: durations.focus * 60,
       color: 'text-primary-400',
       ringColor: 'stroke-primary-500',
@@ -45,7 +47,7 @@ export default function PomodoroTimer({ onClose }) {
       icon: Brain,
     },
     shortBreak: {
-      label: 'Nghỉ ngắn',
+      label: t('pomodoro.shortBreak'),
       time: durations.shortBreak * 60,
       color: 'text-emerald-400',
       ringColor: 'stroke-emerald-500',
@@ -53,7 +55,7 @@ export default function PomodoroTimer({ onClose }) {
       icon: Coffee,
     },
     longBreak: {
-      label: 'Nghỉ dài',
+      label: t('pomodoro.longBreak'),
       time: durations.longBreak * 60,
       color: 'text-blue-400',
       ringColor: 'stroke-blue-500',
@@ -71,7 +73,7 @@ export default function PomodoroTimer({ onClose }) {
     if (isActive && mode === 'focus') {
       focusTrackerRef.current = setInterval(() => {
         setTotalFocusSeconds(prev => prev + 60);
-        trackActivity('study_minutes').catch(() => {});
+        trackActivity('study_minutes').catch(() => { });
       }, 60000);
     }
     return () => clearInterval(focusTrackerRef.current);
@@ -225,7 +227,7 @@ export default function PomodoroTimer({ onClose }) {
       <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-6 py-4">
         <div className="flex items-center gap-2">
           <Focus size={18} className={currentMode.color} />
-          <span className="text-sm font-bold">Focus Mode</span>
+          <span className="text-sm font-bold">{t('pomodoro.focusMode')}</span>
           {cycles > 0 && (
             <span className="text-[11px] text-muted bg-surface border border-line rounded-lg px-2 py-0.5 ml-2">
               {cycles} chu kỳ
@@ -281,12 +283,12 @@ export default function PomodoroTimer({ onClose }) {
                   className="p-1 rounded-lg hover:bg-surface-2 text-muted hover:text-txt transition-colors">
                   <ChevronUp size={14} />
                 </button>
-                <span className="text-[10px] text-muted w-8">phút</span>
+                <span className="text-[10px] text-muted w-8">{t('pomodoro.minutes')}</span>
               </div>
             </div>
           ))}
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-line/50">
-            <span className="text-xs font-medium">Tự động bắt đầu</span>
+            <span className="text-xs font-medium">{t('pomodoro.autoStart')}</span>
             <button
               onClick={() => setAutoStart(!autoStart)}
               className={`w-10 h-5 rounded-full transition-all relative ${autoStart ? 'bg-primary-600' : 'bg-surface-2 border border-line'}`}
@@ -313,11 +315,10 @@ export default function PomodoroTimer({ onClose }) {
               <button
                 key={key}
                 onClick={() => switchMode(key)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-                  mode === key
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${mode === key
                     ? `${m.bg} ${m.color} border border-current/20 shadow-sm`
                     : 'text-muted hover:text-txt hover:bg-surface-2'
-                }`}
+                  }`}
               >
                 <Icon size={13} />
                 {m.label}
@@ -367,11 +368,10 @@ export default function PomodoroTimer({ onClose }) {
 
           <button
             onClick={() => setIsActive(!isActive)}
-            className={`relative flex items-center justify-center w-20 h-20 rounded-[28px] shadow-xl transition-all active:scale-95 ${
-              isActive
+            className={`relative flex items-center justify-center w-20 h-20 rounded-[28px] shadow-xl transition-all active:scale-95 ${isActive
                 ? 'bg-surface border-2 border-line hover:bg-surface-2 text-txt'
                 : `bg-gradient-to-br ${mode === 'focus' ? 'from-primary-600 to-primary-500 shadow-primary-600/30' : mode === 'shortBreak' ? 'from-emerald-600 to-emerald-500 shadow-emerald-600/30' : 'from-blue-600 to-blue-500 shadow-blue-600/30'} text-white`
-            }`}
+              }`}
           >
             {isActive && (
               <div className="absolute inset-0 rounded-[28px] animate-ping opacity-10 border-2"
@@ -391,9 +391,9 @@ export default function PomodoroTimer({ onClose }) {
 
         {/* Keyboard hint */}
         <p className="text-[11px] text-muted/50 mb-6">
-          <kbd className="px-1.5 py-0.5 rounded bg-surface-2 border border-line text-[10px] font-mono">Space</kbd> bắt đầu/tạm dừng
+          <kbd className="px-1.5 py-0.5 rounded bg-surface-2 border border-line text-[10px] font-mono">Space</kbd> {t('pomodoro.spaceStartPause')}
           &nbsp;·&nbsp;
-          <kbd className="px-1.5 py-0.5 rounded bg-surface-2 border border-line text-[10px] font-mono">Esc</kbd> thu nhỏ
+          <kbd className="px-1.5 py-0.5 rounded bg-surface-2 border border-line text-[10px] font-mono">Esc</kbd> {t('pomodoro.escMinimize')}
         </p>
       </div>
 
@@ -402,20 +402,19 @@ export default function PomodoroTimer({ onClose }) {
         <div className="max-w-2xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <div>
-              <p className="text-[10px] uppercase tracking-wider text-muted/60 font-semibold mb-0.5">Hôm nay</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted/60 font-semibold mb-0.5">{t('pomodoro.today')}</p>
               <p className="text-sm font-bold">{formatMinutes(totalFocusSeconds)}</p>
             </div>
             <div className="w-px h-8 bg-line/50" />
             <div>
-              <p className="text-[10px] uppercase tracking-wider text-muted/60 font-semibold mb-0.5">Chu kỳ</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted/60 font-semibold mb-0.5">{t('pomodoro.cycles')}</p>
               <p className="text-sm font-bold">{cycles} <span className="text-xs text-muted font-normal">/ 4</span></p>
             </div>
             <div className="w-px h-8 bg-line/50" />
             <div className="flex items-center gap-1.5">
               {[0, 1, 2, 3].map(i => (
-                <div key={i} className={`w-2.5 h-2.5 rounded-full transition-all ${
-                  i < (cycles % 4) ? 'bg-primary-400 scale-110' : 'bg-line'
-                }`} />
+                <div key={i} className={`w-2.5 h-2.5 rounded-full transition-all ${i < (cycles % 4) ? 'bg-primary-400 scale-110' : 'bg-line'
+                  }`} />
               ))}
             </div>
           </div>

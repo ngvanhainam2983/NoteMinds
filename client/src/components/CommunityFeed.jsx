@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { getCommunityDocuments, likeDocument, unlikeDocument, getComments, postComment, deleteComment, submitReport, getApiBaseUrl } from '../api';
 import { Globe, FileText, Search, Loader2, Calendar, Heart, MessageCircle, Send, Trash2, ChevronDown, ChevronUp, Flag, X } from 'lucide-react';
+import { useLanguage } from '../LanguageContext';
 
 export default function CommunityFeed({ user }) {
+    const { t } = useLanguage();
     const [documents, setDocuments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -130,18 +132,18 @@ export default function CommunityFeed({ user }) {
                 <div>
                     <h1 className="text-3xl font-extrabold flex items-center gap-3 mb-2 font-display">
                         <div className="w-10 h-10 bg-primary-600/15 border border-primary-500/20 rounded-xl flex items-center justify-center">
-                          <Globe className="text-primary-400" size={22} />
+                            <Globe className="text-primary-400" size={22} />
                         </div>
                         Cộng đồng
                     </h1>
-                    <p className="text-muted">Khám phá các tài liệu, flashcards và sơ đồ tư duy được chia sẻ công khai.</p>
+                    <p className="text-muted">{t('community.subtitle')}</p>
                 </div>
 
                 <div className="relative w-full md:w-72">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" size={17} />
                     <input
                         type="text"
-                        placeholder="Tìm kiếm tài liệu..."
+                        placeholder={t('community.searchPlaceholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full bg-surface border border-line rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary-500/50 transition-all"
@@ -158,13 +160,13 @@ export default function CommunityFeed({ user }) {
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-20 text-muted">
                     <Loader2 size={32} className="animate-spin mb-4 text-primary-500" />
-                    <p>Đang tải tài liệu cộng đồng...</p>
+                    <p>{t('community.loading')}</p>
                 </div>
             ) : filteredDocs.length === 0 ? (
                 <div className="bg-surface border border-line rounded-xl p-12 text-center flex flex-col items-center">
                     <Globe size={48} className="text-line mb-4" />
-                    <h3 className="text-lg font-medium mb-1">Chưa có tài liệu nào</h3>
-                    <p className="text-muted text-sm">Chưa có ai chia sẻ tài liệu công khai, hoặc không tìm thấy kết quả phù hợp.</p>
+                    <h3 className="text-lg font-medium mb-1">{t('community.noDocuments')}</h3>
+                    <p className="text-muted text-sm">{t('community.noDocumentsDesc')}</p>
                 </div>
             ) : (
                 <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6">
@@ -173,164 +175,164 @@ export default function CommunityFeed({ user }) {
                         const comments = commentsData[doc.id] || [];
                         const isExpanded = expandedComments[doc.id];
                         return (
-                        <div
-                            key={doc.id}
-                            className="bg-surface border border-line rounded-2xl hover:border-primary-500/50 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-primary-500/10 transition-all cursor-pointer group flex flex-col break-inside-avoid mb-6"
-                        >
                             <div
-                                className="p-6 pb-3"
-                                onClick={() => {
-                                    window.location.href = `/public/${doc.id}`;
-                                }}
+                                key={doc.id}
+                                className="bg-surface border border-line rounded-2xl hover:border-primary-500/50 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-primary-500/10 transition-all cursor-pointer group flex flex-col break-inside-avoid mb-6"
                             >
-                                <div className="flex items-start gap-3 mb-4">
-                                    <div className="p-3 bg-primary-500/10 rounded-xl text-primary-400 mt-0.5 group-hover:scale-110 group-hover:bg-primary-500 group-hover:text-txt transition-all shadow-sm">
-                                        <FileText size={22} />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="font-semibold text-[16px] leading-tight mb-1.5 group-hover:text-primary-400 transition-colors" title={doc.title}>
-                                            {doc.title}
-                                        </h3>
-                                        <p className="text-xs text-muted flex items-center gap-1.5">
-                                            {doc.author_username ? (
-                                                <span
-                                                    className="cursor-pointer"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        window.location.href = `/profile/@${doc.author_username}`;
-                                                    }}
-                                                >
-                                                    {doc.author_avatar ? (
+                                <div
+                                    className="p-6 pb-3"
+                                    onClick={() => {
+                                        window.location.href = `/public/${doc.id}`;
+                                    }}
+                                >
+                                    <div className="flex items-start gap-3 mb-4">
+                                        <div className="p-3 bg-primary-500/10 rounded-xl text-primary-400 mt-0.5 group-hover:scale-110 group-hover:bg-primary-500 group-hover:text-txt transition-all shadow-sm">
+                                            <FileText size={22} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="font-semibold text-[16px] leading-tight mb-1.5 group-hover:text-primary-400 transition-colors" title={doc.title}>
+                                                {doc.title}
+                                            </h3>
+                                            <p className="text-xs text-muted flex items-center gap-1.5">
+                                                {doc.author_username ? (
+                                                    <span
+                                                        className="cursor-pointer"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            window.location.href = `/profile/@${doc.author_username}`;
+                                                        }}
+                                                    >
+                                                        {doc.author_avatar ? (
+                                                            <img
+                                                                src={doc.author_avatar.startsWith('http') ? doc.author_avatar : `${getApiBaseUrl()}${doc.author_avatar}`}
+                                                                alt=""
+                                                                className="w-5 h-5 rounded-full object-cover ring-1 ring-primary-500/30 hover:ring-primary-400 transition-all"
+                                                            />
+                                                        ) : (
+                                                            <span className="w-5 h-5 rounded-full bg-gradient-to-tr from-primary-500 to-accent-500 flex items-center justify-center text-[10px] text-white font-bold opacity-90 shadow-sm hover:opacity-100 transition-all">
+                                                                {doc.author.charAt(0).toUpperCase()}
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                ) : (
+                                                    doc.author_avatar ? (
                                                         <img
                                                             src={doc.author_avatar.startsWith('http') ? doc.author_avatar : `${getApiBaseUrl()}${doc.author_avatar}`}
                                                             alt=""
-                                                            className="w-5 h-5 rounded-full object-cover ring-1 ring-primary-500/30 hover:ring-primary-400 transition-all"
+                                                            className="w-5 h-5 rounded-full object-cover ring-1 ring-primary-500/30"
                                                         />
                                                     ) : (
-                                                        <span className="w-5 h-5 rounded-full bg-gradient-to-tr from-primary-500 to-accent-500 flex items-center justify-center text-[10px] text-white font-bold opacity-90 shadow-sm hover:opacity-100 transition-all">
+                                                        <span className="w-5 h-5 rounded-full bg-gradient-to-tr from-primary-500 to-accent-500 flex items-center justify-center text-[10px] text-white font-bold opacity-90 shadow-sm">
                                                             {doc.author.charAt(0).toUpperCase()}
                                                         </span>
-                                                    )}
-                                                </span>
-                                            ) : (
-                                                doc.author_avatar ? (
-                                                    <img
-                                                        src={doc.author_avatar.startsWith('http') ? doc.author_avatar : `${getApiBaseUrl()}${doc.author_avatar}`}
-                                                        alt=""
-                                                        className="w-5 h-5 rounded-full object-cover ring-1 ring-primary-500/30"
-                                                    />
+                                                    )
+                                                )}
+                                                {doc.author_username ? (
+                                                    <span
+                                                        className="truncate hover:text-primary-400 hover:underline cursor-pointer transition-colors"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            window.location.href = `/profile/@${doc.author_username}`;
+                                                        }}
+                                                    >{doc.author}</span>
                                                 ) : (
-                                                    <span className="w-5 h-5 rounded-full bg-gradient-to-tr from-primary-500 to-accent-500 flex items-center justify-center text-[10px] text-white font-bold opacity-90 shadow-sm">
-                                                        {doc.author.charAt(0).toUpperCase()}
-                                                    </span>
-                                                )
-                                            )}
-                                            {doc.author_username ? (
-                                                <span
-                                                    className="truncate hover:text-primary-400 hover:underline cursor-pointer transition-colors"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        window.location.href = `/profile/@${doc.author_username}`;
-                                                    }}
-                                                >{doc.author}</span>
-                                            ) : (
-                                                <span className="truncate">{doc.author}</span>
-                                            )}
-                                        </p>
+                                                    <span className="truncate">{doc.author}</span>
+                                                )}
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* Like + Comment bar */}
-                            <div className="px-6 pb-3 flex items-center gap-4 border-t border-line/50 pt-3">
-                                <button
-                                    onClick={(e) => handleLike(e, doc.id)}
-                                    className={`flex items-center gap-1.5 text-xs font-medium transition-all ${likeState.liked ? 'text-red-400' : 'text-muted hover:text-red-400'}`}
-                                >
-                                    <Heart size={15} className={likeState.liked ? 'fill-red-400' : ''} />
-                                    <span>{likeState.count}</span>
-                                </button>
-                                <button
-                                    onClick={(e) => toggleComments(e, doc.id)}
-                                    className="flex items-center gap-1.5 text-xs font-medium text-muted hover:text-primary-400 transition-colors"
-                                >
-                                    <MessageCircle size={15} />
-                                    <span>{comments.length || doc.comments_count || 0}</span>
-                                    {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                                </button>
-                                {user && (
+                                {/* Like + Comment bar */}
+                                <div className="px-6 pb-3 flex items-center gap-4 border-t border-line/50 pt-3">
                                     <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setReportModal({ docId: doc.id, title: doc.title });
-                                        }}
-                                        className="flex items-center gap-1 text-xs font-medium text-muted hover:text-amber-400 transition-colors"
-                                        title="Báo cáo vi phạm"
+                                        onClick={(e) => handleLike(e, doc.id)}
+                                        className={`flex items-center gap-1.5 text-xs font-medium transition-all ${likeState.liked ? 'text-red-400' : 'text-muted hover:text-red-400'}`}
                                     >
-                                        <Flag size={13} />
+                                        <Heart size={15} className={likeState.liked ? 'fill-red-400' : ''} />
+                                        <span>{likeState.count}</span>
                                     </button>
-                                )}
-                                <div className="flex-1" />
-                                <div className="flex items-center gap-1.5 text-xs text-muted font-medium">
-                                    <Calendar size={12} />
-                                    {new Date(doc.created_at).toLocaleDateString('vi-VN')}
-                                </div>
-                            </div>
-
-                            {/* Comments section */}
-                            {isExpanded && (
-                                <div className="px-6 pb-4 border-t border-line/50 pt-3 space-y-2" onClick={e => e.stopPropagation()}>
-                                    {comments.length === 0 && (
-                                        <p className="text-xs text-muted py-2 text-center">Chưa có bình luận nào</p>
-                                    )}
-                                    {comments.map(c => (
-                                        <div key={c.id} className="flex items-start gap-2 group/comment">
-                                            <span
-                                                className="w-6 h-6 rounded-full bg-gradient-to-tr from-primary-500 to-accent-500 flex items-center justify-center text-[9px] text-white font-bold shrink-0 mt-0.5 cursor-pointer hover:opacity-80 transition-opacity"
-                                                onClick={() => c.username && (window.location.href = `/profile/@${c.username}`)}
-                                            >
-                                                {(c.username || '?').charAt(0).toUpperCase()}
-                                            </span>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2">
-                                                    <span
-                                                        className={`text-xs font-semibold ${c.username ? 'cursor-pointer hover:text-primary-400 transition-colors' : ''}`}
-                                                        onClick={() => c.username && (window.location.href = `/profile/@${c.username}`)}
-                                                    >{c.display_name || c.username}</span>
-                                                    <span className="text-[10px] text-muted">{new Date(c.created_at).toLocaleDateString('vi-VN')}</span>
-                                                </div>
-                                                <p className="text-xs text-muted mt-0.5">{c.content}</p>
-                                            </div>
-                                            {user && (user.id === c.user_id || user.role === 'admin') && (
-                                                <button
-                                                    onClick={(e) => handleDeleteComment(e, doc.id, c.id)}
-                                                    className="p-1 rounded hover:bg-red-500/10 text-muted hover:text-red-400 opacity-0 group-hover/comment:opacity-100 transition-all"
-                                                >
-                                                    <Trash2 size={11} />
-                                                </button>
-                                            )}
-                                        </div>
-                                    ))}
+                                    <button
+                                        onClick={(e) => toggleComments(e, doc.id)}
+                                        className="flex items-center gap-1.5 text-xs font-medium text-muted hover:text-primary-400 transition-colors"
+                                    >
+                                        <MessageCircle size={15} />
+                                        <span>{comments.length || doc.comments_count || 0}</span>
+                                        {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                                    </button>
                                     {user && (
-                                        <div className="flex items-center gap-2 mt-2 pt-2 border-t border-line/30">
-                                            <input
-                                                value={newComment[doc.id] || ''}
-                                                onChange={(e) => setNewComment(prev => ({ ...prev, [doc.id]: e.target.value }))}
-                                                placeholder="Viết bình luận..."
-                                                className="flex-1 bg-bg border border-line rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-primary-500/50"
-                                                onKeyDown={(e) => e.key === 'Enter' && handlePostComment(e, doc.id)}
-                                            />
-                                            <button
-                                                onClick={(e) => handlePostComment(e, doc.id)}
-                                                className="p-1.5 rounded-lg bg-primary-600 hover:bg-primary-700 transition-colors"
-                                            >
-                                                <Send size={12} />
-                                            </button>
-                                        </div>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setReportModal({ docId: doc.id, title: doc.title });
+                                            }}
+                                            className="flex items-center gap-1 text-xs font-medium text-muted hover:text-amber-400 transition-colors"
+                                            title="Báo cáo vi phạm"
+                                        >
+                                            <Flag size={13} />
+                                        </button>
                                     )}
+                                    <div className="flex-1" />
+                                    <div className="flex items-center gap-1.5 text-xs text-muted font-medium">
+                                        <Calendar size={12} />
+                                        {new Date(doc.created_at).toLocaleDateString('vi-VN')}
+                                    </div>
                                 </div>
-                            )}
-                        </div>
+
+                                {/* Comments section */}
+                                {isExpanded && (
+                                    <div className="px-6 pb-4 border-t border-line/50 pt-3 space-y-2" onClick={e => e.stopPropagation()}>
+                                        {comments.length === 0 && (
+                                            <p className="text-xs text-muted py-2 text-center">{t('community.noComments')}</p>
+                                        )}
+                                        {comments.map(c => (
+                                            <div key={c.id} className="flex items-start gap-2 group/comment">
+                                                <span
+                                                    className="w-6 h-6 rounded-full bg-gradient-to-tr from-primary-500 to-accent-500 flex items-center justify-center text-[9px] text-white font-bold shrink-0 mt-0.5 cursor-pointer hover:opacity-80 transition-opacity"
+                                                    onClick={() => c.username && (window.location.href = `/profile/@${c.username}`)}
+                                                >
+                                                    {(c.username || '?').charAt(0).toUpperCase()}
+                                                </span>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2">
+                                                        <span
+                                                            className={`text-xs font-semibold ${c.username ? 'cursor-pointer hover:text-primary-400 transition-colors' : ''}`}
+                                                            onClick={() => c.username && (window.location.href = `/profile/@${c.username}`)}
+                                                        >{c.display_name || c.username}</span>
+                                                        <span className="text-[10px] text-muted">{new Date(c.created_at).toLocaleDateString('vi-VN')}</span>
+                                                    </div>
+                                                    <p className="text-xs text-muted mt-0.5">{c.content}</p>
+                                                </div>
+                                                {user && (user.id === c.user_id || user.role === 'admin') && (
+                                                    <button
+                                                        onClick={(e) => handleDeleteComment(e, doc.id, c.id)}
+                                                        className="p-1 rounded hover:bg-red-500/10 text-muted hover:text-red-400 opacity-0 group-hover/comment:opacity-100 transition-all"
+                                                    >
+                                                        <Trash2 size={11} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+                                        {user && (
+                                            <div className="flex items-center gap-2 mt-2 pt-2 border-t border-line/30">
+                                                <input
+                                                    value={newComment[doc.id] || ''}
+                                                    onChange={(e) => setNewComment(prev => ({ ...prev, [doc.id]: e.target.value }))}
+                                                    placeholder={t('community.writeComment')}
+                                                    className="flex-1 bg-bg border border-line rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-primary-500/50"
+                                                    onKeyDown={(e) => e.key === 'Enter' && handlePostComment(e, doc.id)}
+                                                />
+                                                <button
+                                                    onClick={(e) => handlePostComment(e, doc.id)}
+                                                    className="p-1.5 rounded-lg bg-primary-600 hover:bg-primary-700 transition-colors"
+                                                >
+                                                    <Send size={12} />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         );
                     })}
                 </div>
@@ -344,8 +346,8 @@ export default function CommunityFeed({ user }) {
                                 <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-green-500/10 border border-green-500/30 flex items-center justify-center">
                                     <Flag size={24} className="text-green-400" />
                                 </div>
-                                <h3 className="text-lg font-bold mb-1">Đã gửi báo cáo</h3>
-                                <p className="text-sm text-muted">Cảm ơn bạn! Chúng tôi sẽ xem xét nội dung này.</p>
+                                <h3 className="text-lg font-bold mb-1">{t('community.reportSent')}</h3>
+                                <p className="text-sm text-muted">{t('community.reportSentDesc')}</p>
                             </div>
                         ) : (
                             <>
@@ -358,18 +360,17 @@ export default function CommunityFeed({ user }) {
                                         <X size={18} />
                                     </button>
                                 </div>
-                                <p className="text-xs text-muted mb-4 truncate">Tài liệu: <strong className="text-txt">{reportModal.title}</strong></p>
+                                <p className="text-xs text-muted mb-4 truncate">{t('community.reportDocument')} <strong className="text-txt">{reportModal.title}</strong></p>
 
                                 <div className="space-y-2 mb-4">
                                     {['Nội dung không phù hợp', 'Vi phạm bản quyền', 'Spam hoặc lừa đảo', 'Thông tin sai lệch', 'Khác'].map(reason => (
                                         <button
                                             key={reason}
                                             onClick={() => setReportReason(reason)}
-                                            className={`w-full text-left px-4 py-2.5 rounded-xl text-sm border transition-all ${
-                                                reportReason === reason
+                                            className={`w-full text-left px-4 py-2.5 rounded-xl text-sm border transition-all ${reportReason === reason
                                                     ? 'border-primary-500/50 bg-primary-500/10 text-primary-400 font-medium'
                                                     : 'border-line hover:border-primary-500/30 text-muted hover:text-txt'
-                                            }`}
+                                                }`}
                                         >
                                             {reason}
                                         </button>

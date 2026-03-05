@@ -2,8 +2,10 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Loader2, MessageSquare, Sparkles, History, Trash2, Save, X, Lock, Volume2 } from 'lucide-react';
 import { chatWithDocument, getConversationHistory, getConversationMessages, saveConversation, deleteConversation } from '../api';
 import MarkdownRenderer from './MarkdownRenderer';
+import { useLanguage } from '../LanguageContext';
 
 export default function ChatView({ docId, messages, setMessages, chatLimit: initialLimit, chatFn, shareMode, readOnly }) {
+  const { t } = useLanguage();
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [chatCount, setChatCount] = useState(0);
@@ -147,7 +149,7 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
         <div className="absolute inset-0 z-20 flex">
           <div className="w-72 bg-surface border-r border-line flex flex-col h-full">
             <div className="flex items-center justify-between px-4 py-3.5 border-b border-line bg-surface-2/50">
-              <span className="text-sm font-semibold flex items-center gap-2"><History size={14} className="text-primary-400" /> Lịch sử chat</span>
+              <span className="text-sm font-semibold flex items-center gap-2"><History size={14} className="text-primary-400" /> {t('chat.history')}</span>
               <button onClick={() => setShowHistory(false)} className="p-1.5 hover:bg-line rounded-lg transition-colors"><X size={14} /></button>
             </div>
             <div className="flex-1 overflow-y-auto p-2.5 space-y-1">
@@ -172,7 +174,7 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
                   </div>
                 ))
               ) : (
-                <p className="text-center text-muted text-xs py-8">Chưa có lịch sử</p>
+                <p className="text-center text-muted text-xs py-8">{t('chat.noHistory')}</p>
               )}
             </div>
           </div>
@@ -251,9 +253,9 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
             </div>
             <div className="bg-surface-2/80 border border-line/50 rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-2">
               <div className="flex gap-1.5">
-                <span className="w-2 h-2 bg-primary-400/60 rounded-full animate-bounce" style={{animationDelay: '0ms'}} />
-                <span className="w-2 h-2 bg-primary-400/60 rounded-full animate-bounce" style={{animationDelay: '150ms'}} />
-                <span className="w-2 h-2 bg-primary-400/60 rounded-full animate-bounce" style={{animationDelay: '300ms'}} />
+                <span className="w-2 h-2 bg-primary-400/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-2 h-2 bg-primary-400/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-2 h-2 bg-primary-400/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
             </div>
           </div>
@@ -282,7 +284,7 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
         <MessageSquare size={11} className={isChatLimitReached ? 'text-red-400' : 'text-muted'} />
         <span className={`text-[11px] ${isChatLimitReached ? 'text-red-400' : 'text-muted'}`}>
           {isUnlimited ? (
-            <>{chatCount} tin nhắn <Sparkles size={10} className="inline text-primary-400" /> không giới hạn</>
+            <>{chatCount} {t('chat.messagesCount').replace('{count}', '')} <Sparkles size={10} className="inline text-primary-400" /> {t('chat.unlimited')}</>
           ) : (
             <>{chatCount}/{chatLimit} tin nhắn</>
           )}
@@ -293,7 +295,7 @@ export default function ChatView({ docId, messages, setMessages, chatLimit: init
       {readOnly ? (
         <div className="border-t border-line px-4 py-3 flex items-center gap-2">
           <Lock size={14} className="text-muted" />
-          <span className="text-xs text-muted">Chế độ chỉ xem — không thể gửi tin nhắn</span>
+          <span className="text-xs text-muted">{t('chat.readOnlyMode')}</span>
         </div>
       ) : (
         <div className="border-t border-line p-3.5">

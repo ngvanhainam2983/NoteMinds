@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { StickyNote, Plus, Trash2, Edit3, Check, X, Loader2, Palette } from 'lucide-react';
 import { getDocumentNotes, createNote, updateNote, deleteNote } from '../api';
+import { useLanguage } from '../LanguageContext';
 
 const NOTE_COLORS = [
   { value: '#fbbf24', label: 'Vàng' },
@@ -12,6 +13,7 @@ const NOTE_COLORS = [
 ];
 
 export default function NotesPanel({ docId, isOpen, onClose }) {
+  const { t } = useLanguage();
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newContent, setNewContent] = useState('');
@@ -83,7 +85,7 @@ export default function NotesPanel({ docId, isOpen, onClose }) {
             <div className="w-8 h-8 bg-amber-500/15 rounded-lg flex items-center justify-center">
               <StickyNote size={16} className="text-amber-400" />
             </div>
-            <h3 className="font-semibold text-sm">Ghi chú cá nhân</h3>
+            <h3 className="font-semibold text-sm">{t('notes.personalNotes')}</h3>
             <span className="px-2 py-0.5 bg-surface-2 rounded-md text-xs text-muted">{notes.length}</span>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-surface-2 text-muted hover:text-txt transition-colors">
@@ -96,7 +98,7 @@ export default function NotesPanel({ docId, isOpen, onClose }) {
           <textarea
             value={newContent}
             onChange={(e) => setNewContent(e.target.value)}
-            placeholder="Viết ghi chú mới..."
+            placeholder={t('notes.placeholder')}
             rows={3}
             className="w-full bg-bg border border-line rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:border-primary-500/50 transition-colors placeholder:text-muted/50"
           />
@@ -133,8 +135,8 @@ export default function NotesPanel({ docId, isOpen, onClose }) {
           ) : notes.length === 0 ? (
             <div className="text-center py-10 text-muted">
               <StickyNote size={32} className="mx-auto mb-2 opacity-40" />
-              <p className="text-sm">Chưa có ghi chú nào</p>
-              <p className="text-xs mt-1">Viết ghi chú để ghi nhớ điểm quan trọng</p>
+              <p className="text-sm">{t('notes.noNotes')}</p>
+              <p className="text-xs mt-1">{t('notes.noNotesDesc')}</p>
             </div>
           ) : (
             notes.map(note => (

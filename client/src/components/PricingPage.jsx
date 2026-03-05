@@ -3,6 +3,7 @@ import {
   ArrowLeft, Check, Crown, Zap, Star, Package,
   Sparkles, Shield, Loader2, CheckCircle2, AlertCircle,
 } from 'lucide-react';
+import { useLanguage } from '../LanguageContext';
 
 const PLANS = [
   {
@@ -91,6 +92,7 @@ const PLANS = [
 ];
 
 export default function PricingPage({ user, onLoginClick }) {
+  const { t } = useLanguage();
   const currentPlan = user?.plan || 'free';
   const [contactPlan, setContactPlan] = useState(null);
   const [showContact, setShowContact] = useState(false);
@@ -111,15 +113,15 @@ export default function PricingPage({ user, onLoginClick }) {
         {/* Header */}
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold font-display mb-4">
-            Bảng giá <span className="gradient-text">NoteMinds</span>
+            {t('pricing.title')} <span className="gradient-text">NoteMinds</span>
           </h2>
-          <p className="text-muted">Chọn gói phù hợp để tăng hiệu suất học tập</p>
+          <p className="text-muted">{t('pricing.subtitle')}</p>
         </div>
 
         {/* Current plan badge */}
         {user && (
           <div className="mb-8 flex items-center justify-center gap-2">
-            <span className="text-sm text-muted">Gói hiện tại:</span>
+            <span className="text-sm text-muted">{t('pricing.currentPlan')}</span>
             <span
               className="px-3 py-1 rounded-full text-sm font-semibold"
               style={{
@@ -146,13 +148,13 @@ export default function PricingPage({ user, onLoginClick }) {
               >
                 {plan.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-indigo-600 text-white text-xs font-bold rounded-full flex items-center gap-1">
-                    <Sparkles size={12} /> Phổ biến nhất
+                    <Sparkles size={12} /> {t('pricing.popular')}
                   </div>
                 )}
 
                 {isCurrent && (
                   <div className="absolute -top-3 right-4 px-3 py-1 bg-primary-600 text-white text-xs font-bold rounded-full">
-                    Đang dùng
+                    {t('pricing.currentPlanBadge')}
                   </div>
                 )}
 
@@ -189,15 +191,15 @@ export default function PricingPage({ user, onLoginClick }) {
                   onClick={() => handleSelectPlan(plan.key)}
                   disabled={isCurrent}
                   className={`w-full py-3 rounded-xl text-sm font-semibold transition-all ${isCurrent
-                      ? 'bg-surface-2 text-muted cursor-default'
-                      : isDowngrade
-                        ? 'bg-surface-2 text-muted hover:bg-line'
-                        : plan.popular
-                          ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/25'
-                          : 'bg-surface-2 hover:bg-line text-txt'
+                    ? 'bg-surface-2 text-muted cursor-default'
+                    : isDowngrade
+                      ? 'bg-surface-2 text-muted hover:bg-line'
+                      : plan.popular
+                        ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/25'
+                        : 'bg-surface-2 hover:bg-line text-txt'
                     }`}
                 >
-                  {isCurrent ? '✓ Đang sử dụng' : !user ? 'Đăng nhập để mua' : isDowngrade ? 'Hạ gói' : 'Nâng cấp'}
+                  {isCurrent ? t('pricing.inUse') : !user ? t('pricing.loginToSelect') : isDowngrade ? t('pricing.downgrade') : t('pricing.upgrade')}
                 </button>
               </div>
             );
@@ -207,14 +209,14 @@ export default function PricingPage({ user, onLoginClick }) {
         {/* FAQ / Info */}
         <div className="mt-16 max-w-3xl mx-auto" id="faq">
           <div className="text-center mb-8">
-            <h3 className="text-2xl font-extrabold font-display tracking-tight mb-2">Câu hỏi thường gặp</h3>
-            <p className="text-sm text-muted">Mọi thắc mắc về NoteMinds đều được giải đáp tại đây</p>
+            <h3 className="text-2xl font-extrabold font-display tracking-tight mb-2">{t('pricing.faq')}</h3>
+            <p className="text-sm text-muted">{t('pricing.faqSubtitle')}</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Cột 1 - Sản phẩm */}
             <div className="space-y-3">
-              <p className="text-xs font-semibold text-primary-400 uppercase tracking-wider px-1 mb-1">Về sản phẩm</p>
+              <p className="text-xs font-semibold text-primary-400 uppercase tracking-wider px-1 mb-1">{t('pricing.aboutProduct')}</p>
               <FaqItem
                 q="NoteMinds hoạt động như thế nào?"
                 a="Bạn chỉ cần upload tài liệu (PDF, Word, PowerPoint, Excel, ảnh, ghi âm...), AI sẽ tự động phân tích và tạo Sơ đồ tư duy, Flashcard, Quiz và cho phép bạn Chat hỏi đáp trực tiếp với nội dung tài liệu."
@@ -235,7 +237,7 @@ export default function PricingPage({ user, onLoginClick }) {
 
             {/* Cột 2 - Thanh toán & Tài khoản */}
             <div className="space-y-3">
-              <p className="text-xs font-semibold text-accent-400 uppercase tracking-wider px-1 mb-1">Thanh toán & Tài khoản</p>
+              <p className="text-xs font-semibold text-accent-400 uppercase tracking-wider px-1 mb-1">{t('pricing.paymentAccount')}</p>
               <FaqItem
                 q="Thanh toán bằng cách nào?"
                 a="NoteMinds hỗ trợ thanh toán qua chuyển khoản ngân hàng, MoMo và ZaloPay. Sau khi thanh toán, admin sẽ kích hoạt gói cho bạn trong vòng 5 phút."
@@ -337,7 +339,7 @@ function ContactModal({ plan, currentPlan, onClose }) {
           onClick={onClose}
           className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 rounded-xl text-sm font-semibold transition-colors"
         >
-          Đã hiểu
+          {t('pricing.understood')}
         </button>
       </div>
     </div>

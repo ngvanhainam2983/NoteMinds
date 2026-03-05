@@ -445,7 +445,16 @@
             "a5": "Yes. Contact admin via Zalo/Telegram or email to cancel. Your current plan will remain active until the paid period expires.",
             "q6": "Is my uploaded data secure?",
             "a6": "Absolutely! All data is encrypted according to security standards. We do not share your documents with any third parties."
-        }
+        },
+        "inUse": "✓ In use",
+        "upgrade": "Upgrade",
+        "downgrade": "Downgrade",
+        "understood": "Got it",
+        "downgradeToName": "Downgrade to {name}",
+        "upgradeToName": "Upgrade to {name}",
+        "contactSupportMsg": "Or contact via Zalo/Telegram for fastest support",
+        "applyReset": "Apply & reset",
+        "customizeTime": "Customize time"
     },
     "community": {
         "title": "Community",

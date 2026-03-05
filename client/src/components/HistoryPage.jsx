@@ -6,8 +6,10 @@ import {
 import { Menu, Dialog, Transition } from '@headlessui/react';
 import { getDocumentHistory, getFolders, createFolder, updateFolder, deleteFolder, assignDocumentToFolder } from '../api';
 import MultiChatView from './MultiChatView';
+import { useLanguage } from '../LanguageContext';
 
 export default function HistoryPage({ onOpenDocument }) {
+  const { t } = useLanguage();
   const [docs, setDocs] = useState([]);
   const [folders, setFolders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -138,7 +140,7 @@ export default function HistoryPage({ onOpenDocument }) {
       {/* ── LEFT SIDEBAR (Folders) ── */}
       <div className="w-full md:w-64 flex flex-col gap-4 shrink-0 overflow-y-auto">
         <div className="flex items-center justify-between mb-1">
-          <h2 className="text-xs font-bold text-muted uppercase tracking-widest">Thư viện</h2>
+          <h2 className="text-xs font-bold text-muted uppercase tracking-widest">{t('history.library')}</h2>
         </div>
 
         <div className="space-y-1">
@@ -150,7 +152,7 @@ export default function HistoryPage({ onOpenDocument }) {
           >
             <div className="flex items-center gap-2.5">
               <History size={16} />
-              <span>Tất cả tài liệu</span>
+              <span>{t('history.allDocuments')}</span>
             </div>
             <span className="text-xs opacity-70 bg-black/15 px-2 py-0.5 rounded-md">{docs.length}</span>
           </button>
@@ -163,7 +165,7 @@ export default function HistoryPage({ onOpenDocument }) {
           >
             <div className="flex items-center gap-2.5">
               <List size={16} />
-              <span>Chưa phân loại</span>
+              <span>{t('history.uncategorized')}</span>
             </div>
             <span className="text-xs opacity-70 bg-black/15 px-2 py-0.5 rounded-md">
               {docs.filter(d => !d.folder_id).length}
@@ -172,7 +174,7 @@ export default function HistoryPage({ onOpenDocument }) {
         </div>
 
         <div className="mt-5 flex items-center justify-between mb-2 group">
-          <h2 className="text-xs font-bold text-muted uppercase tracking-widest">Thư mục</h2>
+          <h2 className="text-xs font-bold text-muted uppercase tracking-widest">{t('history.folders')}</h2>
           <button
             onClick={() => { setEditingFolder(null); setFolderForm({ name: '', color: '#3b82f6' }); setIsFolderModalOpen(true); }}
             className="p-1 rounded bg-surface-2 hover:bg-primary-600 text-muted hover:text-txt transition-all"
@@ -236,7 +238,7 @@ export default function HistoryPage({ onOpenDocument }) {
             );
           })}
           {folders.length === 0 && !loading && (
-            <div className="text-xs text-muted italic text-center py-4">Chưa có thư mục nào</div>
+            <div className="text-xs text-muted italic text-center py-4">{t('history.noFolders')}</div>
           )}
         </div>
       </div>
@@ -259,7 +261,7 @@ export default function HistoryPage({ onOpenDocument }) {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Tìm kiếm tài liệu..."
+                placeholder={t('history.searchPlaceholder')}
                 className="w-full bg-bg border border-line rounded-xl pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-primary-500/50 text-txt"
               />
             </div>
@@ -273,7 +275,7 @@ export default function HistoryPage({ onOpenDocument }) {
                   }`}
               >
                 <CheckSquare size={16} />
-                <span className="hidden sm:inline">Chọn nhiều</span>
+                <span className="hidden sm:inline">{t('history.selectMultiple')}</span>
               </button>
             </div>
           </div>
@@ -333,7 +335,7 @@ export default function HistoryPage({ onOpenDocument }) {
                             </span>
                           )}
                           {expired && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 border border-red-500/20 text-red-400 font-medium shrink-0">Hết hạn</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 border border-red-500/20 text-red-400 font-medium shrink-0">{t('history.expired')}</span>
                           )}
                         </div>
 
@@ -361,7 +363,7 @@ export default function HistoryPage({ onOpenDocument }) {
                           <Transition as={Fragment} enter="transition ease-out duration-100" enterFrom="transform opacity-0 scale-95" enterTo="transform opacity-100 scale-100" leave="transition ease-in duration-75" leaveFrom="transform opacity-100 scale-100" leaveTo="transform opacity-0 scale-95">
                             <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right rounded-xl bg-surface border border-line shadow-xl shadow-black/50 overflow-hidden z-50 focus:outline-none">
                               <div className="px-3 py-2.5 border-b border-line bg-surface-2/50">
-                                <span className="text-[10px] uppercase font-bold text-muted tracking-wider">Di chuyển tới thư mục</span>
+                                <span className="text-[10px] uppercase font-bold text-muted tracking-wider">{t('history.moveToFolder')}</span>
                               </div>
                               <div className="py-1 max-h-48 overflow-y-auto">
                                 <Menu.Item>
@@ -400,8 +402,8 @@ export default function HistoryPage({ onOpenDocument }) {
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center p-8">
                 <Folder size={48} className="text-line mb-4" />
-                <p className="text-muted font-medium">Không có tài liệu nào</p>
-                <p className="text-muted/60 text-sm mt-1">Vui lòng thay đổi bộ lọc hoặc tải lên tài liệu mới.</p>
+                <p className="text-muted font-medium">{t('history.noDocuments')}</p>
+                <p className="text-muted/60 text-sm mt-1">{t('history.noDocumentsDesc')}</p>
               </div>
             )}
           </div>
@@ -449,7 +451,7 @@ export default function HistoryPage({ onOpenDocument }) {
 
                   <form onSubmit={saveFolder} className="space-y-4">
                     <div>
-                      <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">Tên thư mục</label>
+                      <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wider">{t('history.folderName')}</label>
                       <input
                         type="text"
                         required
@@ -461,7 +463,7 @@ export default function HistoryPage({ onOpenDocument }) {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-medium text-muted mb-2 uppercase tracking-wider">Màu sắc</label>
+                      <label className="block text-xs font-medium text-muted mb-2 uppercase tracking-wider">{t('history.folderColor')}</label>
                       <div className="flex flex-wrap gap-2">
                         {['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6'].map(color => (
                           <div

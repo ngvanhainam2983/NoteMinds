@@ -447,8 +447,17 @@
             "q5": "Tôi có thể hủy gói không?",
             "a5": "Có. Liên hệ admin qua Zalo/Telegram hoặc email để hủy. Gói hiện tại sẽ hoạt động đến hết thời hạn đã thanh toán.",
             "q6": "Dữ liệu tải lên có an toàn không?",
-            "a6": "Hoàn toàn! Tất cả dữ liệu đều được mã hóa theo tiêu chuẩn bảo mật. Chúng tôi không chia sẻ tài liệu của bạn với bất kỳ bên thứ ba nào."
-        }
+            "a6": "Hoàn toàn an toàn! Toàn bộ dữ liệu được mã hóa theo tiêu chuẩn bảo mật. Chúng tôi không chia sẻ tài liệu của bạn với bất kỳ bên thứ ba nào."
+        },
+        "inUse": "✓ Đang sử dụng",
+        "upgrade": "Nâng cấp",
+        "downgrade": "Hạ gói",
+        "understood": "Đã hiểu",
+        "downgradeToName": "Hạ xuống gói {name}",
+        "upgradeToName": "Nâng cấp gói {name}",
+        "contactSupportMsg": "Hoặc liên hệ qua Zalo/Telegram để được hỗ trợ nhanh nhất",
+        "applyReset": "Áp dụng & đặt lại",
+        "customizeTime": "Tuỳ chỉnh thời gian"
     },
     "community": {
         "title": "Cộng đồng",
