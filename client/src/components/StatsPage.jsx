@@ -180,10 +180,10 @@ export default function StatsPage({ onBack, user }) {
                 const intensity = total / maxActivity;
                 const bg = total === 0
                   ? 'bg-surface-2'
-                  : intensity < 0.25 ? 'bg-primary-600/20'
-                  : intensity < 0.5 ? 'bg-primary-600/40'
-                  : intensity < 0.75 ? 'bg-primary-600/60'
-                  : 'bg-primary-600/90';
+                  : intensity < 0.25 ? 'bg-primary-600 opacity-20'
+                    : intensity < 0.5 ? 'bg-primary-600 opacity-40'
+                      : intensity < 0.75 ? 'bg-primary-600 opacity-60'
+                        : 'bg-primary-600 opacity-90';
                 return (
                   <div
                     key={dateStr}
@@ -196,10 +196,10 @@ export default function StatsPage({ onBack, user }) {
             <div className="flex items-center gap-2 text-xs text-muted">
               <span>Ít</span>
               <div className="w-4 h-4 rounded bg-surface-2" />
-              <div className="w-4 h-4 rounded bg-primary-600/20" />
-              <div className="w-4 h-4 rounded bg-primary-600/40" />
-              <div className="w-4 h-4 rounded bg-primary-600/60" />
-              <div className="w-4 h-4 rounded bg-primary-600/90" />
+              <div className="w-4 h-4 rounded bg-primary-600 opacity-20" />
+              <div className="w-4 h-4 rounded bg-primary-600 opacity-40" />
+              <div className="w-4 h-4 rounded bg-primary-600 opacity-60" />
+              <div className="w-4 h-4 rounded bg-primary-600 opacity-90" />
               <span>Nhiều</span>
             </div>
 
