@@ -7,14 +7,14 @@ export const getApiBaseUrl = () => {
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     return '/api';
   }
-  
+
   // Production: use api subdomain (nginx will add /api prefix internally)
   const protocol = window.location.protocol;
   const hostname = window.location.hostname;
-  
+
   // Extract main domain (handles www.domain.com -> api.domain.com)
   const mainDomain = hostname.replace(/^www\./, '');
-  
+
   return `${protocol}//api.${mainDomain}`;
 };
 
@@ -78,7 +78,29 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Decrypt responses
+// Helper to recursively fix SQLite UTC dates in API responses
+function fixDates(obj) {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj === 'string') {
+    // Match SQLite datetime: YYYY-MM-DD HH:MM:SS
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(obj)) {
+      return obj.replace(' ', 'T') + 'Z';
+    }
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    for (let i = 0; i < obj.length; i++) {
+      obj[i] = fixDates(obj[i]);
+    }
+  } else if (typeof obj === 'object') {
+    for (const key of Object.keys(obj)) {
+      obj[key] = fixDates(obj[key]);
+    }
+  }
+  return obj;
+}
+
+// Decrypt responses and fix dates
 api.interceptors.response.use(
   (response) => {
     // Decrypt response if it contains encrypted data
@@ -90,6 +112,12 @@ api.interceptors.response.use(
         // Continue with original response if decryption fails
       }
     }
+
+    // Fix SQLite UTC date strings
+    if (response.data) {
+      response.data = fixDates(response.data);
+    }
+
     return response;
   },
   (error) => {

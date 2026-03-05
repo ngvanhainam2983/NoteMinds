@@ -358,5 +358,38 @@
         "passwordMismatch": "Mật khẩu xác nhận không khớp",
         "resetFailed": "Đặt lại mật khẩu thất bại",
         "setNewPassword": "Đặt mật khẩu mới"
+    },
+    "leaderboard": {
+        "title": "Bảng xếp hạng",
+        "subtitle": "Xem ai đang học chăm chỉ nhất!",
+        "thisWeek": "Tuần này",
+        "thisMonth": "Tháng này",
+        "allTime": "Tất cả",
+        "noData": "Chưa có dữ liệu",
+        "noDataDesc": "Hãy bắt đầu học để lên bảng xếp hạng!",
+        "score": "điểm",
+        "rank": "Hạng",
+        "user": "Người dùng",
+        "activity": "Hoạt động",
+        "totalScore": "Tổng điểm"
+    },
+    "stats": {
+        "title": "Thống kê học tập",
+        "subtitle": "Theo dõi tiến trình và duy trì chuỗi ngày học!",
+        "currentStreak": "Chuỗi ngày hiện tại",
+        "longestStreak": "Chuỗi dài nhất",
+        "flashcardsToday": "Flashcard hôm nay",
+        "quizzesToday": "Quiz hôm nay",
+        "dailyGoals": "Mục tiêu hôm nay",
+        "save": "Lưu",
+        "edit": "Sửa",
+        "documents": "Tài liệu",
+        "messages": "Tin nhắn",
+        "studyMinutes": "Phút học",
+        "activity30Days": "Hoạt động 30 ngày qua",
+        "noActivityData": "Chưa có dữ liệu hoạt động",
+        "activityLabel": "hoạt động",
+        "less": "Ít",
+        "more": "Nhiều"
     }
 }

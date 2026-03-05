@@ -5,8 +5,10 @@ import {
   Check, Edit3, Save
 } from 'lucide-react';
 import { getGoals, updateGoals, getActivityHistory } from '../api';
+import { useLanguage } from '../LanguageContext';
 
 export default function StatsPage({ onBack, user }) {
+  const { t } = useLanguage();
   const [goals, setGoals] = useState(null);
   const [activity, setActivity] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -77,9 +79,9 @@ export default function StatsPage({ onBack, user }) {
             <div className="w-10 h-10 bg-primary-600/15 border border-primary-500/20 rounded-xl flex items-center justify-center">
               <BarChart3 className="text-primary-400" size={22} />
             </div>
-            Thống kê học tập
+            {t('stats.title')}
           </h1>
-          <p className="text-muted mt-1">Theo dõi tiến trình và duy trì chuỗi ngày học!</p>
+          <p className="text-muted mt-1">{t('stats.subtitle')}</p>
         </div>
       </div>
 
@@ -88,22 +90,22 @@ export default function StatsPage({ onBack, user }) {
         <div className="bg-gradient-to-br from-orange-500/15 to-orange-600/5 border border-orange-500/20 rounded-2xl p-5 text-center">
           <Flame size={28} className="mx-auto mb-2 text-orange-400" />
           <p className="text-3xl font-extrabold text-orange-400">{streak.current_streak}</p>
-          <p className="text-xs text-muted mt-1">Chuỗi ngày hiện tại</p>
+          <p className="text-xs text-muted mt-1">{t('stats.currentStreak')}</p>
         </div>
         <div className="bg-gradient-to-br from-primary-500/15 to-primary-600/5 border border-primary-500/20 rounded-2xl p-5 text-center">
           <TrendingUp size={28} className="mx-auto mb-2 text-primary-400" />
           <p className="text-3xl font-extrabold text-primary-400">{streak.longest_streak}</p>
-          <p className="text-xs text-muted mt-1">Chuỗi dài nhất</p>
+          <p className="text-xs text-muted mt-1">{t('stats.longestStreak')}</p>
         </div>
         <div className="bg-gradient-to-br from-emerald-500/15 to-emerald-600/5 border border-emerald-500/20 rounded-2xl p-5 text-center">
           <CreditCard size={28} className="mx-auto mb-2 text-emerald-400" />
           <p className="text-3xl font-extrabold text-emerald-400">{todayActivity.flashcards_reviewed}</p>
-          <p className="text-xs text-muted mt-1">Flashcards hôm nay</p>
+          <p className="text-xs text-muted mt-1">{t('stats.flashcardsToday')}</p>
         </div>
         <div className="bg-gradient-to-br from-purple-500/15 to-purple-600/5 border border-purple-500/20 rounded-2xl p-5 text-center">
           <FileText size={28} className="mx-auto mb-2 text-purple-400" />
           <p className="text-3xl font-extrabold text-purple-400">{todayActivity.quizzes_completed}</p>
-          <p className="text-xs text-muted mt-1">Quiz hôm nay</p>
+          <p className="text-xs text-muted mt-1">{t('stats.quizzesToday')}</p>
         </div>
       </div>
 
@@ -112,13 +114,13 @@ export default function StatsPage({ onBack, user }) {
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold flex items-center gap-2">
             <Target size={18} className="text-primary-400" />
-            Mục tiêu hôm nay
+            {t('stats.dailyGoals')}
           </h2>
           <button
             onClick={() => editingGoals ? handleSaveGoals() : setEditingGoals(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-primary-600/10 border border-primary-500/20 rounded-lg text-primary-400 hover:bg-primary-600/20 transition-all"
           >
-            {editingGoals ? <><Save size={12} /> Lưu</> : <><Edit3 size={12} /> Sửa</>}
+            {editingGoals ? <><Save size={12} /> {t('stats.save')}</> : <><Edit3 size={12} /> {t('stats.edit')}</>}
           </button>
         </div>
 
@@ -145,7 +147,7 @@ export default function StatsPage({ onBack, user }) {
           />
           <GoalBar
             icon={<BookOpen size={15} />}
-            label="Tài liệu"
+            label={t('stats.documents')}
             current={todayActivity.documents_uploaded}
             target={editingGoals ? goalForm.daily_documents : userGoals.daily_documents}
             progress={docProgress}
@@ -160,13 +162,13 @@ export default function StatsPage({ onBack, user }) {
       <div className="bg-surface border border-line rounded-2xl p-6">
         <h2 className="text-lg font-bold flex items-center gap-2 mb-5">
           <Clock size={18} className="text-primary-400" />
-          Hoạt động 30 ngày qua
+          {t('stats.activity30Days')}
         </h2>
 
         {activity.length === 0 ? (
           <div className="text-center py-8 text-muted">
             <BarChart3 size={32} className="mx-auto mb-2 opacity-40" />
-            <p className="text-sm">Chưa có dữ liệu hoạt động</p>
+            <p className="text-sm">{t('stats.noActivityData')}</p>
           </div>
         ) : (
           <>
@@ -188,19 +190,19 @@ export default function StatsPage({ onBack, user }) {
                   <div
                     key={dateStr}
                     className={`w-7 h-7 rounded-md ${bg} transition-all hover:scale-110 cursor-default`}
-                    title={`${date.toLocaleDateString('vi-VN')}: ${total} hoạt động`}
+                    title={`${date.toLocaleDateString()}: ${total} ${t('stats.activityLabel')}`}
                   />
                 );
               })}
             </div>
             <div className="flex items-center gap-2 text-xs text-muted">
-              <span>Ít</span>
+              <span>{t('stats.less')}</span>
               <div className="w-4 h-4 rounded bg-surface-2" />
               <div className="w-4 h-4 rounded bg-primary-600 opacity-20" />
               <div className="w-4 h-4 rounded bg-primary-600 opacity-40" />
               <div className="w-4 h-4 rounded bg-primary-600 opacity-60" />
               <div className="w-4 h-4 rounded bg-primary-600 opacity-90" />
-              <span>Nhiều</span>
+              <span>{t('stats.more')}</span>
             </div>
 
             {/* Activity summary table */}
@@ -208,9 +210,9 @@ export default function StatsPage({ onBack, user }) {
               {[
                 { label: 'Flashcards', value: activity.reduce((s, a) => s + (a.flashcards_reviewed || 0), 0), icon: CreditCard, color: 'text-emerald-400' },
                 { label: 'Quiz', value: activity.reduce((s, a) => s + (a.quizzes_completed || 0), 0), icon: FileText, color: 'text-purple-400' },
-                { label: 'Tài liệu', value: activity.reduce((s, a) => s + (a.documents_uploaded || 0), 0), icon: BookOpen, color: 'text-blue-400' },
-                { label: 'Tin nhắn', value: activity.reduce((s, a) => s + (a.chat_messages || 0), 0), icon: MessageCircle, color: 'text-amber-400' },
-                { label: 'Phút học', value: activity.reduce((s, a) => s + (a.study_minutes || 0), 0), icon: Clock, color: 'text-primary-400' },
+                { label: t('stats.documents'), value: activity.reduce((s, a) => s + (a.documents_uploaded || 0), 0), icon: BookOpen, color: 'text-blue-400' },
+                { label: t('stats.messages'), value: activity.reduce((s, a) => s + (a.chat_messages || 0), 0), icon: MessageCircle, color: 'text-amber-400' },
+                { label: t('stats.studyMinutes'), value: activity.reduce((s, a) => s + (a.study_minutes || 0), 0), icon: Clock, color: 'text-primary-400' },
               ].map(s => (
                 <div key={s.label} className="bg-bg border border-line rounded-xl p-3 text-center">
                   <s.icon size={16} className={`mx-auto mb-1 ${s.color}`} />

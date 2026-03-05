@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Trophy, Medal, Flame, ArrowLeft, Loader2, Crown, Star, TrendingUp } from 'lucide-react';
 import { getLeaderboard } from '../api';
+import { useLanguage } from '../LanguageContext';
 
 const PERIODS = [
-  { value: 'week', label: 'Tuần này' },
-  { value: 'month', label: 'Tháng này' },
-  { value: 'all', label: 'Tất cả' },
+  { value: 'week', labelKey: 'leaderboard.thisWeek' },
+  { value: 'month', labelKey: 'leaderboard.thisMonth' },
+  { value: 'all', labelKey: 'leaderboard.allTime' },
 ];
 
 const RANK_STYLES = [
@@ -15,6 +16,7 @@ const RANK_STYLES = [
 ];
 
 export default function LeaderboardPage({ onBack }) {
+  const { t } = useLanguage();
   const [period, setPeriod] = useState('all');
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -46,9 +48,9 @@ export default function LeaderboardPage({ onBack }) {
             <div className="w-10 h-10 bg-amber-500/15 border border-amber-500/20 rounded-xl flex items-center justify-center">
               <Trophy className="text-amber-400" size={22} />
             </div>
-            Bảng xếp hạng
+            {t('leaderboard.title')}
           </h1>
-          <p className="text-muted mt-1">Xem ai đang học chăm chỉ nhất!</p>
+          <p className="text-muted mt-1">{t('leaderboard.subtitle')}</p>
         </div>
       </div>
 
@@ -61,9 +63,9 @@ export default function LeaderboardPage({ onBack }) {
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${period === p.value
               ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/20'
               : 'text-muted hover:text-txt hover:bg-surface-2'
-            }`}
+              }`}
           >
-            {p.label}
+            {t(p.labelKey)}
           </button>
         ))}
       </div>
@@ -75,8 +77,8 @@ export default function LeaderboardPage({ onBack }) {
       ) : data.length === 0 ? (
         <div className="bg-surface border border-line rounded-2xl p-12 text-center">
           <Trophy size={48} className="mx-auto mb-4 text-line" />
-          <h3 className="text-lg font-medium mb-1">Chưa có dữ liệu</h3>
-          <p className="text-muted text-sm">Hãy bắt đầu học để lên bảng xếp hạng!</p>
+          <h3 className="text-lg font-medium mb-1">{t('leaderboard.noData')}</h3>
+          <p className="text-muted text-sm">{t('leaderboard.noDataDesc')}</p>
         </div>
       ) : (
         <>
@@ -102,10 +104,10 @@ export default function LeaderboardPage({ onBack }) {
                     </div>
                     <p className="font-semibold text-sm truncate">{entry.display_name || entry.username}</p>
                     <p className={`text-2xl font-extrabold mt-1 ${style.text}`}>{entry.score}</p>
-                    <p className="text-xs text-muted mt-1">điểm</p>
+                    <p className="text-xs text-muted mt-1">{t('leaderboard.score')}</p>
                     {entry.current_streak > 0 && (
                       <div className="flex items-center justify-center gap-1 mt-2 text-xs text-orange-400">
-                        <Flame size={12} /> {entry.current_streak} ngày
+                        <Flame size={12} /> {entry.current_streak}
                       </div>
                     )}
                   </div>
@@ -120,8 +122,8 @@ export default function LeaderboardPage({ onBack }) {
               <thead>
                 <tr className="border-b border-line text-muted text-xs uppercase tracking-wider">
                   <th className="text-left py-3 px-5 w-12">#</th>
-                  <th className="text-left py-3 px-5">Người dùng</th>
-                  <th className="text-center py-3 px-5">Điểm</th>
+                  <th className="text-left py-3 px-5">{t('leaderboard.user')}</th>
+                  <th className="text-center py-3 px-5">{t('leaderboard.score')}</th>
                   <th className="text-center py-3 px-5 hidden sm:table-cell">Streak</th>
                   <th className="text-center py-3 px-5 hidden md:table-cell">Flashcards</th>
                   <th className="text-center py-3 px-5 hidden md:table-cell">Quiz</th>
