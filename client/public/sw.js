@@ -1,5 +1,5 @@
 // NoteMind Service Worker — enables offline app shell caching
-const CACHE_NAME = 'notemind-v4-security-20260302';
+const CACHE_NAME = 'notemind-v5-lang-update';
 
 // Install: cache the app shell
 self.addEventListener('install', (event) => {

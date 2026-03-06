@@ -16,6 +16,8 @@ import { generateSummary } from './services/summaryGenerator.js';
 import { reviewFlashcard, getDueFlashcards } from './services/srsService.js';
 import { chatWithDocument, chatWithMultipleDocuments } from './services/chatService.js';
 import { callQwen } from './services/qwenClient.js';
+import { getUserPreferences } from './services/syncAndExportService.js';
+import { normalizeLanguage } from './services/promptBuilder.js';
 import {
   createUser, authenticateUser, generateToken, getUserById,
   optionalAuth, requireAuth, requireAdmin,
@@ -58,6 +60,18 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+function resolveRequestLanguage(req, userId = null) {
+  let preferred = req?.body?.language;
+  if (!preferred && userId) {
+    try {
+      preferred = getUserPreferences(userId)?.language;
+    } catch {
+      preferred = null;
+    }
+  }
+  return normalizeLanguage(preferred, req?.headers?.['accept-language']);
+}
 
 // ── Cloudflare Turnstile ──
 // ==== SECURITY: Enforce TURNSTILE_SECRET from environment ====
@@ -1286,7 +1300,12 @@ app.post('/api/documents/:docId/mindmap', async (req, res) => {
       return res.status(400).json({ error: 'Document is still processing' });
     }
 
-    const mindmap = await generateMindmap(doc.text, doc.fileName);
+    const language = resolveRequestLanguage(req, req.user?.id || null);
+    const mindmap = await generateMindmap(doc.text, doc.fileName, {
+      language,
+      acceptLanguage: req.headers['accept-language'],
+      userId: req.user?.id || null
+    });
     saveDocumentSession(req.params.docId, 'mindmap', mindmap);
     broadcastDocEvent(req.params.docId, 'mindmap', mindmap);
     res.json(mindmap);
@@ -1307,7 +1326,12 @@ app.post('/api/documents/:docId/summary', async (req, res) => {
       return res.status(400).json({ error: 'Document is still processing' });
     }
 
-    const summary = await generateSummary(doc.text, doc.fileName);
+    const language = resolveRequestLanguage(req, req.user?.id || null);
+    const summary = await generateSummary(doc.text, doc.fileName, {
+      language,
+      acceptLanguage: req.headers['accept-language'],
+      userId: req.user?.id || null
+    });
     saveDocumentSession(req.params.docId, 'summary', summary);
     broadcastDocEvent(req.params.docId, 'summary', summary);
     res.json({ summary });
@@ -1328,7 +1352,12 @@ app.post('/api/documents/:docId/flashcards', async (req, res) => {
       return res.status(400).json({ error: 'Document is still processing' });
     }
 
-    const flashcards = await generateFlashcards(doc.text, doc.fileName);
+    const language = resolveRequestLanguage(req, req.user?.id || null);
+    const flashcards = await generateFlashcards(doc.text, doc.fileName, {
+      language,
+      acceptLanguage: req.headers['accept-language'],
+      userId: req.user?.id || null
+    });
     saveDocumentSession(req.params.docId, 'flashcards', flashcards);
     broadcastDocEvent(req.params.docId, 'flashcards', flashcards);
     res.json(flashcards);
@@ -1414,7 +1443,12 @@ app.post('/api/documents/:docId/quiz', async (req, res) => {
       return res.status(400).json({ error: 'Document is still processing' });
     }
 
-    const quiz = await generateQuiz(doc.text, doc.fileName);
+    const language = resolveRequestLanguage(req, req.user?.id || null);
+    const quiz = await generateQuiz(doc.text, doc.fileName, {
+      language,
+      acceptLanguage: req.headers['accept-language'],
+      userId: req.user?.id || null
+    });
     saveDocumentSession(req.params.docId, 'quiz', quiz);
     broadcastDocEvent(req.params.docId, 'quiz', quiz);
     if (req.user && req.user.id) {
@@ -1468,7 +1502,12 @@ app.post('/api/documents/:docId/chat', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Message too long (max 3000 characters)' });
     }
 
-    const reply = await chatWithDocument(doc.text, message, history || []);
+    const language = resolveRequestLanguage(req, req.user.id);
+    const reply = await chatWithDocument(doc.text, message, history || [], {
+      language,
+      acceptLanguage: req.headers['accept-language'],
+      userId: req.user.id
+    });
     doc.chatCount++;
 
     // Save chat session (last 50 messages)
@@ -1511,7 +1550,12 @@ app.post('/api/chat/multi', requireAuth, async (req, res) => {
       docsToChat.push(doc);
     }
 
-    const reply = await chatWithMultipleDocuments(docsToChat, message, history || []);
+    const language = resolveRequestLanguage(req, req.user.id);
+    const reply = await chatWithMultipleDocuments(docsToChat, message, history || [], {
+      language,
+      acceptLanguage: req.headers['accept-language'],
+      userId: req.user.id
+    });
 
     // We don't save multi-chat history to a single document's session for now,
     // as it spans multiple documents. The client will hold the state.
@@ -1699,7 +1743,11 @@ app.post('/api/shared/:shareToken/mindmap', async (req, res) => {
     }
 
     const { share, doc } = result;
-    const mindmap = await generateMindmap(doc.text, doc.fileName);
+    const language = resolveRequestLanguage(req, null);
+    const mindmap = await generateMindmap(doc.text, doc.fileName, {
+      language,
+      acceptLanguage: req.headers['accept-language']
+    });
     saveDocumentSession(share.document_id, 'mindmap', mindmap);
     broadcastDocEvent(share.document_id, 'mindmap', mindmap);
     res.json(mindmap);
@@ -1719,7 +1767,11 @@ app.post('/api/shared/:shareToken/summary', async (req, res) => {
     }
 
     const { share, doc } = result;
-    const summary = await generateSummary(doc.text, doc.fileName);
+    const language = resolveRequestLanguage(req, null);
+    const summary = await generateSummary(doc.text, doc.fileName, {
+      language,
+      acceptLanguage: req.headers['accept-language']
+    });
     saveDocumentSession(share.document_id, 'summary', summary);
     broadcastDocEvent(share.document_id, 'summary', summary);
     res.json({ summary });
@@ -1739,7 +1791,11 @@ app.post('/api/shared/:shareToken/flashcards', async (req, res) => {
     }
 
     const { share, doc } = result;
-    const flashcards = await generateFlashcards(doc.text, doc.fileName);
+    const language = resolveRequestLanguage(req, null);
+    const flashcards = await generateFlashcards(doc.text, doc.fileName, {
+      language,
+      acceptLanguage: req.headers['accept-language']
+    });
     saveDocumentSession(share.document_id, 'flashcards', flashcards);
     broadcastDocEvent(share.document_id, 'flashcards', flashcards);
     res.json(flashcards);
@@ -1780,7 +1836,11 @@ app.post('/api/shared/:shareToken/chat', async (req, res) => {
       });
     }
 
-    const reply = await chatWithDocument(doc.text, message, history || []);
+    const language = resolveRequestLanguage(req, null);
+    const reply = await chatWithDocument(doc.text, message, history || [], {
+      language,
+      acceptLanguage: req.headers['accept-language']
+    });
     doc.chatCount++;
 
     // Broadcast chat update to other viewers

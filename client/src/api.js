@@ -30,6 +30,18 @@ const api = axios.create({
 
 const TOKEN_KEY = 'notemind_token';
 const USER_KEY = 'notemind_user';
+const LANGUAGE_KEY = 'notemind-language';
+
+function getCurrentLanguage() {
+  try {
+    const lang = localStorage.getItem(LANGUAGE_KEY);
+    if (lang === 'vi' || lang === 'en') return lang;
+  } catch {
+    // ignore
+  }
+  const browserLang = navigator.language || navigator.userLanguage || '';
+  return browserLang.toLowerCase().startsWith('vi') ? 'vi' : 'en';
+}
 
 export function getStoredToken() {
   return localStorage.getItem(TOKEN_KEY);
@@ -307,17 +319,17 @@ export async function getDocumentStatus(docId) {
 }
 
 export async function generateMindmap(docId) {
-  const response = await api.post(`/documents/${docId}/mindmap`);
+  const response = await api.post(`/documents/${docId}/mindmap`, { language: getCurrentLanguage() });
   return response.data;
 }
 
 export async function generateSummary(docId) {
-  const response = await api.post(`/documents/${docId}/summary`);
+  const response = await api.post(`/documents/${docId}/summary`, { language: getCurrentLanguage() });
   return response.data;
 }
 
 export async function generateFlashcards(docId) {
-  const response = await api.post(`/documents/${docId}/flashcards`);
+  const response = await api.post(`/documents/${docId}/flashcards`, { language: getCurrentLanguage() });
   return response.data;
 }
 
@@ -335,7 +347,7 @@ export async function reviewFlashcard(docId, cardIdx, difficulty, timeElapsedMs 
 }
 
 export async function generateQuiz(docId) {
-  const response = await api.post(`/documents/${docId}/quiz`);
+  const response = await api.post(`/documents/${docId}/quiz`, { language: getCurrentLanguage() });
   return response.data;
 }
 
@@ -361,6 +373,7 @@ export async function chatWithDocument(docId, message, history) {
   const response = await api.post(`/documents/${docId}/chat`, {
     message,
     history,
+    language: getCurrentLanguage(),
   });
   return response.data;
 }
@@ -391,7 +404,12 @@ export async function getDocumentSessions(docId) {
 }
 
 export async function chatWithMultipleDocuments(docIds, message, history) {
-  const response = await api.post('/chat/multi', { docIds, message, history });
+  const response = await api.post('/chat/multi', {
+    docIds,
+    message,
+    history,
+    language: getCurrentLanguage(),
+  });
   return response.data;
 }
 
@@ -566,7 +584,7 @@ export async function searchDocuments(query, limit = 20) {
 }
 
 export async function searchChat(query) {
-  const response = await api.post('/search/chat', { query });
+  const response = await api.post('/search/chat', { query, language: getCurrentLanguage() });
   return response.data;
 }
 
@@ -639,22 +657,26 @@ export async function getSharedDocumentContent(token) {
 }
 
 export async function shareGenerateMindmap(token) {
-  const response = await api.post(`/shared/${token}/mindmap`);
+  const response = await api.post(`/shared/${token}/mindmap`, { language: getCurrentLanguage() });
   return response.data;
 }
 
 export async function shareGenerateSummary(token) {
-  const response = await api.post(`/shared/${token}/summary`);
+  const response = await api.post(`/shared/${token}/summary`, { language: getCurrentLanguage() });
   return response.data;
 }
 
 export async function shareGenerateFlashcards(token) {
-  const response = await api.post(`/shared/${token}/flashcards`);
+  const response = await api.post(`/shared/${token}/flashcards`, { language: getCurrentLanguage() });
   return response.data;
 }
 
 export async function shareChatWithDocument(token, message, history) {
-  const response = await api.post(`/shared/${token}/chat`, { message, history });
+  const response = await api.post(`/shared/${token}/chat`, {
+    message,
+    history,
+    language: getCurrentLanguage(),
+  });
   return response.data;
 }
 
@@ -971,7 +993,10 @@ export async function adminUpdateSystemSetting(key, value) {
 
 // ── Learning Paths (AI Recommended) ─────────────────────────
 export async function generateLearningPath(documentId) {
-  const response = await api.post('/learning-paths', { documentId });
+  const response = await api.post('/learning-paths', {
+    documentId,
+    language: getCurrentLanguage(),
+  });
   return response.data;
 }
 

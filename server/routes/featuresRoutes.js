@@ -9,6 +9,7 @@ import * as advancedFeatureService from '../services/advancedFeatureService.js';
 import * as syncExportService from '../services/syncAndExportService.js';
 import { logger, logAnalytic } from '../services/logger.js';
 import { logActivity } from '../services/statsService.js';
+import { buildSystemPrompt, normalizeLanguage } from '../services/promptBuilder.js';
 import os from 'os';
 import fs from 'fs';
 
@@ -218,7 +219,7 @@ router.get('/search', requireAuth, (req, res) => {
 
 router.post('/search/chat', requireAuth, async (req, res) => {
   try {
-    const { query } = req.body;
+    const { query, language } = req.body;
     if (!query) return res.status(400).json({ error: 'Câu hỏi không được để trống' });
 
     // Step 1: Find top 3 relevant documents
@@ -238,7 +239,7 @@ router.post('/search/chat', requireAuth, async (req, res) => {
         try {
           const text = await processDocument(doc.file_path);
           // Limit to 3000 chars per doc to prevent token limit (Qwen context is large, but let's be safe)
-          contextDocs.push(`--- Tài liệu: ${path.basename(doc.file_path)} ---\n${text.substring(0, 3000)}`);
+          contextDocs.push(`--- ${path.basename(doc.file_path)} ---\n${text.substring(0, 3000)}`);
         } catch (e) {
           console.warn('Failed to extract text for search chat:', e.message);
         }
@@ -251,8 +252,12 @@ router.post('/search/chat', requireAuth, async (req, res) => {
 
     // Step 3: Call Qwen
     const { callQwen } = await import('../services/qwenClient.js');
-    const systemPrompt = `Bạn là một trợ lý AI thông minh chuyên tổng hợp kiến thức từ tài liệu của người dùng. NHIỆM VỤ của bạn là trả lời câu hỏi DỰA TRÊN các tài liệu được cung cấp dưới đây. Nếu thông tin không có trong tài liệu, hãy nói rõ là không có, hoặc giải thích dựa trên hiểu biết chung nhưng phải ghi chú rõ. Luôn trả lời bằng tiếng Việt, trình bày rõ ràng, dễ hiểu bằng Markdown. Trực tiếp đi thẳng vào vấn đề.`;
-    const userMessage = `Tài liệu tham khảo:\n${contextDocs.join('\n\n')}\n\nCâu hỏi: ${query}`;
+    const prefs = syncExportService.getUserPreferences(req.user.id) || {};
+    const resolvedLanguage = normalizeLanguage(language || prefs.language, req.headers['accept-language']);
+    const systemPrompt = buildSystemPrompt('searchChat', resolvedLanguage);
+    const userMessage = resolvedLanguage === 'vi'
+      ? `Tài liệu tham khảo:\n${contextDocs.join('\n\n')}\n\nCâu hỏi: ${query}`
+      : `Reference documents:\n${contextDocs.join('\n\n')}\n\nQuestion: ${query}`;
 
     const reply = await callQwen(systemPrompt, userMessage, {
       userId: req.user.id,
@@ -1581,7 +1586,7 @@ router.put('/admin/system-settings', requireAuth, requireAdmin, (req, res) => {
 
 router.post('/learning-paths', requireAuth, async (req, res) => {
   try {
-    const { documentId } = req.body;
+    const { documentId, language } = req.body;
     if (!documentId) return res.status(400).json({ error: 'Document ID is required' });
 
     const db = new Database(DB_PATH);
@@ -1606,7 +1611,13 @@ router.post('/learning-paths', requireAuth, async (req, res) => {
     if (!docText) docText = doc.original_name || 'Tài liệu học tập';
 
     const { generateLearningPath } = await import('../services/learningPathGenerator.js');
-    const pathData = await generateLearningPath(docText, doc.original_name, { userId: req.user.id });
+    const prefs = syncExportService.getUserPreferences(req.user.id) || {};
+    const resolvedLanguage = normalizeLanguage(language || prefs.language, req.headers['accept-language']);
+    const pathData = await generateLearningPath(docText, doc.original_name, {
+      userId: req.user.id,
+      language: resolvedLanguage,
+      acceptLanguage: req.headers['accept-language']
+    });
 
     const pathId = uuidv4();
     const dbWrite = new Database(DB_PATH);
