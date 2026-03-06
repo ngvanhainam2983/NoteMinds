@@ -954,4 +954,30 @@ export async function adminUpdateSystemSetting(key, value) {
   return response.data;
 }
 
+// ── Learning Paths (AI Recommended) ─────────────────────────
+export async function generateLearningPath(documentId) {
+  const response = await api.post('/learning-paths', { documentId });
+  return response.data;
+}
+
+export async function getLearningPaths() {
+  const response = await api.get('/learning-paths');
+  return response.data.learningPaths;
+}
+
+export async function getLearningPath(id) {
+  const response = await api.get(`/learning-paths/${id}`);
+  return response.data.learningPath;
+}
+
+export async function updateLearningPathProgress(id, stepId, completed) {
+  const response = await api.put(`/learning-paths/${id}/progress`, { stepId, completed });
+  return response.data;
+}
+
+export async function deleteLearningPath(id) {
+  const response = await api.delete(`/learning-paths/${id}`);
+  return response.data;
+}
+
 export default api;

@@ -1522,4 +1522,152 @@ router.put('/admin/system-settings', requireAuth, requireAdmin, (req, res) => {
   } catch (error) { res.status(500).json({ error: 'Failed to update setting' }); }
 });
 
+
+// ════════════════════════════════════════════════════════════
+// LEARNING PATHS (AI RECOMMENDED)
+// ════════════════════════════════════════════════════════════
+
+router.post('/learning-paths', requireAuth, async (req, res) => {
+  try {
+    const { documentId } = req.body;
+    if (!documentId) return res.status(400).json({ error: 'Document ID is required' });
+
+    const db = new Database(DB_PATH);
+    const doc = db.prepare('SELECT * FROM documents WHERE id = ? AND user_id = ? AND deleted_at IS NULL').get(documentId, req.user.id);
+    if (!doc) {
+      db.close();
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    // Get text chunks to generate path
+    const chunks = db.prepare('SELECT text_content FROM document_chunks WHERE document_id = ? ORDER BY page_number, chunk_index LIMIT 5').all(documentId);
+    let docText = chunks.map(c => c.text_content).join('\\n\\n');
+
+    db.close();
+
+    if (!docText) docText = doc.original_name || 'Tài liệu học tập';
+
+    const { generateLearningPath } = await import('../services/learningPathGenerator.js');
+    const pathData = await generateLearningPath(docText, doc.original_name, { userId: req.user.id });
+
+    const pathId = uuidv4();
+    const dbWrite = new Database(DB_PATH);
+
+    dbWrite.prepare(`
+      INSERT INTO learning_paths (id, user_id, name, description, document_ids, path_data, estimated_hours)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      pathId, req.user.id, pathData.name, pathData.description,
+      JSON.stringify([documentId]), JSON.stringify(pathData.steps || []),
+      pathData.estimated_hours || 1.0
+    );
+
+    const newPath = dbWrite.prepare('SELECT * FROM learning_paths WHERE id = ?').get(pathId);
+    dbWrite.close();
+
+    res.json({ learningPath: { ...newPath, steps: pathData.steps || [] } });
+  } catch (error) {
+    console.error('Generate path error:', error);
+    res.status(500).json({ error: 'Failed to generate learning path' });
+  }
+});
+
+router.get('/learning-paths', requireAuth, (req, res) => {
+  try {
+    const db = new Database(DB_PATH);
+    const paths = db.prepare('SELECT * FROM learning_paths WHERE user_id = ? ORDER BY created_at DESC').all(req.user.id);
+
+    // Parse steps
+    paths.forEach(p => {
+      try { p.steps = JSON.parse(p.path_data || '[]'); } catch { p.steps = []; }
+      try { p.document_ids = JSON.parse(p.document_ids || '[]'); } catch { p.document_ids = []; }
+      delete p.path_data; // Don't send double data
+    });
+
+    db.close();
+    res.json({ learningPaths: paths });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get learning paths' });
+  }
+});
+
+router.get('/learning-paths/:id', requireAuth, (req, res) => {
+  try {
+    const db = new Database(DB_PATH);
+    const lp = db.prepare('SELECT * FROM learning_paths WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+
+    if (!lp) {
+      db.close();
+      return res.status(404).json({ error: 'Learning path not found' });
+    }
+
+    try { lp.steps = JSON.parse(lp.path_data || '[]'); } catch { lp.steps = []; }
+    try { lp.document_ids = JSON.parse(lp.document_ids || '[]'); } catch { lp.document_ids = []; }
+    delete lp.path_data;
+
+    // Get progress
+    const progress = db.prepare('SELECT step_id, completed_at FROM learning_path_progress WHERE path_id = ?').all(lp.id);
+    lp.progress = progress;
+
+    db.close();
+    res.json({ learningPath: lp });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get learning path' });
+  }
+});
+
+router.put('/learning-paths/:id/progress', requireAuth, (req, res) => {
+  try {
+    const { stepId, completed } = req.body;
+    if (!stepId) return res.status(400).json({ error: 'Step ID required' });
+
+    const db = new Database(DB_PATH);
+
+    // Check ownership
+    const lp = db.prepare('SELECT id FROM learning_paths WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+    if (!lp) {
+      db.close();
+      return res.status(404).json({ error: 'Learning path not found' });
+    }
+
+    if (completed) {
+      db.prepare(`
+        INSERT INTO learning_path_progress (id, path_id, step_id, completed_at) 
+        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(path_id, step_id) DO UPDATE SET completed_at = CURRENT_TIMESTAMP
+      `).run(uuidv4(), req.params.id, stepId);
+    } else {
+      db.prepare('DELETE FROM learning_path_progress WHERE path_id = ? AND step_id = ?').run(req.params.id, stepId);
+    }
+
+    // update lp updated_at
+    db.prepare('UPDATE learning_paths SET updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(req.params.id);
+
+    const progress = db.prepare('SELECT step_id, completed_at FROM learning_path_progress WHERE path_id = ?').all(lp.id);
+    db.close();
+
+    res.json({ success: true, progress });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update progress' });
+  }
+});
+
+router.delete('/learning-paths/:id', requireAuth, (req, res) => {
+  try {
+    const db = new Database(DB_PATH);
+    const lp = db.prepare('SELECT id FROM learning_paths WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+
+    if (!lp) {
+      db.close();
+      return res.status(404).json({ error: 'Learning path not found' });
+    }
+
+    db.prepare('DELETE FROM learning_paths WHERE id = ?').run(req.params.id);
+    db.close();
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete learning path' });
+  }
+});
+
 export default router;

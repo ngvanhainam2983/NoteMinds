@@ -14,6 +14,7 @@ import PublicDocViewer from './components/PublicDocViewer';
 import PublicProfilePage from './components/PublicProfilePage';
 import LeaderboardPage from './components/LeaderboardPage';
 import StatsPage from './components/StatsPage';
+import LearningPathsPage from './components/LearningPathsPage';
 import AnnouncementBanner from './components/AnnouncementBanner';
 import OfflinePage from './components/OfflinePage';
 import { getStoredUser, logout as apiLogout, getMe, verifyEmailToken, resetPassword, getSystemSettings, getDocumentHistory, getFolders, sendPresenceHeartbeat } from './api';
@@ -22,7 +23,7 @@ import { useLanguage } from './LanguageContext';
 
 export default function App() {
   const [currentDoc, setCurrentDoc] = useState(null);
-  const [view, setView] = useState('home'); // 'home' | 'dashboard' | 'admin' | 'pricing' | 'shared' | 'history' | 'history-list' | 'verify-email' | 'reset-password' | 'leaderboard' | 'stats'
+  const [view, setView] = useState('home'); // 'home' | 'dashboard' | 'admin' | 'pricing' | 'shared' | 'history' | 'history-list' | 'verify-email' | 'reset-password' | 'leaderboard' | 'stats' | 'learning-paths'
   const [historyDoc, setHistoryDoc] = useState(null);
   const [user, setUser] = useState(getStoredUser);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -115,6 +116,8 @@ export default function App() {
       setView('leaderboard');
     } else if (path === '/stats') {
       setView('stats');
+    } else if (path === '/learning-paths') {
+      setView('learning-paths');
     }
   }, []);
 
@@ -365,6 +368,7 @@ export default function App() {
               onOpenProfile={() => { setView('profile'); window.history.pushState({}, '', '/profile'); }}
               onOpenLeaderboard={() => { setView('leaderboard'); window.history.pushState({}, '', '/leaderboard'); }}
               onOpenStats={() => { setView('stats'); window.history.pushState({}, '', '/stats'); }}
+              onOpenLearningPaths={() => { setView('learning-paths'); window.history.pushState({}, '', '/learning-paths'); }}
               currentView={view}
             />
           )}
@@ -435,6 +439,14 @@ export default function App() {
 
           {view === 'stats' && (
             <StatsPage onBack={handleBackHome} user={user} />
+          )}
+
+          {view === 'learning-paths' && (
+            <LearningPathsPage
+              onBack={handleBackHome}
+              onOpenDocument={handleOpenDocument}
+              currentDocId={currentDoc?.docId}
+            />
           )}
 
           {view === 'public' && currentDoc && (

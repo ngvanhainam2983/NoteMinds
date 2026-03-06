@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BrainCircuit, ArrowLeft, LogIn, Menu, X, History, Globe, Trophy, BarChart3, Sparkles } from 'lucide-react';
+import { BrainCircuit, ArrowLeft, LogIn, Menu, X, History, Globe, Trophy, BarChart3, Sparkles, Map } from 'lucide-react';
 import UserDropdown from './UserDropdown';
 import { useLanguage } from '../LanguageContext';
 
@@ -16,6 +16,7 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
   // App-level page links (icon-first, compact)
   const APP_NAV = [
     { label: t('nav.community'), target: 'community', icon: Globe, requireAuth: false },
+    { label: t('nav.learningPaths', 'Lộ trình AI'), target: 'learning-paths', icon: Map, requireAuth: true },
     { label: t('nav.leaderboard'), target: 'leaderboard', icon: Trophy, requireAuth: false },
     { label: t('nav.stats'), target: 'stats', icon: BarChart3, requireAuth: true },
     { label: t('nav.history'), target: 'history', icon: History, requireAuth: true },
@@ -26,6 +27,7 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
     if (target === 'history') { onOpenHistory?.(); return; }
     if (target === 'leaderboard') { onOpenLeaderboard?.(); return; }
     if (target === 'stats') { onOpenStats?.(); return; }
+    if (target === 'learning-paths') { onOpenLearningPaths?.(); return; }
     if (target === 'community') {
       window.history.pushState({}, '', '/community');
       window.dispatchEvent(new Event('popstate'));
@@ -45,6 +47,7 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
 
   const isActiveTarget = (target) =>
     (target === 'history' && currentView === 'history-list') ||
+    (target === 'learning-paths' && currentView === 'learning-paths') ||
     (target === 'community' && currentView === 'community') ||
     (target === 'leaderboard' && currentView === 'leaderboard') ||
     (target === 'stats' && currentView === 'stats');
@@ -135,6 +138,7 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
               onOpenProfile={onOpenProfile}
               onOpenLeaderboard={onOpenLeaderboard}
               onOpenStats={onOpenStats}
+              onOpenLearningPaths={() => handleNav('learning-paths')}
             />
           ) : (
             <button

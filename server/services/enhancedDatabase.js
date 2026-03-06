@@ -373,6 +373,7 @@ export function initializeEnhancedTables() {
         name TEXT NOT NULL,
         description TEXT,
         document_ids TEXT,
+        path_data TEXT, -- JSON array of steps
         estimated_hours REAL,
         completed_at DATETIME,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -385,21 +386,60 @@ export function initializeEnhancedTables() {
     `);
     console.log('  ✓ Learning paths table created');
 
-    // ── Learning Path Progress (per-document completion) ─────
+    // Migration: add path_data column if missing
+    try {
+      const lpCols = db.prepare('PRAGMA table_info(learning_paths)').all().map(c => c.name);
+      if (!lpCols.includes('path_data')) {
+        db.exec('ALTER TABLE learning_paths ADD COLUMN path_data TEXT');
+        console.log('  ✓ Added path_data column to learning_paths');
+      }
+    } catch (e) {
+      // ignore
+    }
+    console.log('  ✓ Learning paths table created');
+
+    // ── Learning Path Progress (per-step completion) ─────────
     db.exec(`
       CREATE TABLE IF NOT EXISTS learning_path_progress (
         id TEXT PRIMARY KEY,
         path_id TEXT NOT NULL,
-        document_id TEXT NOT NULL,
+        step_id TEXT NOT NULL,
+        document_id TEXT,
         completed_at DATETIME,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(path_id) REFERENCES learning_paths(id) ON DELETE CASCADE,
-        UNIQUE(path_id, document_id)
+        UNIQUE(path_id, step_id)
       );
 
       CREATE INDEX IF NOT EXISTS idx_lp_progress_path
       ON learning_path_progress(path_id);
     `);
+    console.log('  ✓ Learning path progress table created');
+
+    // Migration for older schema where step_id didn't exist
+    try {
+      const lppCols = db.prepare('PRAGMA table_info(learning_path_progress)').all().map(c => c.name);
+      if (!lppCols.includes('step_id')) {
+        // Drop the old table and recreate since it's empty in most cases or we can just alter
+        db.exec('DROP TABLE learning_path_progress');
+        db.exec(`
+          CREATE TABLE learning_path_progress (
+            id TEXT PRIMARY KEY,
+            path_id TEXT NOT NULL,
+            step_id TEXT NOT NULL,
+            document_id TEXT,
+            completed_at DATETIME,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(path_id) REFERENCES learning_paths(id) ON DELETE CASCADE,
+            UNIQUE(path_id, step_id)
+          );
+          CREATE INDEX idx_lp_progress_path ON learning_path_progress(path_id);
+        `);
+        console.log('  ✓ Migrated learning_path_progress to include step_id');
+      }
+    } catch (e) {
+      // ignore
+    }
     console.log('  ✓ Learning path progress table created');
 
     // ── Document Sessions (persist mindmap/flashcard/chat data per doc) ──
@@ -534,7 +574,7 @@ export function initializeEnhancedTables() {
       CREATE INDEX IF NOT EXISTS idx_announcements_active ON announcements(is_active, created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_announcements_priority ON announcements(priority DESC, created_at DESC);
     `);
-    
+
     // Add new columns if they don't exist (for existing databases)
     const columns = db.prepare("PRAGMA table_info(announcements)").all();
     const columnNames = columns.map(c => c.name);
