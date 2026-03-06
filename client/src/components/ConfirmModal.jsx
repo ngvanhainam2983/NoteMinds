@@ -41,11 +41,13 @@ export default function ConfirmModal({
 
   if (!open) return null;
 
-  const colors = {
+  const palette = {
     danger:  { bg: 'bg-red-500/10',     border: 'border-red-500/30',     icon: 'text-red-400',     btn: 'bg-red-600 hover:bg-red-700' },
     warning: { bg: 'bg-amber-500/10',    border: 'border-amber-500/30',   icon: 'text-amber-400',   btn: 'bg-amber-600 hover:bg-amber-700' },
     info:    { bg: 'bg-primary-500/10',  border: 'border-primary-500/30', icon: 'text-primary-400', btn: 'bg-primary-600 hover:bg-primary-700' },
-  }[variant];
+  };
+
+  const colors = palette[variant] || palette.warning;
 
   const Icon = variant === 'info' ? Info : AlertTriangle;
 

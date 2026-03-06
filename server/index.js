@@ -103,7 +103,25 @@ app.set('trust proxy', true);
 
 // CORS Configuration
 // ==== SECURITY: Use whitelist for all origins, not just development ====
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:5173').split(',').map(o => o.trim());
+const DEFAULT_ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'https://notemind.tech',
+  'https://www.notemind.tech',
+];
+
+const envAllowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+
+const ALLOWED_ORIGINS = Array.from(new Set([
+  ...DEFAULT_ALLOWED_ORIGINS,
+  ...envAllowedOrigins,
+  FRONTEND_URL,
+].filter(Boolean)));
+
 const allowedOriginsLower = ALLOWED_ORIGINS.map(o => o.toLowerCase());
 
 if (NODE_ENV === 'production') {

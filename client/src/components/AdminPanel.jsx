@@ -424,7 +424,7 @@ export default function AdminPanel({ onBack }) {
                         />
                       ))}
                       {filtered.length === 0 && (
-                        <tr>
+                        <tr key="empty-users-row">
                           <td colSpan={6} className="text-center py-8 text-muted">
                             <Users size={28} className="mx-auto mb-2 opacity-50" />
                             <p>{t('admin.noUserFound')}</p>
@@ -911,7 +911,7 @@ function AdminDocsPanel({ showToast, askConfirm }) {
                 </tr>
               ))}
               {docs.length === 0 && (
-                <tr><td colSpan={4} className="text-center py-8 text-muted">{t('admin.noDocumentsFound')}</td></tr>
+                <tr key="empty-docs-row"><td colSpan={4} className="text-center py-8 text-muted">{t('admin.noDocumentsFound')}</td></tr>
               )}
             </tbody>
           </table>

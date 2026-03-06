@@ -15,6 +15,8 @@ const RANK_STYLES = [
   { bg: 'bg-orange-500/15', border: 'border-orange-500/30', text: 'text-orange-400', icon: Medal },
 ];
 
+const DEFAULT_RANK_STYLE = { bg: 'bg-surface-2/60', border: 'border-line', text: 'text-txt', icon: Star };
+
 export default function LeaderboardPage({ onBack }) {
   const { t } = useLanguage();
   const [period, setPeriod] = useState('all');
@@ -89,11 +91,11 @@ export default function LeaderboardPage({ onBack }) {
                 const entry = data[idx];
                 if (!entry) return null;
                 const rank = idx;
-                const style = RANK_STYLES[rank] || {};
+                const style = RANK_STYLES[rank] || DEFAULT_RANK_STYLE;
                 const Icon = style.icon || Star;
                 return (
                   <div
-                    key={entry.user_id}
+                    key={`${entry.user_id || entry.username || 'user'}-${idx}`}
                     className={`${style.bg} border ${style.border} rounded-2xl p-5 text-center ${rank === 0 ? 'transform -translate-y-3' : ''} transition-all`}
                   >
                     <div className={`w-12 h-12 mx-auto rounded-full ${style.bg} border ${style.border} flex items-center justify-center mb-3`}>
@@ -132,12 +134,12 @@ export default function LeaderboardPage({ onBack }) {
               <tbody>
                 {data.map((entry, idx) => {
                   const isTop3 = idx < 3;
-                  const style = RANK_STYLES[idx];
+                  const style = RANK_STYLES[idx] || DEFAULT_RANK_STYLE;
                   return (
-                    <tr key={entry.user_id} className={`border-b border-line last:border-b-0 transition-colors ${isTop3 ? style?.bg + '/30' : 'hover:bg-surface-2/50'}`}>
+                    <tr key={`${entry.user_id || entry.username || 'user'}-${idx}`} className={`border-b border-line last:border-b-0 transition-colors ${isTop3 ? style.bg : 'hover:bg-surface-2/50'}`}>
                       <td className="py-3 px-5">
                         {isTop3 ? (
-                          <span className={`w-7 h-7 inline-flex items-center justify-center rounded-full font-bold text-xs ${style?.bg} ${style?.text}`}>
+                          <span className={`w-7 h-7 inline-flex items-center justify-center rounded-full font-bold text-xs ${style.bg} ${style.text}`}>
                             {idx + 1}
                           </span>
                         ) : (
@@ -153,7 +155,7 @@ export default function LeaderboardPage({ onBack }) {
                         </div>
                       </td>
                       <td className="py-3 px-5 text-center">
-                        <span className={`font-bold ${isTop3 ? style?.text : 'text-primary-400'}`}>
+                        <span className={`font-bold ${isTop3 ? style.text : 'text-primary-400'}`}>
                           {entry.score}
                         </span>
                       </td>
