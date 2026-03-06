@@ -3,6 +3,74 @@ import { parseAIJson } from './jsonParser.js';
 import { sanitizeDocumentText, sanitizeFileName } from './promptGuard.js';
 import { buildSystemPrompt, normalizeLanguage } from './promptBuilder.js';
 
+function toText(value, fallback = '') {
+    if (typeof value === 'string') {
+        const trimmed = value.trim();
+        return trimmed || fallback;
+    }
+    if (value == null) return fallback;
+    return String(value).trim() || fallback;
+}
+
+function toMinutes(value, fallback = 15) {
+    const n = Number(value);
+    if (Number.isFinite(n) && n > 0) return Math.round(n);
+    return fallback;
+}
+
+function toHours(value, fallback = 1.0) {
+    const n = Number(value);
+    if (Number.isFinite(n) && n > 0) return Math.round(n * 10) / 10;
+    return fallback;
+}
+
+function normalizeActivities(rawActivities = []) {
+    const allowed = new Set(['read_summary', 'flashcards', 'quiz', 'chat']);
+    const mapped = (Array.isArray(rawActivities) ? rawActivities : [])
+        .map(a => toText(a).toLowerCase())
+        .map(a => {
+            if (a === 'read' || a === 'summary' || a === 'mindmap') return 'read_summary';
+            if (a === 'flashcard') return 'flashcards';
+            return a;
+        })
+        .filter(a => allowed.has(a));
+
+    if (mapped.length) return Array.from(new Set(mapped));
+    return ['read_summary'];
+}
+
+function normalizeLearningPathPayload(raw, fileName, language) {
+    const stepsSource = Array.isArray(raw?.steps)
+        ? raw.steps
+        : Array.isArray(raw?.path)
+            ? raw.path
+            : Array.isArray(raw?.items)
+                ? raw.items
+                : [];
+
+    const steps = stepsSource
+        .map((step, index) => ({
+            id: toText(step?.id, `step_${index + 1}`),
+            title: toText(step?.title || step?.name, language === 'vi' ? `Bước ${index + 1}` : `Step ${index + 1}`),
+            description: toText(step?.description || step?.details, language === 'vi' ? 'Hoàn thành bước học tập này.' : 'Complete this learning step.'),
+            estimated_minutes: toMinutes(step?.estimated_minutes || step?.minutes, 15),
+            recommended_activities: normalizeActivities(step?.recommended_activities || step?.activities)
+        }))
+        .filter(step => step.title);
+
+    return {
+        name: toText(raw?.name || raw?.title, language === 'vi' ? `Lộ trình học: ${fileName}` : `Learning Path: ${fileName}`),
+        description: toText(
+            raw?.description,
+            language === 'vi'
+                ? 'Lộ trình học tập được tạo tự động từ tài liệu của bạn.'
+                : 'A learning path generated automatically from your document.'
+        ),
+        estimated_hours: toHours(raw?.estimated_hours || raw?.duration_hours, Math.max(1, Math.round((steps.length || 3) * 0.5 * 10) / 10)),
+        steps
+    };
+}
+
 /**
  * Generate a learning path from document text
  */
@@ -28,13 +96,10 @@ export async function generateLearningPath(text, fileName, options = {}) {
     });
 
     try {
-        const pathData = parseAIJson(response);
-        // Ensure steps have IDs if AI missed it
-        if (pathData && Array.isArray(pathData.steps)) {
-            pathData.steps = pathData.steps.map((step, index) => ({
-                ...step,
-                id: step.id || `step_${index + 1}`
-            }));
+        const parsed = parseAIJson(response);
+        const pathData = normalizeLearningPathPayload(parsed, cleanName, language);
+        if (!pathData.steps.length) {
+            throw new Error('Learning path contains no valid steps');
         }
         return pathData;
     } catch (error) {
