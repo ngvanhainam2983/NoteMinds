@@ -1884,13 +1884,34 @@ app.get('/api/public/documents/:id/content', async (req, res) => {
       return res.status(404).json({ error: 'Tài liệu không tồn tại hoặc không được chia sẻ công khai.' });
     }
 
+    // Extract text
+    let docText = '';
+    const memDoc = documents.get(docQuery.id);
+    if (memDoc && memDoc.text) {
+      docText = memDoc.text;
+    } else if (docQuery.file_path && fs.existsSync(docQuery.file_path)) {
+      try {
+        docText = await processDocument(docQuery.file_path);
+        documents.set(docQuery.id, {
+          id: docQuery.id,
+          fileName: docQuery.original_name,
+          filePath: docQuery.file_path,
+          text: docText,
+          status: 'ready',
+          createdAt: new Date().toISOString()
+        });
+      } catch (e) {
+        console.error('Failed to process public document text:', e.message);
+      }
+    }
+
     // Load pre-existing session data
     const sessions = getAllDocumentSessions(docQuery.id);
 
     res.json({
       documentId: docQuery.id,
       fileName: docQuery.original_name,
-      text: docQuery.text_content,
+      text: docText,
       shareType: 'view', // Always read-only for public community docs
       status: docQuery.status,
       sessions: {

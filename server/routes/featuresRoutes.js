@@ -1539,10 +1539,16 @@ router.post('/learning-paths', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Document not found' });
     }
 
-    // Get text chunks to generate path
-    const chunks = db.prepare('SELECT text_content FROM document_chunks WHERE document_id = ? ORDER BY page_number, chunk_index LIMIT 5').all(documentId);
-    let docText = chunks.map(c => c.text_content).join('\\n\\n');
-
+    // Get text to generate path. Since it might not be in the DB directly, extract from file
+    let docText = '';
+    if (doc.file_path && fs.existsSync(doc.file_path)) {
+      const { processDocument } = await import('../services/documentProcessor.js');
+      try {
+        docText = await processDocument(doc.file_path);
+      } catch (err) {
+        console.warn('Could not extract text for learning path:', err.message);
+      }
+    }
     db.close();
 
     if (!docText) docText = doc.original_name || 'Tài liệu học tập';
