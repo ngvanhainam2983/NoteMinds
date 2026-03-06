@@ -4,6 +4,7 @@ import {
   Search, Folder, RefreshCw, CloudOff, History, ArrowLeft, Map, CreditCard, MessageCircle, Eye
 } from 'lucide-react';
 import OfflineDocViewer from './OfflineDocViewer';
+import { useLanguage } from '../LanguageContext';
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '';
@@ -27,6 +28,7 @@ const statusIcon = (doc) => {
 };
 
 export default function OfflinePage({ onBack, onRetry, onDisable }) {
+  const { t } = useLanguage();
   const [search, setSearch] = useState('');
   const [selectedDoc, setSelectedDoc] = useState(null); // { id, name }
 
@@ -82,9 +84,9 @@ export default function OfflinePage({ onBack, onRetry, onDisable }) {
     const s = sessionsCache[docId]?.sessions;
     if (!s) return null;
     const items = [];
-    if (s.mindmap) items.push({ icon: Map, label: 'Sơ đồ', color: 'text-blue-400' });
-    if (s.flashcards?.cards?.length || (Array.isArray(s.flashcards) && s.flashcards.length)) items.push({ icon: CreditCard, label: 'Flashcard', color: 'text-emerald-400' });
-    if (s.quiz?.questions?.length) items.push({ icon: FileText, label: 'Quiz', color: 'text-amber-400' });
+    if (s.mindmap) items.push({ icon: Map, label: t('offline.badgeMindmap'), color: 'text-blue-400' });
+    if (s.flashcards?.cards?.length || (Array.isArray(s.flashcards) && s.flashcards.length)) items.push({ icon: CreditCard, label: t('offline.badgeFlashcard'), color: 'text-emerald-400' });
+    if (s.quiz?.questions?.length) items.push({ icon: FileText, label: t('offline.badgeQuiz'), color: 'text-amber-400' });
     if (s.chat?.length > 1) items.push({ icon: MessageCircle, label: 'Chat', color: 'text-purple-400' });
     return items.length > 0 ? items : null;
   };
@@ -119,8 +121,8 @@ export default function OfflinePage({ onBack, onRetry, onDisable }) {
                 <WifiOff size={16} className="text-amber-400" />
               </div>
               <div>
-                <h1 className="text-sm font-bold text-txt leading-tight">Chế độ ngoại tuyến</h1>
-                <p className="text-[10px] text-muted leading-tight">Xem lịch sử đã lưu trên thiết bị</p>
+                <h1 className="text-sm font-bold text-txt leading-tight">{t('offline.title')}</h1>
+                <p className="text-[10px] text-muted leading-tight">{t('offline.subtitle')}</p>
               </div>
             </div>
           </div>
@@ -132,7 +134,7 @@ export default function OfflinePage({ onBack, onRetry, onDisable }) {
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted hover:text-txt hover:bg-surface border border-line transition-colors"
                 >
                   <ArrowLeft size={13} />
-                  Quay lại
+                  {t('common.back')}
                 </button>
               )}
               {onRetry && (
@@ -141,7 +143,7 @@ export default function OfflinePage({ onBack, onRetry, onDisable }) {
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-primary-400 hover:bg-primary-600/10 border border-primary-500/20 transition-colors"
                 >
                   <RefreshCw size={13} />
-                  Thử kết nối lại
+                  {t('app.retryConnection')}
                 </button>
               )}
             </div>
@@ -156,15 +158,14 @@ export default function OfflinePage({ onBack, onRetry, onDisable }) {
             <CloudOff size={22} className="text-amber-400" />
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-sm font-bold text-txt mb-1">Không có kết nối mạng</h2>
+            <h2 className="text-sm font-bold text-txt mb-1">{t('offline.noConnectionTitle')}</h2>
             <p className="text-xs text-muted leading-relaxed">
-              Bạn đang ở chế độ ngoại tuyến. Dưới đây là lịch sử tài liệu đã được lưu trên thiết bị của bạn.
-              Khi có kết nối lại, dữ liệu sẽ được đồng bộ tự động.
+              {t('offline.noConnectionDesc')}
             </p>
             {cacheTime && (
               <p className="text-[11px] text-muted/70 mt-1.5 flex items-center gap-1">
                 <Clock size={11} />
-                Cập nhật lần cuối: {cacheTime}
+                {t('offline.lastUpdated')}: {cacheTime}
               </p>
             )}
           </div>
@@ -175,14 +176,14 @@ export default function OfflinePage({ onBack, onRetry, onDisable }) {
           <div className="bg-surface border border-line rounded-xl p-4">
             <div className="flex items-center gap-2 mb-1">
               <FileText size={14} className="text-primary-400" />
-              <span className="text-[11px] text-muted font-medium">Tài liệu</span>
+              <span className="text-[11px] text-muted font-medium">{t('offline.statsDocuments')}</span>
             </div>
             <p className="text-xl font-extrabold text-txt">{cachedDocs.length}</p>
           </div>
           <div className="bg-surface border border-line rounded-xl p-4">
             <div className="flex items-center gap-2 mb-1">
               <Eye size={14} className="text-emerald-400" />
-              <span className="text-[11px] text-muted font-medium">Xem được</span>
+              <span className="text-[11px] text-muted font-medium">{t('offline.statsViewable')}</span>
             </div>
             <p className="text-xl font-extrabold text-txt">
               {cachedDocs.filter(d => !!getDocSessionInfo(d.id)).length}
@@ -191,14 +192,14 @@ export default function OfflinePage({ onBack, onRetry, onDisable }) {
           <div className="bg-surface border border-line rounded-xl p-4 hidden sm:block">
             <div className="flex items-center gap-2 mb-1">
               <Folder size={14} className="text-accent-400" />
-              <span className="text-[11px] text-muted font-medium">Thư mục</span>
+              <span className="text-[11px] text-muted font-medium">{t('offline.statsFolders')}</span>
             </div>
             <p className="text-xl font-extrabold text-txt">{cachedFolders.length}</p>
           </div>
           <div className="bg-surface border border-line rounded-xl p-4 hidden sm:block">
             <div className="flex items-center gap-2 mb-1">
               <CheckCircle2 size={14} className="text-emerald-400" />
-              <span className="text-[11px] text-muted font-medium">Hoàn thành</span>
+              <span className="text-[11px] text-muted font-medium">{t('offline.statsCompleted')}</span>
             </div>
             <p className="text-xl font-extrabold text-txt">
               {cachedDocs.filter(d => d.status === 'ready').length}
@@ -214,7 +215,7 @@ export default function OfflinePage({ onBack, onRetry, onDisable }) {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm kiếm tài liệu đã lưu..."
+              placeholder={t('offline.searchPlaceholder')}
               className="w-full bg-surface border border-line rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary-500/50 text-txt placeholder-muted/60"
             />
           </div>
@@ -226,15 +227,15 @@ export default function OfflinePage({ onBack, onRetry, onDisable }) {
             <div className="w-20 h-20 rounded-2xl bg-surface border border-line flex items-center justify-center mb-5">
               <History size={32} className="text-muted/40" />
             </div>
-            <h3 className="text-lg font-bold text-txt mb-2">Chưa có dữ liệu được lưu</h3>
+            <h3 className="text-lg font-bold text-txt mb-2">{t('offline.emptyTitle')}</h3>
             <p className="text-sm text-muted max-w-sm leading-relaxed">
-              Khi bạn sử dụng NoteMind, lịch sử tài liệu sẽ được lưu tự động để bạn có thể xem lại khi ngoại tuyến.
+              {t('offline.emptyDesc')}
             </p>
           </div>
         ) : filteredDocs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Search size={28} className="text-muted/40 mb-3" />
-            <p className="text-sm text-muted">Không tìm thấy tài liệu phù hợp</p>
+            <p className="text-sm text-muted">{t('offline.noSearchResult')}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -290,14 +291,14 @@ export default function OfflinePage({ onBack, onRetry, onDisable }) {
                       )}
                       {expired && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 border border-red-500/20 text-red-400 font-medium shrink-0">
-                          Hết hạn
+                          {t('offline.expired')}
                         </span>
                       )}
                     </div>
                     <div className="flex items-center gap-3 mt-1.5">
                       <span className={`flex items-center gap-1 text-[11px] ${expired ? 'text-muted/60' : 'text-muted'}`}>
                         {statusIcon(doc)}
-                        {doc.status === 'ready' ? 'Hoàn thành' : doc.status === 'error' ? 'Lỗi' : 'Đang xử lý'}
+                        {doc.status === 'ready' ? t('user.completed') : doc.status === 'error' ? t('user.errorStatus') : t('user.processingStatus')}
                       </span>
                       {doc.text_length > 0 && (
                         <span className="text-[11px] text-muted/60">{(doc.text_length / 1000).toFixed(1)}k ký tự</span>
@@ -328,12 +329,12 @@ export default function OfflinePage({ onBack, onRetry, onDisable }) {
                     {hasContent ? (
                       <span className="text-[10px] px-2 py-1 rounded-lg bg-primary-600/10 border border-primary-500/20 text-primary-400 font-medium flex items-center gap-1">
                         <Eye size={10} />
-                        Xem được
+                        {t('offline.viewableBadge')}
                       </span>
                     ) : (
                       <span className="text-[10px] px-2 py-1 rounded-lg bg-surface border border-line text-muted font-medium flex items-center gap-1">
                         <WifiOff size={10} />
-                        Chỉ tên
+                        {t('offline.nameOnlyBadge')}
                       </span>
                     )}
                   </div>
@@ -351,8 +352,7 @@ export default function OfflinePage({ onBack, onRetry, onDisable }) {
           <div>
             <p className="text-xs font-medium text-txt mb-0.5">Mẹo</p>
             <p className="text-[11px] text-muted leading-relaxed">
-              Tài liệu có nhãn <strong className="text-primary-400">Xem được</strong> là những tài liệu bạn đã mở khi có mạng — bao gồm sơ đồ tư duy, flashcard, quiz và chat.
-              Hãy mở tài liệu khi có mạng để lưu nội dung xem ngoại tuyến.
+              {t('offline.tip')}
             </p>
           </div>
         </div>

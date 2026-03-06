@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Megaphone, X, Info, AlertTriangle, Bell, ExternalLink, ArrowRight } from 'lucide-react';
 import { getAnnouncements, markAnnouncementRead } from '../api';
+import { useLanguage } from '../LanguageContext';
 
 const TYPE_STYLES = {
   info: { bg: 'bg-blue-500/10', border: 'border-blue-500/20', text: 'text-blue-400', icon: Info },
@@ -25,6 +26,7 @@ function isValidUrl(url) {
 }
 
 export default function AnnouncementBanner({ user }) {
+  const { t } = useLanguage();
   const [announcements, setAnnouncements] = useState([]);
   const [dismissedIds, setDismissedIds] = useState(() => {
     try {
@@ -112,7 +114,7 @@ export default function AnnouncementBanner({ user }) {
                   rel="noopener noreferrer"
                   className={`inline-flex items-center gap-1 mt-2 text-xs ${style.text} hover:underline font-medium`}
                 >
-                  {announcement.link_text || 'Xem thêm'}
+                  {announcement.link_text || t('announcement.readMore')}
                   <ArrowRight size={12} />
                 </a>
               )}
@@ -121,7 +123,7 @@ export default function AnnouncementBanner({ user }) {
               <button
                 onClick={() => handleDismiss(announcement.id)}
                 className="p-1 rounded-lg hover:bg-surface-2 text-muted hover:text-txt transition-colors shrink-0"
-                title="Ẩn thông báo"
+                title={t('announcement.hide')}
               >
                 <X size={14} />
               </button>

@@ -283,7 +283,7 @@ export default function Dashboard({ doc, user }) {
       await generateLearningPath(doc.docId);
       window.location.href = '/learning-paths';
     } catch (err) {
-      alert(err.response?.data?.error || 'Lỗi tạo lộ trình. Vui lòng thử lại sau.');
+      alert(err.response?.data?.error || t('dashboard.learningPathError'));
     } finally {
       setIsGeneratingPath(false);
     }
@@ -368,10 +368,10 @@ export default function Dashboard({ doc, user }) {
             disabled={isGeneratingPath || docDetails.isLocked}
             className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer disabled:opacity-50
               bg-gradient-to-r from-primary-600 to-accent-600 text-white hover:shadow-lg hover:shadow-primary-500/25 border-0`}
-            title="Tạo lộ trình AI tự động từ tài liệu này"
+            title={t('dashboard.createLearningPathTitle')}
           >
             {isGeneratingPath ? <Loader2 size={14} className="animate-spin" /> : <Map size={14} />}
-            <span className="hidden sm:inline">Tạo Lộ trình AI</span>
+            <span className="hidden sm:inline">{t('dashboard.createLearningPath')}</span>
           </button>
 
           <button
@@ -395,7 +395,7 @@ export default function Dashboard({ doc, user }) {
               ? 'bg-primary-500/10 border-primary-500/30 text-primary-400'
               : 'bg-surface border-line hover:bg-line text-muted'
               }`}
-            title="Focus Mode (Pomodoro)"
+            title={t('dashboard.focusModeTitle')}
           >
             <Focus size={14} />
             <span className="hidden sm:inline">{t('dashboard.focus')}</span>

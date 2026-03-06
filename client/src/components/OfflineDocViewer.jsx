@@ -6,20 +6,21 @@ import {
 } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
 import MindmapView from './MindmapView';
+import { useLanguage } from '../LanguageContext';
 
 const TABS = [
-  { id: 'mindmap', label: 'Sơ đồ tư duy', icon: Map },
-  { id: 'flashcard', label: 'Flashcard', icon: CreditCard },
-  { id: 'quiz', label: 'Kiểm tra', icon: FileText },
-  { id: 'chat', label: 'Chat', icon: MessageCircle },
+  { id: 'mindmap', labelKey: 'offline.tabMindmap', icon: Map },
+  { id: 'flashcard', labelKey: 'offline.tabFlashcard', icon: CreditCard },
+  { id: 'quiz', labelKey: 'offline.tabQuiz', icon: FileText },
+  { id: 'chat', labelKey: 'offline.tabChat', icon: MessageCircle },
 ];
 
-function OfflineFlashcards({ data }) {
+function OfflineFlashcards({ data, t }) {
   const cards = data?.cards || data || [];
   const [idx, setIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
 
-  if (!cards.length) return <EmptyTab label="Chưa tạo flashcard cho tài liệu này" />;
+  if (!cards.length) return <EmptyTab label={t('offline.noFlashcardForDoc')} t={t} />;
 
   const card = cards[idx];
   return (
@@ -34,7 +35,7 @@ function OfflineFlashcards({ data }) {
       >
         <div className="text-center max-w-full">
           <span className="text-[10px] uppercase tracking-wider text-muted font-bold mb-3 block">
-            {flipped ? 'Đáp án' : 'Câu hỏi'}
+            {flipped ? t('offline.answer') : t('offline.question')}
           </span>
           <div className="text-txt text-base leading-relaxed">
             {flipped
@@ -57,7 +58,7 @@ function OfflineFlashcards({ data }) {
           className="px-4 py-2 rounded-xl bg-primary-600/10 border border-primary-500/20 text-primary-400 text-xs font-medium hover:bg-primary-600/20 transition-colors flex items-center gap-1.5"
         >
           <RotateCw size={13} />
-          Lật thẻ
+          {t('offline.flipCard')}
         </button>
         <button
           onClick={() => { setIdx(Math.min(cards.length - 1, idx + 1)); setFlipped(false); }}
@@ -71,14 +72,14 @@ function OfflineFlashcards({ data }) {
   );
 }
 
-function OfflineQuiz({ data }) {
+function OfflineQuiz({ data, t }) {
   const questions = data?.questions || [];
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [showReview, setShowReview] = useState(false);
 
-  if (!questions.length) return <EmptyTab label="Chưa tạo bài kiểm tra cho tài liệu này" />;
+  if (!questions.length) return <EmptyTab label={t('offline.noQuizForDoc')} t={t} />;
 
   const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
   const q = questions[idx];
@@ -96,9 +97,9 @@ function OfflineQuiz({ data }) {
           {pct}%
         </div>
         <div className="text-center">
-          <h3 className="text-lg font-bold text-txt">{score}/{questions.length} câu đúng</h3>
+          <h3 className="text-lg font-bold text-txt">{t('offline.correctCount').replace('{score}', score).replace('{total}', questions.length)}</h3>
           <p className="text-sm text-muted mt-1">
-            {pct >= 80 ? 'Xuất sắc! 🎉' : pct >= 50 ? 'Khá tốt! 👍' : 'Cần ôn thêm 💪'}
+            {pct >= 80 ? t('offline.resultExcellent') : pct >= 50 ? t('offline.resultGood') : t('offline.resultNeedReview')}
           </p>
         </div>
         <div className="flex gap-3">
@@ -106,13 +107,13 @@ function OfflineQuiz({ data }) {
             onClick={() => setShowReview(true)}
             className="px-4 py-2 rounded-xl bg-surface border border-line text-txt text-sm font-medium hover:bg-surface-2 transition-colors flex items-center gap-1.5"
           >
-            <Eye size={14} /> Xem lại
+            <Eye size={14} /> {t('offline.review')}
           </button>
           <button
             onClick={() => { setAnswers({}); setSubmitted(false); setIdx(0); }}
             className="px-4 py-2 rounded-xl bg-primary-600 text-white text-sm font-medium hover:bg-primary-500 transition-colors flex items-center gap-1.5"
           >
-            <RotateCw size={14} /> Làm lại
+            <RotateCw size={14} /> {t('offline.retryQuiz')}
           </button>
         </div>
       </div>
@@ -123,11 +124,11 @@ function OfflineQuiz({ data }) {
     return (
       <div className="p-6 space-y-4 max-h-[600px] overflow-y-auto">
         <button onClick={() => setShowReview(false)} className="text-xs text-primary-400 hover:underline mb-2 flex items-center gap-1">
-          <ArrowLeft size={12} /> Quay lại kết quả
+          <ArrowLeft size={12} /> {t('offline.backToResult')}
         </button>
         {questions.map((q, i) => (
           <div key={i} className={`p-4 rounded-xl border ${answers[i] === q.correct ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-red-500/30 bg-red-500/5'}`}>
-            <p className="text-sm font-medium text-txt mb-2">Câu {i + 1}: {q.question}</p>
+            <p className="text-sm font-medium text-txt mb-2">{t('offline.questionNumber').replace('{number}', i + 1)}: {q.question}</p>
             <div className="space-y-1">
               {q.options.map((opt, oi) => (
                 <div key={oi} className={`text-xs px-3 py-1.5 rounded-lg ${oi === q.correct ? 'text-emerald-400 font-medium' : oi === answers[i] && oi !== q.correct ? 'text-red-400 line-through' : 'text-muted'}`}>
@@ -145,7 +146,7 @@ function OfflineQuiz({ data }) {
   return (
     <div className="p-6 flex flex-col gap-5">
       <div className="flex items-center justify-between">
-        <span className="text-xs text-muted font-medium">Câu {idx + 1} / {questions.length}</span>
+        <span className="text-xs text-muted font-medium">{t('offline.questionProgress').replace('{current}', idx + 1).replace('{total}', questions.length)}</span>
         <div className="h-1.5 flex-1 mx-4 bg-surface-2 rounded-full overflow-hidden">
           <div className="h-full bg-primary-500 rounded-full transition-all" style={{ width: `${((idx + 1) / questions.length) * 100}%` }} />
         </div>
@@ -184,7 +185,7 @@ function OfflineQuiz({ data }) {
             disabled={Object.keys(answers).length < questions.length}
             className="px-5 py-2 rounded-xl bg-primary-600 text-white text-sm font-semibold hover:bg-primary-500 disabled:opacity-40 transition-colors"
           >
-            Nộp bài
+            {t('offline.submitQuiz')}
           </button>
         ) : (
           <button
@@ -199,8 +200,8 @@ function OfflineQuiz({ data }) {
   );
 }
 
-function OfflineChat({ messages }) {
-  if (!messages || messages.length <= 1) return <EmptyTab label="Chưa có lịch sử chat cho tài liệu này" />;
+function OfflineChat({ messages, t }) {
+  if (!messages || messages.length <= 1) return <EmptyTab label={t('offline.noChatForDoc')} t={t} />;
 
   return (
     <div className="p-4 space-y-3 max-h-[600px] overflow-y-auto">
@@ -223,17 +224,18 @@ function OfflineChat({ messages }) {
   );
 }
 
-function EmptyTab({ label }) {
+function EmptyTab({ label, t }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
       <WifiOff size={28} className="text-muted/30 mb-3" />
       <p className="text-sm text-muted">{label}</p>
-      <p className="text-xs text-muted/60 mt-1">Nội dung này cần được tạo khi có mạng</p>
+      <p className="text-xs text-muted/60 mt-1">{t('offline.needsOnlineGeneration')}</p>
     </div>
   );
 }
 
 export default function OfflineDocViewer({ docId, docName, onBack }) {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('mindmap');
 
   const cached = useMemo(() => {
@@ -277,9 +279,9 @@ export default function OfflineDocViewer({ docId, docName, onBack }) {
             <h1 className="text-sm font-bold text-txt truncate">{docName}</h1>
             <p className="text-[10px] text-muted flex items-center gap-1">
               <WifiOff size={9} />
-              Chế độ ngoại tuyến
+              {t('offline.title')}
               {cached?.cachedAt && (
-                <span className="ml-1">• Lưu lúc {new Date(cached.cachedAt).toLocaleString('vi-VN')}</span>
+                <span className="ml-1">• {t('offline.savedAt')} {new Date(cached.cachedAt).toLocaleString('vi-VN')}</span>
               )}
             </p>
           </div>
@@ -292,10 +294,9 @@ export default function OfflineDocViewer({ docId, docName, onBack }) {
             <div className="w-20 h-20 rounded-2xl bg-surface border border-line flex items-center justify-center mb-5">
               <WifiOff size={32} className="text-muted/40" />
             </div>
-            <h3 className="text-lg font-bold text-txt mb-2">Chưa có dữ liệu ngoại tuyến</h3>
+            <h3 className="text-lg font-bold text-txt mb-2">{t('offline.noOfflineDataTitle')}</h3>
             <p className="text-sm text-muted max-w-sm leading-relaxed">
-              Tài liệu này chưa được mở khi có mạng nên chưa lưu dữ liệu.
-              Hãy mở tài liệu khi có mạng để xem ngoại tuyến.
+              {t('offline.noOfflineDataDesc')}
             </p>
           </div>
         ) : availableTabs.length === 0 ? (
@@ -303,10 +304,9 @@ export default function OfflineDocViewer({ docId, docName, onBack }) {
             <div className="w-20 h-20 rounded-2xl bg-surface border border-line flex items-center justify-center mb-5">
               <FileText size={32} className="text-muted/40" />
             </div>
-            <h3 className="text-lg font-bold text-txt mb-2">Chưa tạo nội dung</h3>
+            <h3 className="text-lg font-bold text-txt mb-2">{t('offline.noGeneratedContentTitle')}</h3>
             <p className="text-sm text-muted max-w-sm leading-relaxed">
-              Tài liệu đã được mở nhưng chưa tạo sơ đồ tư duy, flashcard hay bài kiểm tra nào.
-              Hãy tạo khi có mạng để xem ngoại tuyến.
+              {t('offline.noGeneratedContentDesc')}
             </p>
           </div>
         ) : (
@@ -327,7 +327,7 @@ export default function OfflineDocViewer({ docId, docName, onBack }) {
                     }`}
                   >
                     <Icon size={16} />
-                    <span className="hidden sm:inline">{tab.label}</span>
+                    <span className="hidden sm:inline">{t(tab.labelKey)}</span>
                   </button>
                 );
               })}
@@ -345,13 +345,13 @@ export default function OfflineDocViewer({ docId, docName, onBack }) {
                 />
               )}
               {effectiveTab === 'flashcard' && hasFlashcards && (
-                <OfflineFlashcards data={sessions.flashcards} />
+                <OfflineFlashcards data={sessions.flashcards} t={t} />
               )}
               {effectiveTab === 'quiz' && hasQuiz && (
-                <OfflineQuiz data={sessions.quiz} />
+                <OfflineQuiz data={sessions.quiz} t={t} />
               )}
               {effectiveTab === 'chat' && hasChat && (
-                <OfflineChat messages={sessions.chat} />
+                <OfflineChat messages={sessions.chat} t={t} />
               )}
             </div>
 
@@ -359,7 +359,7 @@ export default function OfflineDocViewer({ docId, docName, onBack }) {
             <div className="mt-4 bg-amber-500/5 border border-amber-500/20 rounded-xl px-4 py-3 flex items-center gap-3">
               <WifiOff size={14} className="text-amber-400 shrink-0" />
               <p className="text-[11px] text-muted leading-relaxed">
-                Đang xem bản lưu ngoại tuyến. Một số tính năng (tạo mới, chat AI, chấm điểm SRS) không khả dụng khi offline.
+                {t('offline.notice')}
               </p>
             </div>
           </>

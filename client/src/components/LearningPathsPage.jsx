@@ -41,7 +41,7 @@ export default function LearningPathsPage({ onBack, onOpenDocument, currentDocId
                 setLoading(false);
             }
         } catch (err) {
-            setError(err.message || 'Lỗi tải lộ trình học');
+            setError(err.message || t('learningPaths.loadError'));
             setLoading(false);
         }
     };
@@ -74,7 +74,7 @@ export default function LearningPathsPage({ onBack, onOpenDocument, currentDocId
     };
 
     const handleDeletePath = async (id) => {
-        if (!window.confirm('Bạn có chắc muốn xoá lộ trình này?')) return;
+        if (!window.confirm(t('learningPaths.deleteConfirm'))) return;
         try {
             await deleteLearningPath(id);
             setPaths(paths.filter(p => p.id !== id));
@@ -99,10 +99,10 @@ export default function LearningPathsPage({ onBack, onOpenDocument, currentDocId
     // Convert "read_summary", "flashcards" into nice UI
     const getActivityMeta = (activityType) => {
         switch (activityType) {
-            case 'read_summary': return { icon: BookOpen, label: 'Đọc Tóm tắt', color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' };
-            case 'flashcards': return { icon: Layers, label: 'Thẻ Ghi nhớ', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' };
-            case 'quiz': return { icon: Target, label: 'Làm Quiz', color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' };
-            case 'chat': return { icon: Brain, label: 'Hỏi đáp AI', color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' };
+            case 'read_summary': return { icon: BookOpen, label: t('learningPaths.activityReadSummary'), color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' };
+            case 'flashcards': return { icon: Layers, label: t('learningPaths.activityFlashcards'), color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' };
+            case 'quiz': return { icon: Target, label: t('learningPaths.activityQuiz'), color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' };
+            case 'chat': return { icon: Brain, label: t('learningPaths.activityChat'), color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' };
             default: return { icon: Play, label: activityType, color: 'text-primary-400', bg: 'bg-primary-500/10', border: 'border-primary-500/20' };
         }
     };
@@ -114,7 +114,7 @@ export default function LearningPathsPage({ onBack, onOpenDocument, currentDocId
         // To select the tab, the user will have to click it manually for now, or we can use custom event/localStorage.
         if (docId) {
             localStorage.setItem('notemind_auto_open_tab', activityType);
-            onOpenDocument({ id: docId, original_name: 'Khởi động lộ trình' });
+            onOpenDocument({ id: docId, original_name: t('learningPaths.launchFromPath') });
         }
     };
 
@@ -136,16 +136,16 @@ export default function LearningPathsPage({ onBack, onOpenDocument, currentDocId
                         <Map className="text-primary-400" size={22} />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-extrabold font-display">Lộ trình AI</h1>
-                        <p className="text-xs text-muted">Học tập có hệ thống</p>
+                        <h1 className="text-2xl font-extrabold font-display">{t('learningPaths.pageTitle')}</h1>
+                        <p className="text-xs text-muted">{t('learningPaths.pageSubtitle')}</p>
                     </div>
                 </div>
 
                 {paths.length === 0 ? (
                     <div className="bg-surface border border-line rounded-2xl p-6 text-center">
                         <Sparkles size={24} className="mx-auto mb-3 text-primary-400 opacity-50" />
-                        <p className="text-sm font-medium mb-1">Chưa có lộ trình nào</p>
-                        <p className="text-xs text-muted mb-4">Upload tài liệu và sử dụng AI để tạo lộ trình học tập cá nhân hoá.</p>
+                        <p className="text-sm font-medium mb-1">{t('learningPaths.emptyTitle')}</p>
+                        <p className="text-xs text-muted mb-4">{t('learningPaths.emptyDesc')}</p>
                     </div>
                 ) : (
                     <div className="space-y-2">
@@ -158,7 +158,7 @@ export default function LearningPathsPage({ onBack, onOpenDocument, currentDocId
                                 <h3 className="font-bold text-sm mb-1 truncate">{p.name}</h3>
                                 <div className="flex gap-3 text-xs text-muted">
                                     <span className="flex items-center gap-1"><Clock size={12} /> {p.estimated_hours}h</span>
-                                    <span>{p.steps?.length || 0} bước</span>
+                                    <span>{t('learningPaths.stepsCount').replace('{count}', p.steps?.length || 0)}</span>
                                 </div>
                             </button>
                         ))}
@@ -171,7 +171,7 @@ export default function LearningPathsPage({ onBack, onOpenDocument, currentDocId
                 {!selectedPath ? (
                     <div className="h-full min-h-[400px] border border-line border-dashed rounded-3xl flex items-center justify-center flex-col text-center p-8 bg-surface/30">
                         <Map size={48} className="text-muted/30 mb-4" />
-                        <p className="text-muted">Chọn một lộ trình bên trái để xem chi tiết</p>
+                        <p className="text-muted">{t('learningPaths.selectHint')}</p>
                     </div>
                 ) : detailLoading ? (
                     <div className="h-full min-h-[400px] border border-line rounded-3xl flex items-center justify-center">
@@ -190,7 +190,7 @@ export default function LearningPathsPage({ onBack, onOpenDocument, currentDocId
                             <button
                                 onClick={() => handleDeletePath(selectedPath.id)}
                                 className="p-2 text-red-400 hover:bg-red-500/10 rounded-xl transition-colors shrink-0"
-                                title="Xóa lộ trình"
+                                title={t('learningPaths.deleteTitle')}
                             >
                                 <Trash2 size={18} />
                             </button>
@@ -207,10 +207,12 @@ export default function LearningPathsPage({ onBack, onOpenDocument, currentDocId
                                 <span className="text-xs font-bold font-display">{calculateProgress(selectedPath)}%</span>
                             </div>
                             <div>
-                                <p className="font-bold text-sm">Tiến độ học tập</p>
+                                <p className="font-bold text-sm">{t('learningPaths.progressTitle')}</p>
                                 <p className="text-xs text-muted flex items-center gap-2">
                                     <CheckCircle2 size={12} className="text-emerald-400" />
-                                    Đã hoàn thành {selectedPath.progress?.length || 0}/{selectedPath.steps?.length || 0} bước
+                                    {t('learningPaths.progressDone')
+                                        .replace('{done}', selectedPath.progress?.length || 0)
+                                        .replace('{total}', selectedPath.steps?.length || 0)}
                                 </p>
                             </div>
                         </div>
@@ -228,7 +230,7 @@ export default function LearningPathsPage({ onBack, onOpenDocument, currentDocId
                                             onClick={() => handleToggleStep(step.id, isCompleted)}
                                             className={`absolute left-0 top-1 w-11 h-11 rounded-full border-4 border-surface flex items-center justify-center transition-all duration-300 z-10 ${isCompleted ? 'bg-emerald-500 text-bg' : 'bg-surface-2 text-muted hover:border-primary-500/30'
                                                 }`}
-                                            title={isCompleted ? "Đánh dấu chưa xem" : "Đánh dấu hoàn thành"}
+                                            title={isCompleted ? t('learningPaths.markUnviewed') : t('learningPaths.markCompleted')}
                                         >
                                             {isCompleted ? <Check size={18} strokeWidth={3} /> : <span className="font-bold">{index + 1}</span>}
                                         </button>
@@ -240,7 +242,7 @@ export default function LearningPathsPage({ onBack, onOpenDocument, currentDocId
                                                     {step.title}
                                                 </h3>
                                                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-2 text-xs font-medium text-muted shrink-0">
-                                                    <Clock size={12} /> {step.estimated_minutes} phút
+                                                    <Clock size={12} /> {t('learningPaths.minutes').replace('{minutes}', step.estimated_minutes)}
                                                 </span>
                                             </div>
                                             <p className="text-sm text-muted mb-4 leading-relaxed">{step.description}</p>

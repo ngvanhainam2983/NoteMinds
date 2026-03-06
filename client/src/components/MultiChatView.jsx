@@ -2,11 +2,13 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Loader2, MessageSquare, ArrowLeft, Volume2, FileText } from 'lucide-react';
 import { chatWithMultipleDocuments } from '../api';
 import MarkdownRenderer from './MarkdownRenderer';
+import { useLanguage } from '../LanguageContext';
 
 export default function MultiChatView({ selectedDocs, onBack }) {
+    const { t } = useLanguage();
     const [messages, setMessages] = useState([{
         role: 'assistant',
-        content: `Xin chào! Bạn đang sử dụng chế độ **Chat Đa Tài Liệu**. Mình đã nhận được ${selectedDocs.length} tài liệu từ bạn.\n\nHãy hỏi mình bất kỳ câu hỏi nào cần tổng hợp, so sánh, hoặc tìm kiếm thông tin chéo giữa các tài liệu này nhé!`
+        content: t('multiChat.welcome').replace('{count}', selectedDocs.length)
     }]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +41,7 @@ export default function MultiChatView({ selectedDocs, onBack }) {
         } catch (err) {
             setMessages(prev => [
                 ...prev,
-                { role: 'assistant', content: `❌ **Lỗi:** ${err.response?.data?.error || err.message}` }
+                { role: 'assistant', content: `❌ **${t('common.error')}:** ${err.response?.data?.error || err.message}` }
             ]);
         } finally {
             setIsLoading(false);
@@ -61,7 +63,7 @@ export default function MultiChatView({ selectedDocs, onBack }) {
             utterance.rate = 1.0;
             window.speechSynthesis.speak(utterance);
         } else {
-            alert("Trình duyệt của bạn không hỗ trợ tính năng đọc văn bản.");
+            alert(t('multiChat.speechUnsupported'));
         }
     };
 
@@ -78,10 +80,10 @@ export default function MultiChatView({ selectedDocs, onBack }) {
                 <div>
                     <h2 className="text-lg font-bold text-txt flex items-center gap-2">
                         <MessageSquare size={20} className="text-primary-400" />
-                        Chat Đa Tài Liệu
+                        {t('multiChat.title')}
                     </h2>
                     <p className="text-xs text-muted mt-0.5 flex flex-wrap gap-x-3 gap-y-1">
-                        Đang phân tích {selectedDocs.length} tài liệu:
+                        {t('multiChat.analyzingDocs').replace('{count}', selectedDocs.length)}
                         <span className="text-txt truncate max-w-md" title={selectedDocs.map(d => d.original_name).join(', ')}>
                             {selectedDocs.map(d => d.original_name).join(', ')}
                         </span>
@@ -109,7 +111,7 @@ export default function MultiChatView({ selectedDocs, onBack }) {
                                 <button
                                     onClick={() => speakText(msg.content)}
                                     className="absolute top-2 right-2 p-1.5 text-muted/60 hover:text-primary-400 bg-surface rounded-md opacity-0 group-hover:opacity-100 transition-all border border-line shadow-md"
-                                    title="Đọc văn bản"
+                                    title={t('multiChat.readText')}
                                 >
                                     <Volume2 size={14} />
                                 </button>
@@ -126,7 +128,7 @@ export default function MultiChatView({ selectedDocs, onBack }) {
                         </div>
                         <div className="bg-surface-2 border border-line rounded-2xl rounded-tl-sm px-6 py-4 flex items-center gap-2">
                             <Loader2 size={16} className="animate-spin text-primary-400" />
-                            <span className="text-sm font-medium text-muted">Đang tổng hợp thông tin từ {selectedDocs.length} tài liệu...</span>
+                            <span className="text-sm font-medium text-muted">{t('multiChat.synthesizing').replace('{count}', selectedDocs.length)}</span>
                         </div>
                     </div>
                 )}
@@ -140,7 +142,7 @@ export default function MultiChatView({ selectedDocs, onBack }) {
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder="Đặt câu hỏi so sánh, tổng hợp nội dung..."
+                        placeholder={t('multiChat.placeholder')}
                         className="flex-1 max-h-32 min-h-[44px] bg-transparent resize-none text-sm text-txt placeholder-muted/60 p-3 focus:outline-none"
                         rows={1}
                     />
@@ -153,7 +155,7 @@ export default function MultiChatView({ selectedDocs, onBack }) {
                     </button>
                 </div>
                 <p className="text-center text-[10px] text-muted/60 mt-2 font-medium">
-                    NoteMinds có thể mắc lỗi khi tổng hợp nhiều tài liệu dài. Hãy kiểm tra lại thông tin quan trọng.
+                    {t('multiChat.disclaimer')}
                 </p>
             </div>
         </div>

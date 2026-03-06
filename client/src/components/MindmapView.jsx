@@ -19,7 +19,7 @@ import { toPng } from 'html-to-image';
 import {
   Loader2, AlertCircle, Map, RefreshCw, Image as ImageIcon,
   Lock, Maximize2, Minimize2, ZoomIn, ZoomOut, Crosshair,
-  GitBranch, Circle, ChevronRight, Sparkles, Network,
+  GitBranch, Circle, ChevronRight, Network,
 } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 
@@ -573,27 +573,29 @@ function MindmapViewInner({ data, loading, error, onGenerate, isLocked }) {
   /* ── Empty state ── */
   if (!data) {
     return (
-      <div className="flex flex-col items-center justify-center h-[500px] gap-6">
-        <div className="relative">
-          <div className={`absolute -inset-3 rounded-3xl blur-xl ${isLocked ? 'bg-gray-500/10' : 'bg-primary-500/10 animate-pulse'}`} />
-          <div className={`relative w-20 h-20 rounded-2xl border-2 flex items-center justify-center ${isLocked ? 'bg-gray-500/5 border-gray-500/20' : 'bg-gradient-to-br from-primary-600/10 to-primary-500/5 border-primary-500/20'}`}>
-            {isLocked ? <Lock size={34} className="text-gray-400" /> : <Network size={34} className="text-primary-400" />}
+      <div className="flex flex-col items-center justify-center h-[500px] gap-5 animate-fade-in">
+        <div className="relative group">
+          <div className={`absolute -inset-2 rounded-2xl blur-lg opacity-40 transition-opacity duration-500 ${isLocked ? 'bg-gray-500/15' : 'bg-primary-500/15 group-hover:opacity-70'}`} />
+          <div className={`relative w-16 h-16 rounded-2xl shadow-lg border flex items-center justify-center ${isLocked
+              ? 'bg-gradient-to-br from-gray-600 to-gray-500 shadow-gray-600/25 border-gray-400/20'
+              : 'bg-gradient-to-br from-primary-600 to-primary-500 shadow-primary-600/25 border-primary-400/20'
+            }`}>
+            {isLocked ? <Lock size={28} className="text-white" /> : <Network size={28} className="text-white" />}
           </div>
         </div>
-        <div className="text-center space-y-1">
-          <p className="text-txt font-semibold text-base">{isLocked ? 'Tài liệu gốc đã bị xóa' : 'Chưa có sơ đồ tư duy'}</p>
-          <p className="text-sm text-muted max-w-xs">{isLocked ? 'Không thể tạo mới vì file gốc không còn tồn tại' : 'AI sẽ phân tích tài liệu và tạo sơ đồ tư duy trực quan'}</p>
+        <div className="text-center">
+          <p className="font-bold text-lg text-txt mb-1">{isLocked ? 'Tài liệu gốc đã bị xóa' : 'Chưa có sơ đồ tư duy'}</p>
+          <p className="text-sm text-muted">{isLocked ? 'Không thể tạo mới vì file gốc không còn tồn tại' : 'AI sẽ phân tích tài liệu và tạo sơ đồ tư duy trực quan'}</p>
         </div>
         <button
           onClick={onGenerate}
           disabled={isLocked}
-          className={`group flex items-center gap-2.5 px-8 py-3.5 rounded-xl text-sm font-semibold transition-all shadow-lg ${isLocked
-              ? 'bg-gray-600 cursor-not-allowed opacity-50 shadow-none'
-              : 'bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 shadow-primary-600/25 hover:shadow-xl hover:scale-[1.02]'
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all font-semibold text-white text-sm active:scale-95 ${isLocked
+              ? 'bg-gray-600 cursor-not-allowed opacity-50'
+              : 'bg-gradient-to-r from-primary-600 to-primary-500 hover:shadow-lg hover:shadow-primary-600/20'
             }`}
         >
-          <Sparkles size={16} className={isLocked ? '' : 'group-hover:animate-spin'} />
-          Tạo Sơ đồ tư duy
+          <RefreshCw size={14} /> {t('mindmap.generateButton', 'Tạo Sơ đồ tư duy')}
         </button>
       </div>
     );

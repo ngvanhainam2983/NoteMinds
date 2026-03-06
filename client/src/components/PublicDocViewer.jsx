@@ -7,14 +7,16 @@ import { getPublicDocumentContent } from '../api';
 import MindmapView from './MindmapView';
 import FlashcardView from './FlashcardView';
 import ChatView from './ChatView';
+import { useLanguage } from '../LanguageContext';
 
 const TABS = [
-    { id: 'mindmap', label: 'Sơ đồ tư duy', icon: Map },
-    { id: 'flashcard', label: 'Flashcard', icon: CreditCard },
-    { id: 'chat', label: 'Hội thoại AI', icon: MessageCircle },
+    { id: 'mindmap', labelKey: 'publicDoc.tabMindmap', icon: Map },
+    { id: 'flashcard', labelKey: 'publicDoc.tabFlashcard', icon: CreditCard },
+    { id: 'chat', labelKey: 'publicDoc.tabChat', icon: MessageCircle },
 ];
 
 export default function PublicDocViewer({ documentId, onBack }) {
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [content, setContent] = useState(null);
@@ -41,7 +43,7 @@ export default function PublicDocViewer({ documentId, onBack }) {
                 }
             })
             .catch(err => {
-                setError(err.response?.data?.error || err.message || 'Tài liệu không hợp lệ hoặc không còn công khai');
+                setError(err.response?.data?.error || err.message || t('publicDoc.invalidOrPrivate'));
             })
             .finally(() => {
                 setLoading(false);
@@ -53,7 +55,7 @@ export default function PublicDocViewer({ documentId, onBack }) {
             <div className="min-h-screen bg-bg flex items-center justify-center">
                 <div className="text-center">
                     <Loader2 size={32} className="text-primary-400 animate-spin mx-auto mb-4" />
-                    <p className="text-muted text-sm">Đang tải tài liệu công khai...</p>
+                    <p className="text-muted text-sm">{t('publicDoc.loading')}</p>
                 </div>
             </div>
         );
@@ -66,14 +68,14 @@ export default function PublicDocViewer({ documentId, onBack }) {
                     <div className="w-16 h-16 bg-red-500/10 border border-red-500/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
                         <AlertCircle size={32} className="text-red-400" />
                     </div>
-                    <h2 className="text-xl font-bold mb-2">Không thể tải tài liệu</h2>
+                    <h2 className="text-xl font-bold mb-2">{t('publicDoc.cannotLoad')}</h2>
                     <p className="text-muted text-sm mb-6">{error}</p>
                     <button
                         onClick={onBack}
                         className="flex items-center gap-2 mx-auto px-5 py-2.5 bg-primary-600 hover:bg-primary-700 rounded-lg text-sm font-medium transition-colors"
                     >
                         <ArrowLeft size={16} />
-                        Quay lại
+                        {t('common.back')}
                     </button>
                 </div>
             </div>
@@ -90,7 +92,7 @@ export default function PublicDocViewer({ documentId, onBack }) {
             </div>
             <p className="text-muted">{label}</p>
             <p className="text-xs text-muted/60 max-w-xs text-center">
-                Tác giả chưa tạo hoặc tính năng này không khả dụng ở chế độ xem công khai.
+                {t('publicDoc.emptyDesc')}
             </p>
         </div>
     );
@@ -100,7 +102,7 @@ export default function PublicDocViewer({ documentId, onBack }) {
             <header className="sticky top-0 z-50 glass border-b border-line">
                 <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <button onClick={onBack} className="p-2 rounded-lg hover:bg-surface-2 transition-colors" title="Quay lại">
+                        <button onClick={onBack} className="p-2 rounded-lg hover:bg-surface-2 transition-colors" title={t('common.back')}>
                             <ArrowLeft size={18} />
                         </button>
                         <div className="flex items-center gap-2">
@@ -115,7 +117,7 @@ export default function PublicDocViewer({ documentId, onBack }) {
                     <div className="flex items-center gap-2">
                         <span className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border text-blue-400 bg-blue-500/10 border-blue-500/30">
                             <Eye size={12} />
-                            Chế độ xem công khai
+                            {t('publicDoc.publicViewMode')}
                         </span>
                     </div>
                 </div>
@@ -126,10 +128,10 @@ export default function PublicDocViewer({ documentId, onBack }) {
                     <FileText size={24} className="text-primary-400 shrink-0" />
                     <div className="min-w-0 flex-1">
                         <p className="text-lg font-bold truncate text-txt">
-                            {content?.fileName || 'Tài liệu công khai'}
+                            {content?.fileName || t('publicDoc.publicDocument')}
                         </p>
                         <p className="text-sm text-muted mt-1">
-                            Được chia sẻ trên Cộng Đồng NoteMinds
+                            {t('publicDoc.sharedOnCommunity')}
                         </p>
                     </div>
                 </div>
@@ -154,7 +156,7 @@ export default function PublicDocViewer({ documentId, onBack }) {
                 `}
                             >
                                 <Icon size={18} />
-                                <span>{tab.label}</span>
+                                <span>{t(tab.labelKey)}</span>
                                 {hasData && !isActive && (
                                     <span className="w-2 h-2 bg-emerald-400 rounded-full absolute top-2 right-2 animate-pulse" />
                                 )}
@@ -166,7 +168,7 @@ export default function PublicDocViewer({ documentId, onBack }) {
                 <div className="bg-surface border border-line rounded-2xl min-h-[500px] overflow-hidden">
                     {activeTab === 'mindmap' && (
                         !mindmapData ? (
-                            <ViewOnlyEmpty icon={Map} label="Chưa có sơ đồ tư duy" />
+                            <ViewOnlyEmpty icon={Map} label={t('publicDoc.emptyMindmap')} />
                         ) : (
                             <MindmapView
                                 data={mindmapData}
@@ -177,7 +179,7 @@ export default function PublicDocViewer({ documentId, onBack }) {
                     )}
                     {activeTab === 'flashcard' && (
                         !flashcardData ? (
-                            <ViewOnlyEmpty icon={CreditCard} label="Chưa có Flashcard" />
+                            <ViewOnlyEmpty icon={CreditCard} label={t('publicDoc.emptyFlashcard')} />
                         ) : (
                             <FlashcardView
                                 data={flashcardData}
@@ -198,7 +200,7 @@ export default function PublicDocViewer({ documentId, onBack }) {
                                 readOnly
                             />
                         ) : (
-                            <ViewOnlyEmpty icon={MessageCircle} label="Tác giả chưa trò chuyện với AI" />
+                            <ViewOnlyEmpty icon={MessageCircle} label={t('publicDoc.emptyChat')} />
                         )
                     )}
                 </div>

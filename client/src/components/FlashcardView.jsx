@@ -149,7 +149,7 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
               : 'bg-gradient-to-r from-accent-600 to-accent-500 hover:shadow-lg hover:shadow-accent-600/20'
             }`}
         >
-          <RefreshCw size={14} /> {t('flashcard.generating').split(' ')[0]} Flashcard
+          <RefreshCw size={14} /> {t('flashcard.generateButton', 'Tạo Flashcard')}
         </button>
       </div>
     );

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getPublicProfile, getApiBaseUrl } from '../api';
 import { ArrowLeft, FileText, Brain, BookOpen, MessageCircle, Flame, Trophy, Calendar, Crown, Loader2, UserX, Globe, CheckCircle2 } from 'lucide-react';
+import { useLanguage } from '../LanguageContext';
 
 const PLAN_BADGES = {
   free: { label: 'Free', color: 'bg-zinc-500/15 text-zinc-400 border-zinc-500/30' },
@@ -11,6 +12,7 @@ const PLAN_BADGES = {
 };
 
 export default function PublicProfilePage({ username, onBack, user: currentUser }) {
+  const { t } = useLanguage();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -30,7 +32,7 @@ export default function PublicProfilePage({ username, onBack, user: currentUser 
         setError('');
       } catch (err) {
         if (!alive) return;
-        setError(err.response?.data?.error || 'Không tìm thấy người dùng');
+        setError(err.response?.data?.error || t('publicProfile.notFound'));
       } finally {
         if (!silent && alive) setLoading(false);
       }
@@ -43,14 +45,14 @@ export default function PublicProfilePage({ username, onBack, user: currentUser 
       alive = false;
       clearInterval(intervalId);
     };
-  }, [username]);
+  }, [username, t]);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-bg flex items-center justify-center">
         <div className="flex flex-col items-center gap-3 text-muted">
           <Loader2 size={32} className="animate-spin text-primary-500" />
-          <p className="text-sm">Đang tải hồ sơ...</p>
+          <p className="text-sm">{t('publicProfile.loading')}</p>
         </div>
       </div>
     );
@@ -65,14 +67,14 @@ export default function PublicProfilePage({ username, onBack, user: currentUser 
               <UserX size={36} className="text-red-400" />
             </div>
             <div>
-              <h2 className="text-xl font-extrabold tracking-tight mb-1">Không tìm thấy</h2>
-              <p className="text-sm text-muted">{error || 'Người dùng không tồn tại hoặc đã bị chặn.'}</p>
+              <h2 className="text-xl font-extrabold tracking-tight mb-1">{t('publicProfile.notFoundTitle')}</h2>
+              <p className="text-sm text-muted">{error || t('publicProfile.notFoundDesc')}</p>
             </div>
             <button
               onClick={onBack}
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-surface-2 hover:bg-line rounded-xl text-sm font-medium transition-colors"
             >
-              <ArrowLeft size={15} /> Quay lại
+              <ArrowLeft size={15} /> {t('common.back')}
             </button>
           </div>
         </div>
@@ -83,11 +85,11 @@ export default function PublicProfilePage({ username, onBack, user: currentUser 
   const { user: u, stats, recentDocs } = profile;
   const badge = PLAN_BADGES[u.plan] || PLAN_BADGES.free;
   const statusMap = {
-    online: { label: 'Online', dot: 'bg-green-400' },
-    idle: { label: 'Idle', dot: 'bg-yellow-400' },
-    dnd: { label: 'DND', dot: 'bg-rose-400' },
-    offline: { label: 'Offline', dot: 'bg-zinc-300' },
-    invisible: { label: 'Offline', dot: 'bg-zinc-300' },
+    online: { label: t('publicProfile.statusOnline'), dot: 'bg-green-400' },
+    idle: { label: t('publicProfile.statusIdle'), dot: 'bg-yellow-400' },
+    dnd: { label: t('publicProfile.statusDnd'), dot: 'bg-rose-400' },
+    offline: { label: t('publicProfile.statusOffline'), dot: 'bg-zinc-300' },
+    invisible: { label: t('publicProfile.statusOffline'), dot: 'bg-zinc-300' },
   };
   const presenceStatus = statusMap[u.presenceStatus] ? u.presenceStatus : (u.isOnline ? 'online' : 'offline');
   const statusMeta = statusMap[presenceStatus];
@@ -102,12 +104,12 @@ export default function PublicProfilePage({ username, onBack, user: currentUser 
     : null;
 
   const statCards = [
-    { icon: FileText, label: 'Tài liệu công khai', value: stats.publicDocs, color: 'text-primary-400 bg-primary-500/10' },
-    { icon: Brain, label: 'Flashcard đã ôn', value: stats.totalFlashcards, color: 'text-accent-400 bg-accent-500/10' },
-    { icon: BookOpen, label: 'Bài kiểm tra', value: stats.totalQuizzes, color: 'text-blue-400 bg-blue-500/10' },
-    { icon: MessageCircle, label: 'Tin nhắn AI', value: stats.totalChats, color: 'text-emerald-400 bg-emerald-500/10' },
-    { icon: Flame, label: 'Streak hiện tại', value: `${stats.currentStreak} ngày`, color: 'text-orange-400 bg-orange-500/10' },
-    { icon: Trophy, label: 'Streak dài nhất', value: `${stats.longestStreak} ngày`, color: 'text-amber-400 bg-amber-500/10' },
+    { icon: FileText, label: t('publicProfile.statPublicDocs'), value: stats.publicDocs, color: 'text-primary-400 bg-primary-500/10' },
+    { icon: Brain, label: t('publicProfile.statFlashcards'), value: stats.totalFlashcards, color: 'text-accent-400 bg-accent-500/10' },
+    { icon: BookOpen, label: t('publicProfile.statQuizzes'), value: stats.totalQuizzes, color: 'text-blue-400 bg-blue-500/10' },
+    { icon: MessageCircle, label: t('publicProfile.statAiMessages'), value: stats.totalChats, color: 'text-emerald-400 bg-emerald-500/10' },
+    { icon: Flame, label: t('publicProfile.statCurrentStreak'), value: `${stats.currentStreak} ${t('publicProfile.days')}`, color: 'text-orange-400 bg-orange-500/10' },
+    { icon: Trophy, label: t('publicProfile.statLongestStreak'), value: `${stats.longestStreak} ${t('publicProfile.days')}`, color: 'text-amber-400 bg-amber-500/10' },
   ];
 
   return (
@@ -121,7 +123,7 @@ export default function PublicProfilePage({ username, onBack, user: currentUser 
           >
             <ArrowLeft size={18} />
           </button>
-          <span className="text-sm font-medium text-muted">Hồ sơ người dùng</span>
+          <span className="text-sm font-medium text-muted">{t('publicProfile.userProfile')}</span>
         </div>
       </div>
 
@@ -169,17 +171,17 @@ export default function PublicProfilePage({ username, onBack, user: currentUser 
                   <span className="group relative inline-flex items-center cursor-default">
                     <CheckCircle2 size={14} className="text-emerald-400" />
                     <span className="pointer-events-none absolute bottom-full mb-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md border border-line bg-surface px-2 py-1 text-[11px] text-txt opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
-                      Đã được xác minh
+                      {t('publicProfile.verified')}
                     </span>
                   </span>
                 )}
               </div>
               <p className="text-xs text-muted mt-1.5 flex items-center gap-1.5 justify-center sm:justify-start">
                 <Calendar size={12} />
-                Tham gia {new Date(u.joinedAt).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' })}
+                {t('publicProfile.joined')} {new Date(u.joinedAt).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' })}
               </p>
               {presenceStatus === 'offline' && lastSeenText && (
-                <p className="text-xs text-muted mt-1">Hoạt động lần cuối: {lastSeenText}</p>
+                <p className="text-xs text-muted mt-1">{t('publicProfile.lastActive')}: {lastSeenText}</p>
               )}
             </div>
           </div>
@@ -187,7 +189,7 @@ export default function PublicProfilePage({ username, onBack, user: currentUser 
 
         {/* Stats grid */}
         <div>
-          <h2 className="text-lg font-bold mb-4">Hoạt động</h2>
+          <h2 className="text-lg font-bold mb-4">{t('publicProfile.activity')}</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {statCards.map((s, i) => (
               <div key={i} className="bg-surface border border-line rounded-xl p-4 flex items-center gap-3.5 hover:border-primary-500/30 transition-colors">
@@ -208,7 +210,7 @@ export default function PublicProfilePage({ username, onBack, user: currentUser 
           <div>
             <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
               <Globe size={18} className="text-primary-400" />
-              Tài liệu công khai
+              {t('publicProfile.publicDocuments')}
             </h2>
             <div className="space-y-2">
               {recentDocs.map(doc => (

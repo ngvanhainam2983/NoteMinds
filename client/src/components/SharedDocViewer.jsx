@@ -12,26 +12,24 @@ import MindmapView from './MindmapView';
 import FlashcardView from './FlashcardView';
 import ChatView from './ChatView';
 import SummaryView from './SummaryView';
+import { useLanguage } from '../LanguageContext';
 
 const PERMISSION_INFO = {
-  view: { label: 'Chỉ xem', icon: Eye, color: 'text-blue-400 bg-blue-500/10 border-blue-500/30' },
-  comment: { label: 'Bình luận', icon: MessageSquare, color: 'text-amber-400 bg-amber-500/10 border-amber-500/30' },
-  edit: { label: 'Chỉnh sửa', icon: Pencil, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30' },
+  view: { labelKey: 'shared.viewOnly', icon: Eye, color: 'text-blue-400 bg-blue-500/10 border-blue-500/30' },
+  comment: { labelKey: 'shared.comment', icon: MessageSquare, color: 'text-amber-400 bg-amber-500/10 border-amber-500/30' },
+  edit: { labelKey: 'shared.edit', icon: Pencil, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30' },
 };
 
 const TABS = [
-  { id: 'summary', label: 'Tóm tắt', icon: BookOpen },
-  { id: 'mindmap', label: 'Sơ đồ tư duy', icon: Map },
-  { id: 'flashcard', label: 'Flashcard', icon: CreditCard },
-  { id: 'chat', label: 'Hỏi đáp AI', icon: MessageCircle },
+  { id: 'summary', labelKey: 'shared.tabSummary', icon: BookOpen },
+  { id: 'mindmap', labelKey: 'shared.tabMindmap', icon: Map },
+  { id: 'flashcard', labelKey: 'shared.tabFlashcard', icon: CreditCard },
+  { id: 'chat', labelKey: 'shared.tabChat', icon: MessageCircle },
 ];
 
-const WELCOME_MESSAGE = {
-  role: 'assistant',
-  content: 'Xin chào! Mình là trợ lý học tập NoteMinds 🧠\n\nĐây là tài liệu được chia sẻ. Hãy hỏi mình bất kỳ điều gì về nội dung nhé! Ví dụ:\n- "Tóm tắt nội dung chính"\n- "Giải thích khái niệm X"\n- "So sánh A và B"'
-};
-
 export default function SharedDocViewer({ shareToken, onBack }) {
+  const { t } = useLanguage();
+  const welcomeText = t('shared.welcomeMessage');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [shareInfo, setShareInfo] = useState(null);
@@ -42,12 +40,11 @@ export default function SharedDocViewer({ shareToken, onBack }) {
   const [summaryData, setSummaryData] = useState(null);
   const [mindmapData, setMindmapData] = useState(null);
   const [flashcardData, setFlashcardData] = useState(null);
-  const [chatMessages, setChatMessages] = useState([WELCOME_MESSAGE]);
+  const [chatMessages, setChatMessages] = useState([{ role: 'assistant', content: welcomeText }]);
   const [tabLoading, setTabLoading] = useState({ summary: false, mindmap: false, flashcard: false });
   const [tabErrors, setTabErrors] = useState({});
 
   const isViewOnly = (shareInfo?.shareType || 'view') === 'view';
-
   // ── SSE: live-update from owner/other editors ──
   useEffect(() => {
     if (!shareToken || !content) return;
@@ -79,7 +76,7 @@ export default function SharedDocViewer({ shareToken, onBack }) {
       try {
         const msgs = JSON.parse(e.data);
         if (Array.isArray(msgs) && msgs.length > 0) {
-          setChatMessages([WELCOME_MESSAGE, ...msgs.map(m => ({ role: m.role, content: m.content }))]);
+          setChatMessages([{ role: 'assistant', content: welcomeText }, ...msgs.map(m => ({ role: m.role, content: m.content }))]);
         }
       } catch { }
     });
@@ -89,7 +86,7 @@ export default function SharedDocViewer({ shareToken, onBack }) {
     };
 
     return () => evtSource.close();
-  }, [shareToken, content]);
+  }, [shareToken, content, welcomeText]);
 
   useEffect(() => {
     if (!shareToken) return;
@@ -102,7 +99,7 @@ export default function SharedDocViewer({ shareToken, onBack }) {
           setShareInfo(data);
           return getSharedDocumentContent(shareToken);
         } else {
-          throw new Error(data.error || 'Link không hợp lệ');
+          throw new Error(data.error || t('shared.invalidLink'));
         }
       })
       .then(data => {
@@ -114,18 +111,18 @@ export default function SharedDocViewer({ shareToken, onBack }) {
             if (data.sessions.mindmap) setMindmapData(data.sessions.mindmap);
             if (data.sessions.flashcards) setFlashcardData(data.sessions.flashcards);
             if (data.sessions.chat && data.sessions.chat.length > 0) {
-              setChatMessages([WELCOME_MESSAGE, ...data.sessions.chat.map(m => ({ role: m.role, content: m.content }))]);
+              setChatMessages([{ role: 'assistant', content: welcomeText }, ...data.sessions.chat.map(m => ({ role: m.role, content: m.content }))]);
             }
           }
         }
       })
       .catch(err => {
-        setError(err.response?.data?.error || err.message || 'Link chia sẻ không hợp lệ hoặc đã hết hạn');
+        setError(err.response?.data?.error || err.message || t('shared.invalidOrExpired'));
       })
       .finally(() => {
         setLoading(false);
       });
-  }, [shareToken]);
+  }, [shareToken, t, welcomeText]);
 
   const handleGenerateSummary = useCallback(async () => {
     if (summaryData || isViewOnly) return;
@@ -178,7 +175,7 @@ export default function SharedDocViewer({ shareToken, onBack }) {
       <div className="min-h-screen bg-bg flex items-center justify-center">
         <div className="text-center">
           <Loader2 size={32} className="text-primary-400 animate-spin mx-auto mb-4" />
-          <p className="text-muted text-sm">Đang tải tài liệu chia sẻ...</p>
+          <p className="text-muted text-sm">{t('shared.loading')}</p>
         </div>
       </div>
     );
@@ -191,14 +188,14 @@ export default function SharedDocViewer({ shareToken, onBack }) {
           <div className="w-16 h-16 bg-red-500/10 border border-red-500/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <AlertCircle size={32} className="text-red-400" />
           </div>
-          <h2 className="text-xl font-bold mb-2">Link không hợp lệ</h2>
+          <h2 className="text-xl font-bold mb-2">{t('shared.invalidLink')}</h2>
           <p className="text-muted text-sm mb-6">{error}</p>
           <button
             onClick={onBack}
             className="flex items-center gap-2 mx-auto px-5 py-2.5 bg-primary-600 hover:bg-primary-700 rounded-lg text-sm font-medium transition-colors"
           >
             <ArrowLeft size={16} />
-            Về trang chủ
+            {t('shared.backHome')}
           </button>
         </div>
       </div>
@@ -218,9 +215,7 @@ export default function SharedDocViewer({ shareToken, onBack }) {
         </div>
       </div>
       <p className="text-muted">{label}</p>
-      <p className="text-xs text-muted/60 max-w-xs text-center">
-        Người chia sẻ chưa tạo nội dung này. Bạn đang ở chế độ chỉ xem.
-      </p>
+      <p className="text-xs text-muted/60 max-w-xs text-center">{t('shared.viewOnlyEmptyDesc')}</p>
     </div>
   );
 
@@ -230,7 +225,7 @@ export default function SharedDocViewer({ shareToken, onBack }) {
       <header className="sticky top-0 z-50 glass">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-2 rounded-lg hover:bg-surface-2 transition-colors" title="Về trang chủ">
+            <button onClick={onBack} className="p-2 rounded-lg hover:bg-surface-2 transition-colors" title={t('shared.backHome')}>
               <ArrowLeft size={18} />
             </button>
             <div className="flex items-center gap-2">
@@ -245,12 +240,12 @@ export default function SharedDocViewer({ shareToken, onBack }) {
           <div className="flex items-center gap-2">
             <span className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border ${permInfo.color}`}>
               <PermIcon size={12} />
-              {permInfo.label}
+              {t(permInfo.labelKey)}
             </span>
             {shareInfo?.expiresAt && (
               <span className="flex items-center gap-1 text-[10px] text-muted">
                 <Clock size={11} />
-                Hết hạn: {new Date(shareInfo.expiresAt).toLocaleDateString('vi')}
+                {t('shared.expiresAt')}: {new Date(shareInfo.expiresAt).toLocaleDateString('vi')}
               </span>
             )}
           </div>
@@ -264,12 +259,12 @@ export default function SharedDocViewer({ shareToken, onBack }) {
           <FileText size={18} className="text-primary-400 shrink-0" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium truncate">
-              {content?.fileName || shareInfo?.documentName || 'Tài liệu được chia sẻ'}
+              {content?.fileName || shareInfo?.documentName || t('shared.sharedDocument')}
             </p>
             <p className="text-xs text-muted">
-              {content?.text ? `${(content.text.length / 1000).toFixed(1)}k ký tự` : 'Đã xử lý'}
-              {' • '}Tài liệu được chia sẻ
-              {shareInfo?.shareType && ` • ${permInfo.label}`}
+              {content?.text ? `${(content.text.length / 1000).toFixed(1)}k ${t('dashboard.chars')}` : t('dashboard.processed')}
+              {' • '}{t('shared.sharedDocument')}
+              {shareInfo?.shareType && ` • ${t(permInfo.labelKey)}`}
             </p>
           </div>
           {/* Share link display */}
@@ -286,7 +281,7 @@ export default function SharedDocViewer({ shareToken, onBack }) {
           <div className="flex items-center gap-2 mb-4 px-4 py-2.5 bg-blue-500/5 border border-blue-500/20 rounded-xl">
             <Lock size={14} className="text-blue-400 shrink-0" />
             <p className="text-xs text-blue-300">
-              Chế độ chỉ xem — bạn chỉ có thể xem nội dung đã được tạo bởi người chia sẻ.
+              {t('shared.viewOnlyBanner')}
             </p>
           </div>
         )}
@@ -314,7 +309,7 @@ export default function SharedDocViewer({ shareToken, onBack }) {
                 `}
               >
                 <Icon size={16} />
-                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="hidden sm:inline">{t(tab.labelKey)}</span>
                 {hasData && !isActive && (
                   <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full absolute top-2 right-2" />
                 )}
@@ -327,7 +322,7 @@ export default function SharedDocViewer({ shareToken, onBack }) {
         <div className="bg-surface border border-line rounded-2xl min-h-[500px] overflow-hidden">
           {activeTab === 'summary' && (
             isViewOnly && !summaryData ? (
-              <ViewOnlyEmpty icon={BookOpen} label="Chưa có bản tóm tắt" />
+              <ViewOnlyEmpty icon={BookOpen} label={t('shared.emptySummary')} />
             ) : (
               <SummaryView
                 data={summaryData}
@@ -339,7 +334,7 @@ export default function SharedDocViewer({ shareToken, onBack }) {
           )}
           {activeTab === 'mindmap' && (
             isViewOnly && !mindmapData ? (
-              <ViewOnlyEmpty icon={Map} label="Chưa có sơ đồ tư duy" />
+              <ViewOnlyEmpty icon={Map} label={t('shared.emptyMindmap')} />
             ) : (
               <MindmapView
                 data={mindmapData}
@@ -351,7 +346,7 @@ export default function SharedDocViewer({ shareToken, onBack }) {
           )}
           {activeTab === 'flashcard' && (
             isViewOnly && !flashcardData ? (
-              <ViewOnlyEmpty icon={CreditCard} label="Chưa có Flashcard" />
+              <ViewOnlyEmpty icon={CreditCard} label={t('shared.emptyFlashcard')} />
             ) : (
               <FlashcardView
                 data={flashcardData}
@@ -375,7 +370,7 @@ export default function SharedDocViewer({ shareToken, onBack }) {
                   readOnly
                 />
               ) : (
-                <ViewOnlyEmpty icon={MessageCircle} label="Chưa có hội thoại AI" />
+                <ViewOnlyEmpty icon={MessageCircle} label={t('shared.emptyChat')} />
               )
             ) : (
               <ChatView

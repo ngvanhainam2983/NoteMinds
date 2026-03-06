@@ -5,16 +5,16 @@ import { useLanguage } from '../LanguageContext';
 
 export default function SummaryView({ data, loading, error, onGenerate, isLocked }) {
     const { t } = useLanguage();
-    const [loadingText, setLoadingText] = useState("Đang đọc và phân tích tài liệu...");
+    const [loadingText, setLoadingText] = useState(t('summary.loadingReadAnalyze'));
 
     /* ── Loading text cycle ── */
     useEffect(() => {
         if (!loading) return;
         const texts = [
-            "Đang đọc và phân tích tài liệu...",
-            "Đang tìm kiếm các ý chính...",
-            "Đang tổng hợp thông tin quan trọng...",
-            "Đang viết bản tóm tắt chi tiết..."
+            t('summary.loadingReadAnalyze'),
+            t('summary.loadingFindKeyPoints'),
+            t('summary.loadingSynthesize'),
+            t('summary.loadingWriteDetailed')
         ];
         let i = 0;
         const interval = setInterval(() => { i = (i + 1) % texts.length; setLoadingText(texts[i]); }, 2500);
@@ -41,7 +41,7 @@ export default function SummaryView({ data, loading, error, onGenerate, isLocked
                     <div className="w-56 bg-line/50 h-1.5 rounded-full mt-4 overflow-hidden">
                         <div className="h-full bg-gradient-to-r from-primary-500 to-primary-400 rounded-full animate-[slide_2.5s_ease-in-out_infinite_alternate]" style={{ width: '40%' }} />
                     </div>
-                    <p className="text-[11px] text-muted mt-3">Đang tạo Tóm tắt AI</p>
+                    <p className="text-[11px] text-muted mt-3">{t('summary.generating')}</p>
                 </div>
             </div>
         );
@@ -55,14 +55,14 @@ export default function SummaryView({ data, loading, error, onGenerate, isLocked
                     <AlertCircle size={30} className="text-red-400" />
                 </div>
                 <div className="text-center">
-                    <p className="text-red-400 font-semibold mb-1">Lỗi khi tạo tóm tắt</p>
+                    <p className="text-red-400 font-semibold mb-1">{t('summary.errorGenerating')}</p>
                     <p className="text-sm text-muted max-w-md">{error}</p>
                 </div>
                 <button
                     onClick={onGenerate}
                     className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 rounded-xl text-sm font-medium hover:bg-primary-700 transition-all shadow-lg shadow-primary-600/20"
                 >
-                    <RefreshCw size={14} /> Thử lại
+                    <RefreshCw size={14} /> {t('common.retry')}
                 </button>
             </div>
         );
@@ -79,8 +79,8 @@ export default function SummaryView({ data, loading, error, onGenerate, isLocked
                     </div>
                 </div>
                 <div className="text-center space-y-1">
-                    <p className="text-txt font-semibold text-base">{isLocked ? 'Tài liệu gốc đã bị xóa' : 'Chưa có bản tóm tắt'}</p>
-                    <p className="text-sm text-muted max-w-xs">{isLocked ? 'Không thể tạo mới vì file gốc không còn tồn tại' : 'AI sẽ đọc và chắt lọc những thông tin quan trọng nhất.'}</p>
+                    <p className="text-txt font-semibold text-base">{isLocked ? t('summary.sourceDeletedTitle') : t('summary.emptyTitle')}</p>
+                    <p className="text-sm text-muted max-w-xs">{isLocked ? t('summary.sourceDeletedDesc') : t('summary.emptyDesc')}</p>
                 </div>
                 <button
                     onClick={onGenerate}
@@ -91,7 +91,7 @@ export default function SummaryView({ data, loading, error, onGenerate, isLocked
                         }`}
                 >
                     <Sparkles size={16} className={isLocked ? '' : 'group-hover:animate-spin'} />
-                    Tạo Tóm tắt AI
+                    {t('summary.generateButton')}
                 </button>
             </div>
         );
@@ -106,8 +106,8 @@ export default function SummaryView({ data, loading, error, onGenerate, isLocked
                         <FileText className="text-primary-400" size={24} />
                     </div>
                     <div>
-                        <h2 className="text-2xl font-extrabold font-display leading-tight">Bản Tóm Tắt</h2>
-                        <p className="text-sm text-muted">Được tạo tự động bởi AI từ nội dung tài liệu gốc</p>
+                        <h2 className="text-2xl font-extrabold font-display leading-tight">{t('summary.title')}</h2>
+                        <p className="text-sm text-muted">{t('summary.subtitle')}</p>
                     </div>
                 </div>
 

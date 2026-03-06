@@ -347,7 +347,7 @@ export default function App() {
             <div className="flex items-center justify-between gap-3">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold">
                 <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
-                MAINTENANCE MODE
+                  {t('app.maintenanceMode')}
               </div>
               <div className="w-12 h-12 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center justify-center shrink-0">
                 <Wrench size={22} className="text-amber-400" />
@@ -562,13 +562,13 @@ export default function App() {
                 <div className="border-t border-line pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                   <p className="text-xs text-muted">&copy; 2026 NoteMind @ Đội Đèn Giao Thông. All rights reserved.</p>
                   <div className="flex items-center gap-4">
-                    <a href="//www.dmca.com/Protection/Status.aspx?ID=ead8dfc7-7685-44c0-a909-f4072ff1ce07&refurl=https://notemind.tech" title="DMCA.com Protection Status" className="dmca-badge" target="_blank" rel="noopener noreferrer">
+                    <a href="//www.dmca.com/Protection/Status.aspx?ID=ead8dfc7-7685-44c0-a909-f4072ff1ce07&refurl=https://notemind.tech" title={t('app.dmcaStatusTitle')} className="dmca-badge" target="_blank" rel="noopener noreferrer">
                       <img src="https://images.dmca.com/Badges/DMCA_badge_trn_60w.png?ID=ead8dfc7-7685-44c0-a909-f4072ff1ce07" alt="DMCA.com Protection Status" className="h-5 opacity-70 hover:opacity-100 transition-opacity" />
                     </a>
                     <button
                       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                       className="text-xs text-muted hover:text-txt transition-colors flex items-center gap-1"
-                      title="Lên đầu trang"
+                      title={t('app.scrollToTopTitle')}
                     >
                       ↑ {t('app.footerScrollTop')}
                     </button>
