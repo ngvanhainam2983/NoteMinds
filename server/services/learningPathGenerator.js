@@ -44,9 +44,13 @@ function normalizeLearningPathPayload(raw, fileName, language) {
         ? raw.steps
         : Array.isArray(raw?.path)
             ? raw.path
-            : Array.isArray(raw?.items)
-                ? raw.items
-                : [];
+            : Array.isArray(raw?.learning_path)
+                ? raw.learning_path
+                : Array.isArray(raw?.learning_steps)
+                    ? raw.learning_steps
+                    : Array.isArray(raw?.items)
+                        ? raw.items
+                        : [];
 
     const steps = stepsSource
         .map((step, index) => ({
@@ -66,7 +70,7 @@ function normalizeLearningPathPayload(raw, fileName, language) {
                 ? 'Lộ trình học tập được tạo tự động từ tài liệu của bạn.'
                 : 'A learning path generated automatically from your document.'
         ),
-        estimated_hours: toHours(raw?.estimated_hours || raw?.duration_hours, Math.max(1, Math.round((steps.length || 3) * 0.5 * 10) / 10)),
+        estimated_hours: toHours(raw?.estimated_hours || raw?.total_estimated_hours || raw?.duration_hours, Math.max(1, Math.round((steps.length || 3) * 0.5 * 10) / 10)),
         steps
     };
 }
