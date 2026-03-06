@@ -244,6 +244,22 @@ export default function Dashboard({ doc, user }) {
     }
   };
 
+  const [isGeneratingPath, setIsGeneratingPath] = useState(false);
+
+  const handleGeneratePath = async () => {
+    if (isGeneratingPath || !doc?.docId) return;
+    setIsGeneratingPath(true);
+    try {
+      const { generateLearningPath } = await import('../api');
+      await generateLearningPath(doc.docId);
+      window.location.href = '/learning-paths';
+    } catch (err) {
+      alert(err.response?.data?.error || 'Lỗi tạo lộ trình. Vui lòng thử lại sau.');
+    } finally {
+      setIsGeneratingPath(false);
+    }
+  };
+
   const handleTogglePublic = async () => {
     if (isTogglingPublic || !doc?.docId) return;
     setIsTogglingPublic(true);
@@ -319,6 +335,17 @@ export default function Dashboard({ doc, user }) {
 
         <div className="flex items-center gap-2">
           <button
+            onClick={handleGeneratePath}
+            disabled={isGeneratingPath || docDetails.isLocked}
+            className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer disabled:opacity-50
+              bg-gradient-to-r from-primary-600 to-accent-600 text-white hover:shadow-lg hover:shadow-primary-500/25 border-0`}
+            title="Tạo lộ trình AI tự động từ tài liệu này"
+          >
+            {isGeneratingPath ? <Loader2 size={14} className="animate-spin" /> : <Map size={14} />}
+            <span className="hidden sm:inline">Tạo Lộ trình AI</span>
+          </button>
+
+          <button
             onClick={handleTogglePublic}
             disabled={isTogglingPublic}
             className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium border rounded-xl transition-all ${isPublic
@@ -353,8 +380,8 @@ export default function Dashboard({ doc, user }) {
           onClick={handleDownload}
           disabled={isDownloading || docDetails.isLocked}
           className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium border rounded-xl transition-all disabled:opacity-50 ${docDetails.isLocked
-              ? 'bg-surface border-line text-muted cursor-not-allowed'
-              : 'bg-primary-600/10 border-primary-500/20 text-primary-400 hover:bg-primary-600/20'
+            ? 'bg-surface border-line text-muted cursor-not-allowed'
+            : 'bg-primary-600/10 border-primary-500/20 text-primary-400 hover:bg-primary-600/20'
             }`}
           title={docDetails.isLocked ? t('dashboard.sourceDeletedTitle') : ''}
         >
@@ -500,8 +527,8 @@ export default function Dashboard({ doc, user }) {
           onClick={() => setShowChat(true)}
           disabled={docDetails.isLocked && chatMessages.length <= 1}
           className={`tour-chat-fab fixed bottom-6 right-6 z-30 w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl transition-all group ${docDetails.isLocked && chatMessages.length <= 1
-              ? 'bg-gray-600 cursor-not-allowed opacity-50 shadow-none'
-              : 'bg-gradient-to-br from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white shadow-primary-600/30 hover:scale-105 active:scale-95'
+            ? 'bg-gray-600 cursor-not-allowed opacity-50 shadow-none'
+            : 'bg-gradient-to-br from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white shadow-primary-600/30 hover:scale-105 active:scale-95'
             }`}
           title={docDetails.isLocked && chatMessages.length <= 1 ? t('dashboard.sourceDocDeleted') : t('dashboard.chatWithAI')}
         >
