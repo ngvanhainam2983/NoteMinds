@@ -84,7 +84,6 @@ const PLANS = [
       'Tất cả tính năng Pro',
       'Không giới hạn kích thước',
       'Chat không giới hạn tin nhắn',
-      'API access (sắp ra mắt)',
       'Hỗ trợ 1-1 ưu tiên',
     ],
     limitations: [],
