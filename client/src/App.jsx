@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import FileUpload from './components/FileUpload';
@@ -63,8 +63,7 @@ export default function App() {
     cacheHistory();
   }, [isOffline, user]);
 
-  // Detect /share/:token, /history, /history/:docId, /session/:docId, or /price URL on mount
-  useEffect(() => {
+  const syncViewWithLocation = useCallback(() => {
     const path = window.location.pathname;
     const search = new URLSearchParams(window.location.search);
     const shareMatch = path.match(/^\/share\/([a-f0-9]+)$/i);
@@ -74,52 +73,111 @@ export default function App() {
     const publicProfileMatch = path.match(/^\/profile\/@([a-zA-Z0-9_.-]+)$/i);
     if (shareMatch) {
       setShareToken(shareMatch[1]);
+      setCurrentDoc(null);
+      setPublicUsername(null);
       setView('shared');
     } else if (publicDocMatch) {
+      setShareToken(null);
+      setPublicUsername(null);
       setCurrentDoc({ docId: publicDocMatch[1], fileName: t('app.publicDoc') });
       setView('public');
     } else if (historyDocMatch) {
+      setShareToken(null);
+      setPublicUsername(null);
       setCurrentDoc({ docId: historyDocMatch[1], fileName: t('app.savedDoc') });
       setView('dashboard');
     } else if (path === '/history') {
+      setShareToken(null);
+      setPublicUsername(null);
       setView('history-list');
     } else if (sessionMatch) {
+      setShareToken(null);
+      setPublicUsername(null);
       setCurrentDoc({ docId: sessionMatch[1], fileName: t('app.newSession') });
       setView('dashboard');
     } else if (path === '/price') {
+      setShareToken(null);
+      setCurrentDoc(null);
+      setPublicUsername(null);
       setView('home');
       setTimeout(() => {
         document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
       }, 500);
     } else if (path === '/verify-email' && search.get('token')) {
+      setShareToken(null);
+      setCurrentDoc(null);
+      setPublicUsername(null);
       setEmailToken(search.get('token'));
       setView('verify-email');
     } else if (path === '/reset-password' && search.get('token')) {
+      setShareToken(null);
+      setCurrentDoc(null);
+      setPublicUsername(null);
       setEmailToken(search.get('token'));
       setView('reset-password');
     } else if (path === '/profile') {
+      setShareToken(null);
+      setCurrentDoc(null);
+      setPublicUsername(null);
       setView('profile');
     } else if (publicProfileMatch) {
+      setShareToken(null);
+      setCurrentDoc(null);
       setPublicUsername(publicProfileMatch[1]);
       setView('public-profile');
     } else if (path === '/community') {
+      setShareToken(null);
+      setCurrentDoc(null);
+      setPublicUsername(null);
       setView('community');
     } else if (path === '/admin') {
       // Only allow admin users to access admin panel
       const storedUser = getStoredUser();
       if (storedUser && storedUser.role === 'admin') {
+        setShareToken(null);
+        setCurrentDoc(null);
+        setPublicUsername(null);
         setView('admin');
       } else {
         setView('home');
       }
     } else if (path === '/leaderboard') {
+      setShareToken(null);
+      setCurrentDoc(null);
+      setPublicUsername(null);
       setView('leaderboard');
     } else if (path === '/stats') {
+      setShareToken(null);
+      setCurrentDoc(null);
+      setPublicUsername(null);
       setView('stats');
     } else if (path === '/learning-paths') {
+      setShareToken(null);
+      setCurrentDoc(null);
+      setPublicUsername(null);
       setView('learning-paths');
+    } else {
+      setShareToken(null);
+      setCurrentDoc(null);
+      setPublicUsername(null);
+      setView('home');
     }
-  }, []);
+  }, [t]);
+
+  // Keep app view in sync with browser navigation (back/forward) and initial URL.
+  useEffect(() => {
+    syncViewWithLocation();
+    window.addEventListener('popstate', syncViewWithLocation);
+    return () => window.removeEventListener('popstate', syncViewWithLocation);
+  }, [syncViewWithLocation]);
+
+  const navigateTo = useCallback((path) => {
+    const targetPath = path || '/';
+    if (window.location.pathname !== targetPath || window.location.search) {
+      window.history.pushState({}, '', targetPath);
+    }
+    syncViewWithLocation();
+  }, [syncViewWithLocation]);
 
   // Verify stored token on mount
   useEffect(() => {
@@ -183,32 +241,23 @@ export default function App() {
   // Documents are auto-deleted after 7 days on the server — no instant cleanup needed
 
   const handleUploadComplete = (docInfo) => {
+    navigateTo(`/session/${docInfo.docId}`);
     setCurrentDoc(docInfo);
-    setView('dashboard');
-    window.history.pushState({}, '', `/session/${docInfo.docId}`);
   };
 
   const handleBackHome = () => {
-    setView('home');
-    setCurrentDoc(null);
-    setShareToken(null);
     setHistoryDoc(null);
-    setPublicUsername(null);
-    // Clean up URL if on a share or history page
-    if (window.location.pathname !== '/') {
-      window.history.pushState({}, '', '/');
-    }
+    navigateTo('/');
   };
 
   const handleOpenDocument = (doc) => {
+    navigateTo(`/history/${doc.id}`);
     setCurrentDoc({
       docId: doc.id,
       fileName: doc.original_name || doc.title || t('app.savedDoc'),
       textLength: doc.text_length || 0,
       is_public: !!doc.is_public
     });
-    setView('dashboard');
-    window.history.pushState({}, '', `/history/${doc.id}`);
   };
 
   const handleLogout = () => {
@@ -358,17 +407,17 @@ export default function App() {
               onLogout={handleLogout}
               onOpenAdmin={() => {
                 if (user && user.role === 'admin') {
-                  setView('admin');
-                  window.history.pushState({}, '', '/admin');
+                  navigateTo('/admin');
                 }
               }}
               onUserUpdate={(updated) => setUser(updated)}
               onOpenDocument={handleOpenDocument}
-              onOpenHistory={() => { setView('history-list'); window.history.pushState({}, '', '/history'); }}
-              onOpenProfile={() => { setView('profile'); window.history.pushState({}, '', '/profile'); }}
-              onOpenLeaderboard={() => { setView('leaderboard'); window.history.pushState({}, '', '/leaderboard'); }}
-              onOpenStats={() => { setView('stats'); window.history.pushState({}, '', '/stats'); }}
-              onOpenLearningPaths={() => { setView('learning-paths'); window.history.pushState({}, '', '/learning-paths'); }}
+              onOpenCommunity={() => navigateTo('/community')}
+              onOpenHistory={() => navigateTo('/history')}
+              onOpenProfile={() => navigateTo('/profile')}
+              onOpenLeaderboard={() => navigateTo('/leaderboard')}
+              onOpenStats={() => navigateTo('/stats')}
+              onOpenLearningPaths={() => navigateTo('/learning-paths')}
               currentView={view}
             />
           )}
@@ -493,9 +542,9 @@ export default function App() {
                   <div>
                     <h4 className="text-sm font-bold mb-3 text-txt">{t('app.footerCommunity')}</h4>
                     <ul className="space-y-2 text-xs text-muted">
-                      <li><button onClick={() => { setView('community'); window.history.pushState({}, '', '/community'); }} className="hover:text-txt transition-colors">{t('app.footerPosts')}</button></li>
-                      <li><button onClick={() => { setView('leaderboard'); window.history.pushState({}, '', '/leaderboard'); }} className="hover:text-txt transition-colors">{t('app.footerLeaderboard')}</button></li>
-                      <li><button onClick={() => { setView('stats'); window.history.pushState({}, '', '/stats'); }} className="hover:text-txt transition-colors">{t('app.footerStats')}</button></li>
+                      <li><button onClick={() => navigateTo('/community')} className="hover:text-txt transition-colors">{t('app.footerPosts')}</button></li>
+                      <li><button onClick={() => navigateTo('/leaderboard')} className="hover:text-txt transition-colors">{t('app.footerLeaderboard')}</button></li>
+                      <li><button onClick={() => navigateTo('/stats')} className="hover:text-txt transition-colors">{t('app.footerStats')}</button></li>
                     </ul>
                   </div>
 

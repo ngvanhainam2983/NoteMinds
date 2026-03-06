@@ -3,7 +3,7 @@ import { BrainCircuit, ArrowLeft, LogIn, Menu, X, History, Globe, Trophy, BarCha
 import UserDropdown from './UserDropdown';
 import { useLanguage } from '../LanguageContext';
 
-export default function Header({ onBackHome, showBack, user, onLoginClick, onLogout, onOpenAdmin, onOpenPricing, onUserUpdate, onOpenDocument, onOpenHistory, onOpenProfile, onOpenLeaderboard, onOpenStats, onOpenLearningPaths, currentView }) {
+export default function Header({ onBackHome, showBack, user, onLoginClick, onLogout, onOpenAdmin, onOpenPricing, onUserUpdate, onOpenDocument, onOpenHistory, onOpenProfile, onOpenLeaderboard, onOpenStats, onOpenLearningPaths, onOpenCommunity, currentView }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { t } = useLanguage();
 
@@ -29,9 +29,7 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
     if (target === 'stats') { onOpenStats?.(); return; }
     if (target === 'learning-paths') { onOpenLearningPaths?.(); return; }
     if (target === 'community') {
-      window.history.pushState({}, '', '/community');
-      window.dispatchEvent(new Event('popstate'));
-      window.location.href = '/community';
+      onOpenCommunity?.();
       return;
     }
     // Scroll-to-section links (home page)
