@@ -4,7 +4,16 @@ import { sanitizeDocumentText, sanitizeFileName } from './promptGuard.js';
 import { buildSystemPrompt, normalizeLanguage } from './promptBuilder.js';
 
 function toText(value, fallback = '') {
-  if (typeof value === 'string') return value.trim();
+  if (value && typeof value === 'object') {
+    const candidate = value.label ?? value.title ?? value.name ?? value.text ?? value.content ?? value.value;
+    if (candidate !== undefined && candidate !== value) {
+      return toText(candidate, fallback);
+    }
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed || fallback;
+  }
   if (value == null) return fallback;
   return String(value).trim() || fallback;
 }
@@ -12,7 +21,10 @@ function toText(value, fallback = '') {
 function normalizeNode(node, prefix = 'n', depth = 0, index = 0) {
   if (!node || typeof node !== 'object') return null;
 
-  const label = toText(node.label || node.title || node.name || node.text || '', `Node ${index + 1}`);
+  const label = toText(
+    node.label ?? node.title ?? node.name ?? node.text ?? node.topic ?? node.content ?? node.value ?? '',
+    `Node ${index + 1}`
+  );
   const childrenSource = Array.isArray(node.children)
     ? node.children
     : Array.isArray(node.nodes)
@@ -21,6 +33,10 @@ function normalizeNode(node, prefix = 'n', depth = 0, index = 0) {
         ? node.branches
         : Array.isArray(node.items)
           ? node.items
+          : Array.isArray(node.subtopics)
+            ? node.subtopics
+            : Array.isArray(node.subNodes)
+              ? node.subNodes
           : [];
 
   const id = toText(node.id, `${prefix}-${depth}-${index + 1}`);

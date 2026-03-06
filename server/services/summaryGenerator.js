@@ -2,6 +2,49 @@ import { callQwen } from './qwenClient.js';
 import { sanitizeDocumentText, sanitizeFileName } from './promptGuard.js';
 import { buildSystemPrompt, normalizeLanguage } from './promptBuilder.js';
 
+function normalizeSummaryText(response) {
+    const asText = typeof response === 'string' ? response.trim() : String(response ?? '').trim();
+    if (!asText) return '';
+
+    // Common case: model returns JSON wrapper like {"summary":"..."}
+    try {
+        const parsed = JSON.parse(asText);
+        if (typeof parsed?.summary === 'string' && parsed.summary.trim()) {
+            return parsed.summary.trim();
+        }
+    } catch {
+        // ignore parse failures and continue
+    }
+
+    // Handle fenced JSON blocks containing { summary: "..." }
+    const codeBlockMatch = asText.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if (codeBlockMatch?.[1]) {
+        try {
+            const parsed = JSON.parse(codeBlockMatch[1].trim());
+            if (typeof parsed?.summary === 'string' && parsed.summary.trim()) {
+                return parsed.summary.trim();
+            }
+        } catch {
+            // ignore and fall through
+        }
+    }
+
+    // Handle responses that include explanatory text plus an inline JSON object.
+    const jsonObjectMatch = asText.match(/\{[\s\S]*\}/);
+    if (jsonObjectMatch?.[0]) {
+        try {
+            const parsed = JSON.parse(jsonObjectMatch[0]);
+            if (typeof parsed?.summary === 'string' && parsed.summary.trim()) {
+                return parsed.summary.trim();
+            }
+        } catch {
+            // ignore and fall through
+        }
+    }
+
+    return asText;
+}
+
 /**
  * Generate a markdown summary from document text
  */
@@ -27,5 +70,5 @@ export async function generateSummary(text, fileName, options = {}) {
         action: 'generate_summary'
     });
 
-    return response;
+    return normalizeSummaryText(response);
 }

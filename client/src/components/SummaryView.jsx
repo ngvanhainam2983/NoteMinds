@@ -3,9 +3,31 @@ import { Loader2, AlertCircle, RefreshCw, FileText, Lock, Sparkles } from 'lucid
 import MarkdownRenderer from './MarkdownRenderer';
 import { useLanguage } from '../LanguageContext';
 
+function getSummaryContent(data) {
+    if (typeof data === 'string') {
+        const text = data.trim();
+        if (!text) return '';
+        try {
+            const parsed = JSON.parse(text);
+            if (typeof parsed?.summary === 'string') return parsed.summary;
+        } catch {
+            // not JSON string, use as-is
+        }
+        return text;
+    }
+
+    if (data && typeof data === 'object') {
+        if (typeof data.summary === 'string') return data.summary;
+        if (typeof data.content === 'string') return data.content;
+    }
+
+    return '';
+}
+
 export default function SummaryView({ data, loading, error, onGenerate, isLocked }) {
     const { t } = useLanguage();
     const [loadingText, setLoadingText] = useState(t('summary.loadingReadAnalyze'));
+    const summaryContent = getSummaryContent(data);
 
     /* ── Loading text cycle ── */
     useEffect(() => {
@@ -112,7 +134,7 @@ export default function SummaryView({ data, loading, error, onGenerate, isLocked
                 </div>
 
                 <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none text-txt leading-relaxed bg-bg border border-line rounded-2xl p-6 md:p-8 shadow-sm">
-                    <MarkdownRenderer content={data} />
+                    <MarkdownRenderer content={summaryContent} />
                 </div>
             </div>
         </div>
