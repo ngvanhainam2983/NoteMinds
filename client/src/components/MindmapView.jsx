@@ -601,6 +601,33 @@ function MindmapViewInner({ data, loading, error, onGenerate, isLocked }) {
     );
   }
 
+  if (!Array.isArray(data?.nodes) || data.nodes.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[500px] gap-5 animate-fade-in">
+        <div className="relative group">
+          <div className="absolute -inset-2 rounded-2xl bg-primary-500/15 blur-lg opacity-50" />
+          <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-600 to-primary-500 shadow-lg shadow-primary-600/25 border border-primary-400/20 flex items-center justify-center">
+            <Network size={28} className="text-white" />
+          </div>
+        </div>
+        <div className="text-center">
+          <p className="font-bold text-lg text-txt mb-1">{t('mindmap.emptyTitle')}</p>
+          <p className="text-sm text-muted">{t('mindmap.emptyDesc')}</p>
+        </div>
+        <button
+          onClick={onGenerate}
+          disabled={isLocked}
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all font-semibold text-white text-sm active:scale-95 ${isLocked
+            ? 'bg-gray-600 cursor-not-allowed opacity-50'
+            : 'bg-gradient-to-r from-primary-600 to-primary-500 hover:shadow-lg hover:shadow-primary-600/20'
+            }`}
+        >
+          <RefreshCw size={14} /> {t('mindmap.generateButton')}
+        </button>
+      </div>
+    );
+  }
+
   /* ── Main mindmap view ── */
   return (
     <div ref={containerRef} className={`w-full flex flex-col ${isFullscreen ? 'h-screen bg-surface' : 'h-[650px]'}`}>

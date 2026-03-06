@@ -44,7 +44,11 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
 
     const score = useMemo(() => {
         if (!data?.questions) return 0;
-        return data.questions.reduce((acc, q, i) => acc + (answers[i] === q.correctAnswerIndex ? 1 : 0), 0);
+        return data.questions.reduce((acc, q, i) => {
+            const idx = Number.isInteger(q?.correctAnswerIndex) ? q.correctAnswerIndex : -1;
+            if (idx < 0 || answers[i] === undefined) return acc;
+            return acc + (answers[i] === idx ? 1 : 0);
+        }, 0);
     }, [answers, data?.questions]);
 
     const percent = qLen > 0 ? Math.round((score / qLen) * 100) : 0;
@@ -182,7 +186,8 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
         const gradeColor = percent >= 80 ? 'emerald' : percent >= 50 ? 'amber' : 'red';
         const gradeMsg = percent === 100 ? t('quiz.gradePerfect') : percent >= 80 ? t('quiz.gradeExcellent') : percent >= 50 ? t('quiz.gradeGood') : t('quiz.gradeNeedsReview');
         const gradeEmoji = percent === 100 ? '🏆' : percent >= 80 ? '🎉' : percent >= 50 ? '👍' : '💪';
-        const unansweredCount = qLen - answeredCount;
+        const unansweredCount = Math.max(0, qLen - answeredCount);
+        const wrongCount = Math.max(0, qLen - score - unansweredCount);
 
         return (
             <div className="max-w-2xl mx-auto py-6 px-4 animate-fade-in">
@@ -225,7 +230,7 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
                                     <CheckCircle2 size={13} /> {t('quiz.correctCount', { count: score })}
                                 </span>
                                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20">
-                                    <XCircle size={13} /> {t('quiz.wrongCount', { count: qLen - score - unansweredCount })}
+                                    <XCircle size={13} /> {t('quiz.wrongCount', { count: wrongCount })}
                                 </span>
                                 {unansweredCount > 0 && (
                                     <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-surface-2 text-muted border border-line">
@@ -250,8 +255,8 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
                         {score > 0 && (
                             <div className="h-full bg-emerald-500 transition-all duration-700 rounded-l-full" style={{ width: `${(score / qLen) * 100}%` }} />
                         )}
-                        {(qLen - score - unansweredCount) > 0 && (
-                            <div className="h-full bg-red-500 transition-all duration-700" style={{ width: `${((qLen - score - unansweredCount) / qLen) * 100}%` }} />
+                        {wrongCount > 0 && (
+                            <div className="h-full bg-red-500 transition-all duration-700" style={{ width: `${(wrongCount / qLen) * 100}%` }} />
                         )}
                         {unansweredCount > 0 && (
                             <div className="h-full bg-line transition-all duration-700 rounded-r-full" style={{ width: `${(unansweredCount / qLen) * 100}%` }} />
@@ -269,7 +274,8 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
                     <p className="text-xs text-muted font-semibold uppercase tracking-wider mb-3">{t('quiz.questionDetails')}</p>
                     <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
                         {data.questions.map((q, i) => {
-                            const correct = answers[i] === q.correctAnswerIndex;
+                            const correctIndex = Number.isInteger(q?.correctAnswerIndex) ? q.correctAnswerIndex : -1;
+                            const correct = answers[i] !== undefined && answers[i] === correctIndex;
                             const unanswered = answers[i] === undefined;
                             return (
                                 <button
@@ -350,8 +356,9 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
                     <div className="flex flex-wrap gap-1.5 mb-4">
                         {data.questions.map((q, i) => {
                             const isCurrent = i === currentIdx;
-                            const correct = submitted && answers[i] === q.correctAnswerIndex;
-                            const wrong = submitted && answers[i] !== undefined && answers[i] !== q.correctAnswerIndex;
+                            const correctIndex = Number.isInteger(q?.correctAnswerIndex) ? q.correctAnswerIndex : -1;
+                            const correct = submitted && answers[i] !== undefined && answers[i] === correctIndex;
+                            const wrong = submitted && answers[i] !== undefined && answers[i] !== correctIndex;
                             const answered = answers[i] !== undefined;
 
                             let cls = 'w-7 h-7 rounded-lg text-[10px] font-bold transition-all ';

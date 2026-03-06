@@ -5,8 +5,20 @@ import remarkGfm from 'remark-gfm';
  * Renders markdown content with proper dark theme styling
  */
 export default function MarkdownRenderer({ content, className = '' }) {
+  const normalizedContent = typeof content === 'string'
+    ? content
+    : content == null
+      ? ''
+      : (() => {
+        try {
+          return typeof content === 'object' ? JSON.stringify(content, null, 2) : String(content);
+        } catch {
+          return String(content);
+        }
+      })();
+
   // Pre-clean: fix empty list items and stray bullets
-  const cleaned = (content || '')
+  const cleaned = normalizedContent
     .replace(/^([ \t]*[-*•])[ \t]*\n([ \t]*\S)/gm, '$1 $2')  // Merge lone bullet with next line content
     .replace(/^[\s]*[-*•][\s]*$/gm, '')   // Remove lines that are still just a bullet with nothing
     .replace(/\n{3,}/g, '\n\n')            // Collapse excessive blank lines

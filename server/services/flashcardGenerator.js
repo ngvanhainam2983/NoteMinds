@@ -3,6 +3,42 @@ import { parseAIJson } from './jsonParser.js';
 import { sanitizeDocumentText, sanitizeFileName } from './promptGuard.js';
 import { buildSystemPrompt, normalizeLanguage } from './promptBuilder.js';
 
+function toText(value, fallback = '') {
+  if (typeof value === 'string') return value.trim();
+  if (value == null) return fallback;
+  return String(value).trim() || fallback;
+}
+
+function normalizeFlashcardsPayload(raw, fileName) {
+  const list = Array.isArray(raw?.cards)
+    ? raw.cards
+    : Array.isArray(raw?.flashcards)
+      ? raw.flashcards
+      : Array.isArray(raw?.items)
+        ? raw.items
+        : [];
+
+  const cards = list
+    .map((card, index) => {
+      const question = toText(card?.question || card?.front || card?.term || '');
+      const answer = toText(card?.answer || card?.back || card?.definition || '');
+      if (!question && !answer) return null;
+
+      return {
+        id: Number.isInteger(card?.id) ? card.id : index + 1,
+        question,
+        answer,
+        tag: toText(card?.tag || card?.category || '')
+      };
+    })
+    .filter(Boolean);
+
+  return {
+    title: toText(raw?.title, fileName),
+    cards
+  };
+}
+
 /**
  * Generate flashcards from document text
  */
@@ -40,7 +76,11 @@ Please generate flashcards from the content above in JSON format.`;
   });
 
   try {
-    const flashcards = parseAIJson(response);
+    const parsed = parseAIJson(response);
+    const flashcards = normalizeFlashcardsPayload(parsed, fileName);
+    if (!flashcards.cards.length) {
+      throw new Error('Flashcards payload is empty');
+    }
     return flashcards;
   } catch (error) {
     console.error('Failed to parse flashcard JSON:', error.message);
