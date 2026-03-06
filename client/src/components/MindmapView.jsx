@@ -413,7 +413,7 @@ function MindmapViewInner({ data, loading, error, onGenerate, isLocked }) {
     }
   }, [data]);
 
-  const [loadingText, setLoadingText] = useState("Đang phân tích cấu trúc tài liệu...");
+  const [loadingText, setLoadingText] = useState(t('mindmap.loadingStep1'));
 
   /* ── Fullscreen toggle ── */
   const toggleFullscreen = useCallback(() => {
@@ -454,7 +454,7 @@ function MindmapViewInner({ data, loading, error, onGenerate, isLocked }) {
       const imageHeight = nodesBounds.height + padding * 2;
       const transform = getTransformForBounds(nodesBounds, imageWidth, imageHeight, 0.5, 2, padding);
       const viewport = document.querySelector('.react-flow__viewport');
-      if (!viewport) throw new Error('Không tìm thấy viewport');
+      if (!viewport) throw new Error(t('mindmap.viewportNotFound'));
 
       const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--color-surface').trim() || '#1a1b2e';
 
@@ -476,7 +476,7 @@ function MindmapViewInner({ data, loading, error, onGenerate, isLocked }) {
       a.click();
     } catch (err) {
       console.error('Export mindmap failed:', err);
-      alert('Lỗi xuất ảnh: ' + (err.message || 'Thử lại'));
+      alert(`${t('mindmap.exportImageError')}: ${err.message || t('common.retry')}`);
     } finally {
       setExporting(false);
     }
@@ -486,15 +486,15 @@ function MindmapViewInner({ data, loading, error, onGenerate, isLocked }) {
   useEffect(() => {
     if (!loading) return;
     const texts = [
-      "Đang phân tích cấu trúc tài liệu...",
-      "Trích xuất các ý chính và khái niệm...",
-      "Thiết lập các nhánh liên kết sơ đồ...",
-      "Hoàn thiện giao diện đồ họa..."
+      t('mindmap.loadingStep1'),
+      t('mindmap.loadingStep2'),
+      t('mindmap.loadingStep3'),
+      t('mindmap.loadingStep4')
     ];
     let i = 0;
     const interval = setInterval(() => { i = (i + 1) % texts.length; setLoadingText(texts[i]); }, 2500);
     return () => clearInterval(interval);
-  }, [loading]);
+  }, [loading, t]);
 
   /* ── Loading state ── */
   if (loading) {
@@ -564,7 +564,7 @@ function MindmapViewInner({ data, loading, error, onGenerate, isLocked }) {
           onClick={onGenerate}
           className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 rounded-xl text-sm font-medium hover:bg-primary-700 transition-all shadow-lg shadow-primary-600/20"
         >
-          <RefreshCw size={14} /> Thử lại
+          <RefreshCw size={14} /> {t('common.retry')}
         </button>
       </div>
     );
@@ -584,8 +584,8 @@ function MindmapViewInner({ data, loading, error, onGenerate, isLocked }) {
           </div>
         </div>
         <div className="text-center">
-          <p className="font-bold text-lg text-txt mb-1">{isLocked ? 'Tài liệu gốc đã bị xóa' : 'Chưa có sơ đồ tư duy'}</p>
-          <p className="text-sm text-muted">{isLocked ? 'Không thể tạo mới vì file gốc không còn tồn tại' : 'AI sẽ phân tích tài liệu và tạo sơ đồ tư duy trực quan'}</p>
+          <p className="font-bold text-lg text-txt mb-1">{isLocked ? t('mindmap.sourceDeletedTitle') : t('mindmap.emptyTitle')}</p>
+          <p className="text-sm text-muted">{isLocked ? t('mindmap.sourceDeletedDesc') : t('mindmap.emptyDesc')}</p>
         </div>
         <button
           onClick={onGenerate}
@@ -595,7 +595,7 @@ function MindmapViewInner({ data, loading, error, onGenerate, isLocked }) {
               : 'bg-gradient-to-r from-primary-600 to-primary-500 hover:shadow-lg hover:shadow-primary-600/20'
             }`}
         >
-          <RefreshCw size={14} /> {t('mindmap.generateButton', 'Tạo Sơ đồ tư duy')}
+          <RefreshCw size={14} /> {t('mindmap.generateButton')}
         </button>
       </div>
     );
@@ -609,20 +609,20 @@ function MindmapViewInner({ data, loading, error, onGenerate, isLocked }) {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <GitBranch size={14} className="text-primary-400" />
-            <h3 className="font-bold text-sm text-txt truncate max-w-[200px] sm:max-w-[300px]">{data.title || 'Sơ đồ tư duy'}</h3>
+            <h3 className="font-bold text-sm text-txt truncate max-w-[200px] sm:max-w-[300px]">{data.title || t('mindmap.defaultTitle')}</h3>
           </div>
           <span className="text-[10px] text-muted font-medium bg-surface-2 px-2 py-0.5 rounded-md border border-line hidden sm:inline-flex items-center gap-1">
             <Circle size={6} className="text-primary-400 fill-primary-400" />
-            {nodeCount} nút
+            {t('mindmap.nodesCount', { count: nodeCount })}
           </span>
           {/* Collapse / Expand */}
           {data?.nodes?.[0]?.children?.length > 0 && (
             <div className="hidden sm:flex items-center gap-1">
-              <button onClick={collapseAll} className="text-[10px] text-muted hover:text-txt bg-surface-2 px-2 py-0.5 rounded-md border border-line transition-colors" title="Thu gọn tất cả">
-                Thu gọn
+              <button onClick={collapseAll} className="text-[10px] text-muted hover:text-txt bg-surface-2 px-2 py-0.5 rounded-md border border-line transition-colors" title={t('mindmap.collapseAll')}>
+                {t('mindmap.collapse')}
               </button>
-              <button onClick={expandAll} className="text-[10px] text-muted hover:text-txt bg-surface-2 px-2 py-0.5 rounded-md border border-line transition-colors" title="Mở rộng tất cả">
-                Mở rộng
+              <button onClick={expandAll} className="text-[10px] text-muted hover:text-txt bg-surface-2 px-2 py-0.5 rounded-md border border-line transition-colors" title={t('mindmap.expandAll')}>
+                {t('mindmap.expand')}
               </button>
             </div>
           )}
@@ -630,15 +630,15 @@ function MindmapViewInner({ data, loading, error, onGenerate, isLocked }) {
         <div className="flex items-center gap-1.5">
           {/* Zoom controls */}
           <div className="hidden sm:flex items-center bg-surface-2 border border-line rounded-lg overflow-hidden">
-            <button onClick={() => zoomOut()} className="p-1.5 hover:bg-line transition-colors text-muted hover:text-txt" title="Thu nhỏ">
+            <button onClick={() => zoomOut()} className="p-1.5 hover:bg-line transition-colors text-muted hover:text-txt" title={t('mindmap.zoomOut')}>
               <ZoomOut size={13} />
             </button>
             <div className="w-px h-5 bg-line" />
-            <button onClick={() => fitView({ padding: 0.2, duration: 400 })} className="p-1.5 hover:bg-line transition-colors text-muted hover:text-txt" title="Vừa khung">
+            <button onClick={() => fitView({ padding: 0.2, duration: 400 })} className="p-1.5 hover:bg-line transition-colors text-muted hover:text-txt" title={t('mindmap.fitView')}>
               <Crosshair size={13} />
             </button>
             <div className="w-px h-5 bg-line" />
-            <button onClick={() => zoomIn()} className="p-1.5 hover:bg-line transition-colors text-muted hover:text-txt" title="Phóng to">
+            <button onClick={() => zoomIn()} className="p-1.5 hover:bg-line transition-colors text-muted hover:text-txt" title={t('mindmap.zoomIn')}>
               <ZoomIn size={13} />
             </button>
           </div>
@@ -648,7 +648,7 @@ function MindmapViewInner({ data, loading, error, onGenerate, isLocked }) {
             onClick={handleExportPng}
             disabled={exporting}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-surface-2 border border-line rounded-lg hover:bg-line transition-all disabled:opacity-50 text-primary-400 hover:text-primary-300"
-            title="Xuất PNG"
+            title={t('mindmap.exportPng')}
           >
             {exporting ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
             <span className="hidden sm:inline">{t('mindmap.exportPng')}</span>
@@ -658,7 +658,7 @@ function MindmapViewInner({ data, loading, error, onGenerate, isLocked }) {
           <button
             onClick={toggleFullscreen}
             className="p-1.5 bg-surface-2 border border-line rounded-lg hover:bg-line transition-all text-muted hover:text-txt"
-            title={isFullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình'}
+            title={isFullscreen ? t('mindmap.exitFullscreen') : t('mindmap.fullscreen')}
           >
             {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
           </button>

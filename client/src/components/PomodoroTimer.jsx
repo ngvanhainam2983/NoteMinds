@@ -1,18 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Play, Pause, RotateCcw, X, Focus, SkipForward, Settings, Coffee, Brain, Zap, ChevronUp, ChevronDown, Volume2, VolumeX, Minimize2 } from 'lucide-react';
 import { trackActivity } from '../api';
 import { useLanguage } from '../LanguageContext';
-
-const QUOTES = [
-  'Tập trung là nghệ thuật loại bỏ mọi thứ không quan trọng.',
-  'Thành công là tổng của những nỗ lực nhỏ, lặp đi lặp lại.',
-  'Không có đường tắt đến bất kỳ nơi nào xứng đáng.',
-  'Kỷ luật là cầu nối giữa mục tiêu và thành tựu.',
-  'Mỗi phút bạn tập trung hôm nay là món quà cho tương lai.',
-  'Hành trình ngàn dặm bắt đầu từ một bước chân.',
-  'Kiến thức là sức mạnh, tập trung là chìa khóa.',
-  'Đừng đợi cảm hứng, hãy tạo ra nó bằng hành động.',
-];
 
 export default function PomodoroTimer({ onClose }) {
   const { t } = useLanguage();
@@ -23,7 +12,17 @@ export default function PomodoroTimer({ onClose }) {
   const [showSettings, setShowSettings] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [quote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)]);
+  const quotes = useMemo(() => [
+    t('pomodoro.quote1'),
+    t('pomodoro.quote2'),
+    t('pomodoro.quote3'),
+    t('pomodoro.quote4'),
+    t('pomodoro.quote5'),
+    t('pomodoro.quote6'),
+    t('pomodoro.quote7'),
+    t('pomodoro.quote8'),
+  ], [t]);
+  const [quote] = useState(() => quotes[Math.floor(Math.random() * quotes.length)]);
   const [autoStart, setAutoStart] = useState(true);
 
   const [durations, setDurations] = useState(() => {
@@ -166,7 +165,7 @@ export default function PomodoroTimer({ onClose }) {
 
   const formatMinutes = (seconds) => {
     const m = Math.floor(seconds / 60);
-    return m < 1 ? '< 1 phút' : `${m} phút`;
+    return m < 1 ? t('pomodoro.lessThanOneMinute') : t('pomodoro.minutesCount', { count: m });
   };
 
   const currentMode = MODES[mode];
@@ -230,26 +229,26 @@ export default function PomodoroTimer({ onClose }) {
           <span className="text-sm font-bold">{t('pomodoro.focusMode')}</span>
           {cycles > 0 && (
             <span className="text-[11px] text-muted bg-surface border border-line rounded-lg px-2 py-0.5 ml-2">
-              {cycles} chu kỳ
+              {t('pomodoro.cyclesCount', { count: cycles })}
             </span>
           )}
         </div>
         <div className="flex items-center gap-1.5">
           <button onClick={() => setSoundEnabled(!soundEnabled)}
-            className="p-2 rounded-xl hover:bg-surface-2 text-muted hover:text-txt transition-all" title={soundEnabled ? 'Tắt âm thanh' : 'Bật âm thanh'}>
+            className="p-2 rounded-xl hover:bg-surface-2 text-muted hover:text-txt transition-all" title={soundEnabled ? t('pomodoro.soundOff') : t('pomodoro.soundOn')}>
             {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </button>
           <button onClick={() => setShowSettings(!showSettings)}
             className={`p-2 rounded-xl hover:bg-surface-2 transition-all ${showSettings ? 'text-primary-400 bg-primary-500/10' : 'text-muted hover:text-txt'}`}
-            title="Cài đặt">
+            title={t('pomodoro.settings')}>
             <Settings size={16} />
           </button>
           <button onClick={() => setMinimized(true)}
-            className="p-2 rounded-xl hover:bg-surface-2 text-muted hover:text-txt transition-all" title="Thu nhỏ">
+            className="p-2 rounded-xl hover:bg-surface-2 text-muted hover:text-txt transition-all" title={t('pomodoro.minimize')}>
             <Minimize2 size={16} />
           </button>
           <button onClick={onClose}
-            className="p-2 rounded-xl hover:bg-surface-2 text-muted hover:text-txt transition-all" title="Đóng">
+            className="p-2 rounded-xl hover:bg-surface-2 text-muted hover:text-txt transition-all" title={t('pomodoro.close')}>
             <X size={16} />
           </button>
         </div>
@@ -259,12 +258,12 @@ export default function PomodoroTimer({ onClose }) {
       {showSettings && (
         <div className="absolute top-16 right-6 w-72 bg-surface border border-line rounded-2xl shadow-2xl shadow-black/30 p-5 animate-fade-in z-10">
           <h3 className="text-sm font-bold mb-4 flex items-center gap-2">
-            <Settings size={14} className="text-primary-400" /> Tuỳ chỉnh thời gian
+            <Settings size={14} className="text-primary-400" /> {t('pomodoro.customizeTime')}
           </h3>
           {[
-            { key: 'focus', label: 'Tập trung', min: 1, max: 90, icon: Brain },
-            { key: 'shortBreak', label: 'Nghỉ ngắn', min: 1, max: 30, icon: Coffee },
-            { key: 'longBreak', label: 'Nghỉ dài', min: 1, max: 60, icon: Zap },
+            { key: 'focus', label: t('pomodoro.focusLabel'), min: 1, max: 90, icon: Brain },
+            { key: 'shortBreak', label: t('pomodoro.shortBreakLabel'), min: 1, max: 30, icon: Coffee },
+            { key: 'longBreak', label: t('pomodoro.longBreakLabel'), min: 1, max: 60, icon: Zap },
           ].map(({ key, label, min, max, icon: Icon }) => (
             <div key={key} className="flex items-center justify-between py-2.5 border-b border-line/50 last:border-0">
               <div className="flex items-center gap-2">
@@ -300,7 +299,7 @@ export default function PomodoroTimer({ onClose }) {
             onClick={() => { switchMode(mode); setShowSettings(false); }}
             className="w-full mt-4 py-2 rounded-xl bg-primary-600/10 border border-primary-500/20 text-primary-400 text-xs font-semibold hover:bg-primary-600/20 transition-colors"
           >
-            Áp dụng & đặt lại
+            {t('pomodoro.applyReset')}
           </button>
         </div>
       )}
@@ -361,7 +360,7 @@ export default function PomodoroTimer({ onClose }) {
           <button
             onClick={() => { setIsActive(false); setTimeLeft(currentMode.time); }}
             className="p-3 rounded-2xl bg-surface border border-line hover:bg-surface-2 text-muted hover:text-txt transition-all active:scale-95"
-            title="Đặt lại"
+            title={t('pomodoro.reset')}
           >
             <RotateCcw size={20} />
           </button>
@@ -383,7 +382,7 @@ export default function PomodoroTimer({ onClose }) {
           <button
             onClick={() => handleComplete()}
             className="p-3 rounded-2xl bg-surface border border-line hover:bg-surface-2 text-muted hover:text-txt transition-all active:scale-95"
-            title="Bỏ qua"
+            title={t('pomodoro.skip')}
           >
             <SkipForward size={20} />
           </button>

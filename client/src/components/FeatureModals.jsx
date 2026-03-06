@@ -11,6 +11,7 @@ import {
   getPreferences, setPreference, exportFlashcardsCSV, addFavorite, removeFavorite,
   checkFavorite, getFlashcardStats, getStoredToken
 } from '../api';
+import { useLanguage } from '../LanguageContext';
 
 // ── Modal Wrapper ────────────────────────────────────
 function Modal({ isOpen, onClose, title, icon: Icon, children, wide }) {
@@ -44,6 +45,7 @@ import { Sparkles } from 'lucide-react';
 
 // ── Search Panel ─────────────────────────────────────
 export function SearchModal({ isOpen, onClose }) {
+  const { t } = useLanguage();
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState('basic'); // 'basic' | 'ai'
   const [results, setResults] = useState(null);
@@ -81,19 +83,19 @@ export function SearchModal({ isOpen, onClose }) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Tìm kiếm & Hỏi AI" icon={Search} wide>
+    <Modal isOpen={isOpen} onClose={onClose} title={t('featureModals.searchTitle')} icon={Search} wide>
       <div className="flex bg-bg border border-line rounded-xl p-1 mb-6">
         <button
           onClick={() => setActiveTab('basic')}
           className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 ${activeTab === 'basic' ? 'bg-surface shadow text-txt' : 'text-muted hover:text-txt'}`}
         >
-          <Search size={16} /> Tìm kiếm cơ bản
+          <Search size={16} /> {t('featureModals.basicSearch')}
         </button>
         <button
           onClick={() => setActiveTab('ai')}
           className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 ${activeTab === 'ai' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 font-bold shadow' : 'text-muted hover:text-txt'}`}
         >
-          <Sparkles size={16} /> Hỏi AI (Tất cả tài liệu)
+          <Sparkles size={16} /> {t('featureModals.askAiAllDocs')}
         </button>
       </div>
 
@@ -103,7 +105,7 @@ export function SearchModal({ isOpen, onClose }) {
           value={query}
           onChange={e => setQuery(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSearch()}
-          placeholder={activeTab === 'basic' ? "Tìm tài liệu, hội thoại..." : "Hỏi bất cứ điều gì về các tài liệu của bạn..."}
+          placeholder={activeTab === 'basic' ? t('featureModals.searchPlaceholderBasic') : t('featureModals.searchPlaceholderAi')}
           className="flex-1 bg-bg border border-line rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary-500"
           autoFocus
         />
@@ -123,7 +125,7 @@ export function SearchModal({ isOpen, onClose }) {
             {results.documents?.length > 0 && (
               <div>
                 <h4 className="text-sm font-medium text-muted mb-2 flex items-center gap-2">
-                  <FileText size={14} /> Tài liệu ({results.documents.length})
+                  <FileText size={14} /> {t('featureModals.documentsCount', { count: results.documents.length })}
                 </h4>
                 {results.documents.map((doc, i) => (
                   <div key={i} className="bg-bg border border-line rounded-lg p-3 mb-2">
@@ -136,18 +138,18 @@ export function SearchModal({ isOpen, onClose }) {
             {results.conversations?.length > 0 && (
               <div>
                 <h4 className="text-sm font-medium text-muted mb-2 flex items-center gap-2">
-                  <MessageSquare size={14} /> Hội thoại ({results.conversations.length})
+                  <MessageSquare size={14} /> {t('featureModals.conversationsCount', { count: results.conversations.length })}
                 </h4>
                 {results.conversations.map((conv, i) => (
                   <div key={i} className="bg-bg border border-line rounded-lg p-3 mb-2">
-                    <p className="text-sm font-medium">{conv.title || 'Hội thoại'}</p>
+                    <p className="text-sm font-medium">{conv.title || t('featureModals.conversation')}</p>
                     {conv.excerpt && <p className="text-xs text-muted mt-1 line-clamp-2">{conv.excerpt}</p>}
                   </div>
                 ))}
               </div>
             )}
             {(!results.documents?.length && !results.conversations?.length) && (
-              <p className="text-center text-muted text-sm py-8">Không tìm thấy kết quả cho "{query}"</p>
+              <p className="text-center text-muted text-sm py-8">{t('featureModals.noResultsFor', { query })}</p>
             )}
           </div>
         )}
@@ -156,7 +158,7 @@ export function SearchModal({ isOpen, onClose }) {
         {activeTab === 'ai' && aiResult && (
           <div className="bg-bg border border-line rounded-xl p-5 shadow-sm">
             <h4 className="text-sm font-medium text-purple-600 dark:text-purple-400 mb-4 flex items-center gap-2">
-              <Sparkles size={16} /> AI Trả lời
+              <Sparkles size={16} /> {t('featureModals.aiAnswer')}
             </h4>
             <div className="prose prose-sm dark:prose-invert max-w-none text-txt">
               <MarkdownRenderer content={aiResult.reply} />
@@ -164,11 +166,11 @@ export function SearchModal({ isOpen, onClose }) {
 
             {aiResult.sourceDocuments?.length > 0 && (
               <div className="mt-6 pt-4 border-t border-line">
-                <p className="text-xs text-muted font-medium mb-2">Nguồn tham khảo:</p>
+                <p className="text-xs text-muted font-medium mb-2">{t('featureModals.references')}</p>
                 <div className="flex flex-wrap gap-2">
                   {aiResult.sourceDocuments.map((doc, i) => (
                     <span key={i} className="px-2.5 py-1 bg-surface border border-line rounded-md text-xs text-muted flex items-center gap-1.5">
-                      <FileText size={12} /> {doc.title || doc.filename || 'Tài liệu'}
+                      <FileText size={12} /> {doc.title || doc.filename || t('featureModals.document')}
                     </span>
                   ))}
                 </div>
@@ -183,12 +185,12 @@ export function SearchModal({ isOpen, onClose }) {
             {activeTab === 'basic' ? (
               <>
                 <Search size={32} className="text-line mb-3" />
-                <p className="text-muted text-sm">Nhập từ khóa để tìm kiếm trong tài liệu và hội thoại</p>
+                <p className="text-muted text-sm">{t('featureModals.searchHint')}</p>
               </>
             ) : (
               <>
                 <Sparkles size={32} className="text-purple-500/40 mb-3" />
-                <p className="text-muted text-sm max-w-sm">Hỏi AI bất kỳ điều gì. AI sẽ tự động duyệt qua tất cả tài liệu của bạn để tìm ra câu trả lời chính xác nhất.</p>
+                <p className="text-muted text-sm max-w-sm">{t('featureModals.askAiHint')}</p>
               </>
             )}
           </div>
@@ -200,6 +202,7 @@ export function SearchModal({ isOpen, onClose }) {
 
 // ── Analytics Panel ──────────────────────────────────
 export function AnalyticsModal({ isOpen, onClose }) {
+  const { t } = useLanguage();
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState(7);
@@ -214,14 +217,14 @@ export function AnalyticsModal({ isOpen, onClose }) {
   }, [isOpen, days]);
 
   const statCards = analytics ? [
-    { label: 'Tài liệu đã xem', value: analytics.documentsViewed ?? 0, icon: FileText, color: 'text-blue-400' },
-    { label: 'Tin nhắn chat', value: analytics.chatInteractions ?? 0, icon: MessageSquare, color: 'text-green-400' },
-    { label: 'Flashcard đã ôn', value: analytics.flashcardsReviewed ?? 0, icon: CreditCard, color: 'text-purple-400' },
-    { label: 'Tổng hoạt động', value: analytics.totalActions ?? 0, icon: TrendingUp, color: 'text-amber-400' },
+    { label: t('featureModals.analyticsDocsViewed'), value: analytics.documentsViewed ?? 0, icon: FileText, color: 'text-blue-400' },
+    { label: t('featureModals.analyticsChatMessages'), value: analytics.chatInteractions ?? 0, icon: MessageSquare, color: 'text-green-400' },
+    { label: t('featureModals.analyticsFlashcardsReviewed'), value: analytics.flashcardsReviewed ?? 0, icon: CreditCard, color: 'text-purple-400' },
+    { label: t('featureModals.analyticsTotalActions'), value: analytics.totalActions ?? 0, icon: TrendingUp, color: 'text-amber-400' },
   ] : [];
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Phân tích học tập" icon={BarChart3} wide>
+    <Modal isOpen={isOpen} onClose={onClose} title={t('featureModals.analyticsTitle')} icon={BarChart3} wide>
       <div className="flex gap-2 mb-6">
         {[7, 14, 30].map(d => (
           <button
@@ -230,7 +233,7 @@ export function AnalyticsModal({ isOpen, onClose }) {
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${days === d ? 'bg-primary-600 text-white' : 'bg-bg border border-line text-muted hover:text-txt'
               }`}
           >
-            {d} ngày
+            {t('featureModals.days', { count: d })}
           </button>
         ))}
       </div>
@@ -252,13 +255,13 @@ export function AnalyticsModal({ isOpen, onClose }) {
           {analytics.topDocuments?.length > 0 && (
             <div>
               <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
-                <Star size={14} className="text-amber-400" /> Tài liệu hàng đầu
+                <Star size={14} className="text-amber-400" /> {t('featureModals.topDocuments')}
               </h4>
               <div className="space-y-2">
                 {analytics.topDocuments.map((doc, i) => (
                   <div key={i} className="flex items-center justify-between bg-bg border border-line rounded-lg px-4 py-2.5">
                     <span className="text-sm truncate">{doc.title || doc.filename}</span>
-                    <span className="text-xs text-primary-400 font-medium">{doc.interactions} lượt</span>
+                    <span className="text-xs text-primary-400 font-medium">{t('featureModals.viewsCount', { count: doc.interactions })}</span>
                   </div>
                 ))}
               </div>
@@ -267,7 +270,7 @@ export function AnalyticsModal({ isOpen, onClose }) {
           {analytics.weeklyActivity?.length > 0 && (
             <div>
               <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
-                <Clock size={14} className="text-blue-400" /> Hoạt động theo ngày
+                <Clock size={14} className="text-blue-400" /> {t('featureModals.dailyActivity')}
               </h4>
               <div className="flex items-end gap-1 h-32 bg-bg border border-line rounded-xl p-4">
                 {analytics.weeklyActivity.map((day, i) => {
@@ -276,7 +279,7 @@ export function AnalyticsModal({ isOpen, onClose }) {
                   const height = Math.max((val / max) * 100, 4);
                   return (
                     <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                      <div className="w-full bg-primary-600/60 rounded-t" style={{ height: `${height}%` }} title={`${val} hoạt động`} />
+                      <div className="w-full bg-primary-600/60 rounded-t" style={{ height: `${height}%` }} title={t('featureModals.activitiesCount', { count: val })} />
                       <span className="text-[10px] text-muted">{(day.day || '').slice(0, 2)}</span>
                     </div>
                   );
@@ -286,32 +289,33 @@ export function AnalyticsModal({ isOpen, onClose }) {
           )}
         </div>
       ) : (
-        <p className="text-center text-muted text-sm py-8">Chưa có dữ liệu phân tích</p>
+        <p className="text-center text-muted text-sm py-8">{t('featureModals.noAnalyticsData')}</p>
       )}
     </Modal>
   );
 }
 
 // ── Share Modal ──────────────────────────────────────
-const SHARE_PERMISSIONS = [
-  { value: 'view', label: 'Chỉ xem', icon: '👁️', desc: 'Chỉ xem nội dung, không chỉnh sửa' },
-  { value: 'comment', label: 'Bình luận', icon: '💬', desc: 'Xem và bình luận' },
-  { value: 'edit', label: 'Chỉnh sửa', icon: '✏️', desc: 'Xem, bình luận và chỉnh sửa' },
-];
-
-const PERMISSION_BADGE = {
-  view: { label: 'Xem', color: 'text-blue-400 bg-blue-500/10 border-blue-500/30' },
-  comment: { label: 'Bình luận', color: 'text-amber-400 bg-amber-500/10 border-amber-500/30' },
-  edit: { label: 'Sửa', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30' },
-};
-
 export function ShareModal({ isOpen, onClose, documentId }) {
+  const { t } = useLanguage();
   const [shares, setShares] = useState([]);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [copied, setCopied] = useState(null);
   const [expiresIn, setExpiresIn] = useState(7);
   const [shareType, setShareType] = useState('view');
+
+  const SHARE_PERMISSIONS = [
+    { value: 'view', label: t('featureModals.permissionViewOnly'), icon: '👁️', desc: t('featureModals.permissionViewOnlyDesc') },
+    { value: 'comment', label: t('featureModals.permissionComment'), icon: '💬', desc: t('featureModals.permissionCommentDesc') },
+    { value: 'edit', label: t('featureModals.permissionEdit'), icon: '✏️', desc: t('featureModals.permissionEditDesc') },
+  ];
+
+  const PERMISSION_BADGE = {
+    view: { label: t('featureModals.badgeView'), color: 'text-blue-400 bg-blue-500/10 border-blue-500/30' },
+    comment: { label: t('featureModals.badgeComment'), color: 'text-amber-400 bg-amber-500/10 border-amber-500/30' },
+    edit: { label: t('featureModals.badgeEdit'), color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30' },
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -355,10 +359,10 @@ export function ShareModal({ isOpen, onClose, documentId }) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Chia sẻ tài liệu" icon={Share2}>
+    <Modal isOpen={isOpen} onClose={onClose} title={t('featureModals.shareTitle')} icon={Share2}>
       {documentId && (
         <div className="bg-bg border border-line rounded-xl p-4 mb-6">
-          <p className="text-sm font-medium mb-3">Tạo link chia sẻ mới</p>
+          <p className="text-sm font-medium mb-3">{t('featureModals.createShareLink')}</p>
 
           {/* Permission selector */}
           <div className="grid grid-cols-3 gap-2 mb-3">
@@ -386,9 +390,9 @@ export function ShareModal({ isOpen, onClose, documentId }) {
               onChange={e => setExpiresIn(Number(e.target.value))}
               className="bg-surface border border-line rounded-lg px-3 py-2 text-sm focus:outline-none"
             >
-              <option value={1}>1 ngày</option>
-              <option value={7}>7 ngày</option>
-              <option value={30}>30 ngày</option>
+              <option value={1}>{t('share.day1')}</option>
+              <option value={7}>{t('share.day7')}</option>
+              <option value={30}>{t('share.day30')}</option>
             </select>
             <button
               onClick={handleCreate}
@@ -396,7 +400,7 @@ export function ShareModal({ isOpen, onClose, documentId }) {
               className="flex items-center gap-2 px-4 py-2 bg-primary-600 rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors disabled:opacity-50"
             >
               {creating ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-              Tạo link
+              {t('featureModals.createLink')}
             </button>
           </div>
         </div>
@@ -405,7 +409,7 @@ export function ShareModal({ isOpen, onClose, documentId }) {
         <div className="flex justify-center py-8"><Loader2 size={24} className="text-primary-400 animate-spin" /></div>
       ) : shares.length > 0 ? (
         <div className="space-y-2">
-          <p className="text-sm text-muted mb-3">Các link đã tạo</p>
+          <p className="text-sm text-muted mb-3">{t('featureModals.existingLinks')}</p>
           {shares.map(s => {
             const badge = PERMISSION_BADGE[s.share_type] || PERMISSION_BADGE.view;
             const shareUrl = `${window.location.origin}/share/${s.share_token}`;
@@ -420,7 +424,7 @@ export function ShareModal({ isOpen, onClose, documentId }) {
                     {badge.label}
                   </span>
                   <span className="text-[10px] text-muted">
-                    {s.expires_at ? new Date(s.expires_at).toLocaleDateString('vi') : '∞'}
+                    {s.expires_at ? new Date(s.expires_at).toLocaleDateString('vi') : t('featureModals.noExpiry')}
                   </span>
                   <button onClick={() => copyLink(s.share_token)} className="p-1 hover:bg-line rounded transition-colors">
                     {copied === s.share_token ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
@@ -431,7 +435,7 @@ export function ShareModal({ isOpen, onClose, documentId }) {
                 </div>
                 {s.original_name && (
                   <p className="text-[10px] text-[#666] mt-1 pl-6 truncate">
-                    {s.original_name} • {s.access_count || 0} lượt xem
+                    {s.original_name} • {t('featureModals.viewsCount', { count: s.access_count || 0 })}
                   </p>
                 )}
               </div>
@@ -439,7 +443,7 @@ export function ShareModal({ isOpen, onClose, documentId }) {
           })}
         </div>
       ) : (
-        <p className="text-center text-muted text-sm py-8">Chưa có link chia sẻ nào</p>
+        <p className="text-center text-muted text-sm py-8">{t('share.noLinks')}</p>
       )}
     </Modal>
   );
@@ -456,6 +460,7 @@ const TAG_COLORS = [
 ];
 
 export function TagsModal({ isOpen, onClose, documentId }) {
+  const { t } = useLanguage();
   const [allTags, setAllTags] = useState([]);
   const [docTags, setDocTags] = useState([]);
   const [newTagName, setNewTagName] = useState('');
@@ -504,17 +509,17 @@ export function TagsModal({ isOpen, onClose, documentId }) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Quản lý nhãn" icon={Tag}>
+    <Modal isOpen={isOpen} onClose={onClose} title={t('featureModals.tagsTitle')} icon={Tag}>
       {/* Create new tag */}
       <div className="bg-bg border border-line rounded-xl p-4 mb-6">
-        <p className="text-sm font-medium mb-3">Tạo nhãn mới</p>
+        <p className="text-sm font-medium mb-3">{t('tags.createNew')}</p>
         <div className="flex gap-2 mb-3">
           <input
             type="text"
             value={newTagName}
             onChange={e => setNewTagName(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleCreateTag()}
-            placeholder="Tên nhãn..."
+            placeholder={t('featureModals.tagNamePlaceholder')}
             className="flex-1 bg-surface border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary-500"
           />
           <button
@@ -543,7 +548,7 @@ export function TagsModal({ isOpen, onClose, documentId }) {
       ) : allTags.length > 0 ? (
         <div className="space-y-2">
           <p className="text-sm text-muted mb-2">
-            {documentId ? 'Nhấn để gắn/gỡ nhãn cho tài liệu' : 'Tất cả nhãn của bạn'}
+            {documentId ? t('featureModals.clickToAttachTag') : t('featureModals.allYourTags')}
           </p>
           <div className="flex flex-wrap gap-2">
             {allTags.map(tag => {
@@ -565,7 +570,7 @@ export function TagsModal({ isOpen, onClose, documentId }) {
           </div>
         </div>
       ) : (
-        <p className="text-center text-muted text-sm py-8">Chưa có nhãn nào. Tạo nhãn mới ở trên!</p>
+        <p className="text-center text-muted text-sm py-8">{t('tags.noTags')}</p>
       )}
     </Modal>
   );
@@ -573,6 +578,7 @@ export function TagsModal({ isOpen, onClose, documentId }) {
 
 // ── Preferences Modal ────────────────────────────────
 export function PreferencesModal({ isOpen, onClose }) {
+  const { t } = useLanguage();
   const [prefs, setPrefs] = useState({});
   const [loading, setLoading] = useState(true);
 
@@ -595,13 +601,13 @@ export function PreferencesModal({ isOpen, onClose }) {
   };
 
   const toggleItems = [
-    { key: 'offlineModeEnabled', label: 'Chế độ offline', desc: 'Lưu cache để dùng khi mất mạng' },
-    { key: 'notifications', label: 'Thông báo', desc: 'Nhận thông báo nhắc ôn bài' },
-    { key: 'emailUpdates', label: 'Email cập nhật', desc: 'Nhận email về tính năng mới' },
+    { key: 'offlineModeEnabled', label: t('featureModals.prefOfflineMode'), desc: t('featureModals.prefOfflineModeDesc') },
+    { key: 'notifications', label: t('featureModals.prefNotifications'), desc: t('featureModals.prefNotificationsDesc') },
+    { key: 'emailUpdates', label: t('featureModals.prefEmailUpdates'), desc: t('featureModals.prefEmailUpdatesDesc') },
   ];
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Cài đặt" icon={Settings}>
+    <Modal isOpen={isOpen} onClose={onClose} title={t('featureModals.settingsTitle')} icon={Settings}>
       {loading ? (
         <div className="flex justify-center py-12"><Loader2 size={24} className="text-primary-400 animate-spin" /></div>
       ) : (
@@ -630,6 +636,7 @@ export function PreferencesModal({ isOpen, onClose }) {
 
 // ── Favorite Button ──────────────────────────────────
 export function FavoriteButton({ documentId }) {
+  const { t } = useLanguage();
   const [isFav, setIsFav] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -665,7 +672,7 @@ export function FavoriteButton({ documentId }) {
       disabled={loading}
       className={`p-2 rounded-lg transition-all ${isFav ? 'text-amber-400 bg-amber-400/10' : 'text-muted hover:text-amber-400 hover:bg-amber-400/10'
         }`}
-      title={isFav ? 'Bỏ yêu thích' : 'Yêu thích'}
+      title={isFav ? t('featureModals.unfavorite') : t('featureModals.favorite')}
     >
       <Star size={16} fill={isFav ? 'currentColor' : 'none'} />
     </button>
@@ -674,6 +681,7 @@ export function FavoriteButton({ documentId }) {
 
 // ── Export Button ────────────────────────────────────
 export function ExportButton({ documentId, type = 'flashcards' }) {
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
 
   const handleExport = async () => {
@@ -704,14 +712,14 @@ export function ExportButton({ documentId, type = 'flashcards' }) {
           a.download = `mindmap_${documentId}.png`;
           a.click();
         } else {
-          throw new Error('Không tìm thấy sơ đồ tư duy để xuất ảnh.');
+          throw new Error(t('featureModals.exportMindmapNotFound'));
         }
       } else {
-        throw new Error('Loại xuất file không được hỗ trợ.');
+        throw new Error(t('featureModals.exportTypeUnsupported'));
       }
     } catch (err) {
       console.error('Export failed:', err);
-      alert(err.message || 'Lỗi xuất file');
+      alert(err.message || t('featureModals.exportError'));
     } finally {
       setLoading(false);
     }
@@ -727,10 +735,10 @@ export function ExportButton({ documentId, type = 'flashcards' }) {
       onClick={handleExport}
       disabled={loading}
       className={`flex items-center gap-1.5 px-3 py-1.5 text-xs bg-surface-2 border border-line rounded-lg hover:bg-line transition-colors disabled:opacity-50 ${isMindmap ? 'text-indigo-400' : ''}`}
-      title={isMindmap ? "Xuất PNG" : "Xuất CSV"}
+      title={isMindmap ? t('featureModals.exportPng') : t('featureModals.exportCsv')}
     >
       {loading ? <Loader2 size={12} className="animate-spin" /> : isMindmap ? <ImageIcon size={12} /> : <Download size={12} />}
-      {isMindmap ? "Xuất PNG" : "Xuất CSV"}
+      {isMindmap ? t('featureModals.exportPng') : t('featureModals.exportCsv')}
     </button>
   );
 }

@@ -41,7 +41,7 @@ export default function Hero() {
         <p className="text-base sm:text-lg text-muted max-w-2xl mx-auto mb-10 leading-relaxed">
           {t('hero.subtitle1')}
           <strong className="text-txt font-medium"> {t('hero.subtitleMindmap')}</strong>,{' '}
-          <strong className="text-txt font-medium">{t('hero.subtitleFlashcard')}</strong> và{' '}
+          <strong className="text-txt font-medium">{t('hero.subtitleFlashcard')}</strong> {t('common.and')}{' '}
           <strong className="text-txt font-medium">{t('hero.subtitleChat')}</strong>{' '}
           {t('hero.subtitleEnd')}
         </p>

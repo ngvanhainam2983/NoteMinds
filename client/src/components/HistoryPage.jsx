@@ -87,7 +87,7 @@ export default function HistoryPage({ onOpenDocument }) {
       setDocs(docs.map(doc => doc.id === docId ? { ...doc, folder_id: folderId } : doc));
     } catch (e) {
       console.error(e);
-      alert('Lỗi khi chuyển thư mục');
+      alert(t('history.moveFolderError'));
     }
   };
 
@@ -104,19 +104,19 @@ export default function HistoryPage({ onOpenDocument }) {
       }
       setIsFolderModalOpen(false);
     } catch (err) {
-      alert('Lỗi lưu thư mục: ' + err.message);
+      alert(`${t('history.saveFolderError')}: ${err.message}`);
     }
   };
 
   const removeFolder = async (folderId) => {
-    if (!confirm('Bạn có chắc xoá thư mục này không? Các tài liệu bên trong sẽ trở thành "Chưa phân loại".')) return;
+    if (!confirm(t('history.deleteFolderConfirm'))) return;
     try {
       await deleteFolder(folderId);
       setFolders(folders.filter(f => f.id !== folderId));
       setDocs(docs.map(d => d.folder_id === folderId ? { ...d, folder_id: null } : d));
       if (activeFolderId === folderId) setActiveFolderId('all');
     } catch (err) {
-      alert('Lỗi xoá: ' + err.message);
+      alert(`${t('history.deleteError')}: ${err.message}`);
     }
   };
 
@@ -178,7 +178,7 @@ export default function HistoryPage({ onOpenDocument }) {
           <button
             onClick={() => { setEditingFolder(null); setFolderForm({ name: '', color: '#3b82f6' }); setIsFolderModalOpen(true); }}
             className="p-1 rounded bg-surface-2 hover:bg-primary-600 text-muted hover:text-txt transition-all"
-            title="Thêm thư mục"
+            title={t('history.addFolder')}
           >
             <Plus size={14} />
           </button>
@@ -216,7 +216,7 @@ export default function HistoryPage({ onOpenDocument }) {
                               onClick={(e) => { e.stopPropagation(); setEditingFolder(folder); setFolderForm({ name: folder.name, color: folder.color }); setIsFolderModalOpen(true); }}
                               className={`${active ? 'bg-line text-txt' : 'text-muted'} group flex w-full items-center px-4 py-2 text-xs transition-colors`}
                             >
-                              <Edit2 size={12} className="mr-2" /> Cập nhật
+                              <Edit2 size={12} className="mr-2" /> {t('history.update')}
                             </button>
                           )}
                         </Menu.Item>
@@ -226,7 +226,7 @@ export default function HistoryPage({ onOpenDocument }) {
                               onClick={(e) => { e.stopPropagation(); removeFolder(folder.id); }}
                               className={`${active ? 'bg-red-500/10 text-red-500' : 'text-red-400'} group flex w-full items-center px-4 py-2 text-xs transition-colors`}
                             >
-                              <Trash2 size={12} className="mr-2" /> Xoá thư mục
+                              <Trash2 size={12} className="mr-2" /> {t('history.deleteFolder')}
                             </button>
                           )}
                         </Menu.Item>
@@ -324,7 +324,7 @@ export default function HistoryPage({ onOpenDocument }) {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <p className={`text-sm font-medium truncate ${expired ? 'text-muted/60 line-through' : 'text-txt group-hover:text-primary-400'}`}>
-                            {doc.original_name || 'Tài liệu không tên'}
+                            {doc.original_name || t('history.untitledDocument')}
                           </p>
                           {!expired && doc.folder_id && folders.find(f => f.id === doc.folder_id) && (
                             <span className="text-[10px] px-1.5 py-0.5 rounded-md border flex items-center gap-1 shrink-0"
@@ -342,10 +342,10 @@ export default function HistoryPage({ onOpenDocument }) {
                         <div className="flex items-center gap-3 mt-1.5">
                           <span className={`flex items-center gap-1 text-[11px] ${expired ? 'text-muted/60' : 'text-muted'}`}>
                             {statusIcon(doc)}
-                            {doc.status === 'ready' ? 'Hoàn thành' : doc.status === 'error' ? 'Lỗi' : 'Đang xử lý'}
+                            {doc.status === 'ready' ? t('history.statusReady') : doc.status === 'error' ? t('history.statusError') : t('history.statusProcessing')}
                           </span>
                           {doc.text_length > 0 && (
-                            <span className="text-[11px] text-muted/60">{(doc.text_length / 1000).toFixed(1)}k ký tự</span>
+                            <span className="text-[11px] text-muted/60">{t('history.charactersCount', { count: `${(doc.text_length / 1000).toFixed(1)}k` })}</span>
                           )}
                           <span className="text-[11px] text-muted/60 flex items-center gap-1">
                             <Clock size={11} />
@@ -373,7 +373,7 @@ export default function HistoryPage({ onOpenDocument }) {
                                       className={`${active ? 'bg-line text-txt' : 'text-muted'} flex w-full items-center px-4 py-2 text-xs transition-colors gap-2`}
                                     >
                                       <List size={14} className="opacity-70" />
-                                      Bỏ phân loại
+                                      {t('history.removeCategory')}
                                     </button>
                                   )}
                                 </Menu.Item>
@@ -420,14 +420,14 @@ export default function HistoryPage({ onOpenDocument }) {
             className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20"
           >
             <div className="bg-surface-2 border border-primary-500/30 rounded-full shadow-2xl shadow-primary-500/10 px-6 py-3 flex items-center gap-6">
-              <span className="text-sm font-medium text-txt">Đã chọn <span className="text-primary-400 font-bold">{selectedDocs.size}</span> tài liệu</span>
+              <span className="text-sm font-medium text-txt">{t('history.selectedCount', { count: selectedDocs.size })}</span>
               <div className="w-px h-6 bg-surface-2" />
               <button
                 onClick={() => setShowMultiChat(true)}
                 className="flex items-center gap-2 bg-primary-600 text-white px-4 py-1.5 rounded-full text-sm font-semibold hover:bg-primary-500 hover:shadow-lg hover:shadow-primary-600/30 transition-all"
               >
                 <MessageSquare size={16} />
-                Chat với AI
+                {t('history.chatWithAi')}
               </button>
             </div>
           </Transition>
@@ -446,7 +446,7 @@ export default function HistoryPage({ onOpenDocument }) {
               <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0 scale-95" enterTo="opacity-100 scale-100" leave="ease-in duration-200" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95">
                 <Dialog.Panel className="w-full max-w-sm transform overflow-hidden rounded-2xl bg-surface border border-line p-6 text-left align-middle shadow-xl transition-all">
                   <Dialog.Title as="h3" className="text-lg font-bold leading-6 text-txt mb-4">
-                    {editingFolder ? 'Sửa thư mục' : 'Tạo thư mục mới'}
+                    {editingFolder ? t('history.editFolder') : t('history.newFolder')}
                   </Dialog.Title>
 
                   <form onSubmit={saveFolder} className="space-y-4">
@@ -458,7 +458,7 @@ export default function HistoryPage({ onOpenDocument }) {
                         value={folderForm.name}
                         onChange={(e) => setFolderForm({ ...folderForm, name: e.target.value })}
                         className="w-full bg-bg border border-line rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary-500/50 text-txt"
-                        placeholder="VD: Toán rời rạc, Luyện thi IELTS..."
+                        placeholder={t('history.folderPlaceholder')}
                       />
                     </div>
 
@@ -482,13 +482,13 @@ export default function HistoryPage({ onOpenDocument }) {
                         className="px-4 py-2 text-sm font-medium text-muted bg-surface-2 hover:bg-line rounded-xl transition-colors"
                         onClick={() => setIsFolderModalOpen(false)}
                       >
-                        Huỷ
+                        {t('history.cancel')}
                       </button>
                       <button
                         type="submit"
                         className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-500 rounded-xl transition-colors shadow-lg shadow-primary-600/20"
                       >
-                        {editingFolder ? 'Cập nhật' : 'Tạo mới'}
+                        {editingFolder ? t('history.update') : t('history.createNew')}
                       </button>
                     </div>
                   </form>

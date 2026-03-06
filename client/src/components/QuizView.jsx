@@ -73,7 +73,7 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
     };
 
     const handleSubmit = () => {
-        if (answeredCount < qLen && !confirm(`Bạn mới trả lời ${answeredCount}/${qLen} câu. Nộp bài ngay?`)) return;
+        if (answeredCount < qLen && !confirm(t('quiz.submitConfirm', { answered: answeredCount, total: qLen }))) return;
         setSubmitted(true);
         setTimerActive(false);
         setView('summary');
@@ -89,14 +89,14 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
     };
 
     // ── Loading Text Cycle ───
-    const [loadingText, setLoadingText] = useState("Đang đọc nội dung tài liệu...");
+    const [loadingText, setLoadingText] = useState(t('quiz.loadingRead'));
     useEffect(() => {
         if (!loading) return;
-        const texts = ["Đang đọc nội dung tài liệu...", "Tìm kiếm các chi tiết quan trọng...", "Đang tạo ngân hàng câu hỏi...", "Phân tích các đáp án gây nhiễu..."];
+        const texts = [t('quiz.loadingRead'), t('quiz.loadingFindDetails'), t('quiz.loadingBuildBank'), t('quiz.loadingAnalyzeDistractors')];
         let i = 0;
         const id = setInterval(() => { i = (i + 1) % texts.length; setLoadingText(texts[i]); }, 2500);
         return () => clearInterval(id);
-    }, [loading]);
+    }, [loading, t]);
 
     // ── Loading ───
     if (loading) {
@@ -163,10 +163,10 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
                 </div>
                 <div className="text-center">
                     <p className={`font-bold text-lg mb-1 ${isError ? 'text-red-400' : 'text-txt'}`}>
-                        {isError ? "Lỗi tạo bài tập" : isLocked ? "Tài liệu gốc đã bị xóa" : "Chưa có bài kiểm tra"}
+                        {isError ? t('quiz.errorGenerating') : isLocked ? t('quiz.sourceDeletedTitle') : t('quiz.emptyTitle')}
                     </p>
                     <p className="text-sm text-muted">
-                        {isError ? "Vui lòng thử lại sau" : isLocked ? "Không thể tạo mới vì file gốc không còn tồn tại" : "Tạo bài kiểm tra từ nội dung tài liệu"}
+                        {isError ? t('quiz.errorTryLater') : isLocked ? t('quiz.sourceDeletedDesc') : t('quiz.emptyDesc')}
                     </p>
                 </div>
                 <button onClick={onGenerate} disabled={isLocked && !isError} className={`flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all active:scale-95 font-semibold text-sm text-white ${isLocked && !isError ? 'bg-gray-600 cursor-not-allowed opacity-50' : 'bg-gradient-to-r from-primary-600 to-primary-500 hover:shadow-lg hover:shadow-primary-600/20'
@@ -180,7 +180,7 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
     // ── Summary View ───
     if (view === 'summary') {
         const gradeColor = percent >= 80 ? 'emerald' : percent >= 50 ? 'amber' : 'red';
-        const gradeMsg = percent === 100 ? 'Hoàn hảo!' : percent >= 80 ? 'Xuất sắc!' : percent >= 50 ? 'Khá tốt!' : 'Cần ôn thêm!';
+        const gradeMsg = percent === 100 ? t('quiz.gradePerfect') : percent >= 80 ? t('quiz.gradeExcellent') : percent >= 50 ? t('quiz.gradeGood') : t('quiz.gradeNeedsReview');
         const gradeEmoji = percent === 100 ? '🏆' : percent >= 80 ? '🎉' : percent >= 50 ? '👍' : '💪';
         const unansweredCount = qLen - answeredCount;
 
@@ -222,14 +222,14 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
                             {/* Stats pills */}
                             <div className="flex flex-wrap items-center gap-2 justify-center md:justify-start">
                                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                    <CheckCircle2 size={13} /> {score} đúng
+                                    <CheckCircle2 size={13} /> {t('quiz.correctCount', { count: score })}
                                 </span>
                                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20">
-                                    <XCircle size={13} /> {qLen - score - unansweredCount} sai
+                                    <XCircle size={13} /> {t('quiz.wrongCount', { count: qLen - score - unansweredCount })}
                                 </span>
                                 {unansweredCount > 0 && (
                                     <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-surface-2 text-muted border border-line">
-                                        <Target size={13} /> {unansweredCount} bỏ qua
+                                        <Target size={13} /> {t('quiz.skippedCount', { count: unansweredCount })}
                                     </span>
                                 )}
                                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-surface-2 text-muted border border-line">
@@ -275,7 +275,7 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
                                 <button
                                     key={i}
                                     onClick={() => { setView('review'); setCurrentIdx(i); }}
-                                    title={`Câu ${i + 1}: ${unanswered ? 'Bỏ qua' : correct ? 'Đúng' : 'Sai'}`}
+                                    title={t('quiz.questionResultTitle', { index: i + 1, result: unanswered ? t('quiz.skipped') : correct ? t('quiz.correct') : t('quiz.wrong') })}
                                     className={`aspect-square rounded-lg text-xs font-bold transition-all hover:scale-110 hover:shadow-md flex items-center justify-center ${unanswered ? 'bg-surface-2 text-muted border border-line'
                                             : correct ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
                                                 : 'bg-red-500/15 text-red-400 border border-red-500/30'
@@ -291,10 +291,10 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
                 {/* Actions */}
                 <div className="flex gap-2.5">
                     <button onClick={() => { setView('review'); setCurrentIdx(0); }} className="flex-1 py-3 rounded-xl border border-line bg-surface-2 hover:bg-line hover:border-primary-500/30 font-medium transition-all active:scale-[0.97] flex items-center justify-center gap-2 text-sm">
-                        <Eye size={15} /> Xem lại đáp án
+                        <Eye size={15} /> {t('quiz.reviewAnswers')}
                     </button>
                     <button onClick={resetQuiz} className="flex-1 py-3 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 font-semibold transition-all active:scale-[0.97] shadow-lg shadow-primary-600/20 hover:shadow-xl hover:shadow-primary-600/30 flex items-center justify-center gap-2 text-sm text-white">
-                        <RotateCcw size={15} /> Làm lại
+                        <RotateCcw size={15} /> {t('quiz.retry')}
                     </button>
                 </div>
             </div>
@@ -315,11 +315,11 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
                         <FileQuestion size={16} className="text-white" />
                     </div>
                     <div className="min-w-0">
-                        <h2 className="font-bold text-sm truncate">{data.title || "Bài Kiểm Tra"}</h2>
+                        <h2 className="font-bold text-sm truncate">{data.title || t('quiz.defaultTitle')}</h2>
                         {isReview ? (
-                            <p className="text-[11px] font-medium text-primary-400">Xem lại — {score}/{qLen} đúng</p>
+                            <p className="text-[11px] font-medium text-primary-400">{t('quiz.reviewScore', { score, total: qLen })}</p>
                         ) : (
-                            <p className="text-[11px] text-muted">{qLen} câu hỏi</p>
+                            <p className="text-[11px] text-muted">{t('quiz.questionCount', { count: qLen })}</p>
                         )}
                     </div>
                 </div>
@@ -445,19 +445,19 @@ export default function QuizView({ data, loading, error, onGenerate, isLocked })
                 {/* Center actions */}
                 {isReview ? (
                     <button onClick={() => setView('summary')} className="px-4 py-2 bg-surface-2 border border-line rounded-lg text-xs font-medium hover:bg-line hover:border-primary-500/30 transition-all flex items-center gap-1.5">
-                        <ListChecks size={13} /> Tổng kết
+                        <ListChecks size={13} /> {t('quiz.summary')}
                     </button>
                 ) : !submitted ? (
                     currentIdx === qLen - 1 ? (
                         <button onClick={handleSubmit} className="px-5 py-2 bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-lg font-bold shadow-lg shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all text-xs text-white flex items-center gap-1.5">
-                            <Zap size={13} /> Nộp bài
+                            <Zap size={13} /> {t('quiz.submitQuiz')}
                         </button>
                     ) : (
-                        <span className="text-[11px] text-muted font-medium">{answeredCount} / {qLen} đã trả lời</span>
+                        <span className="text-[11px] text-muted font-medium">{t('quiz.answeredProgress', { answered: answeredCount, total: qLen })}</span>
                     )
                 ) : (
                     <button onClick={() => setView('summary')} className="px-4 py-2 bg-surface-2 border border-line rounded-lg text-xs font-medium hover:bg-line hover:border-primary-500/30 transition-all flex items-center gap-1.5">
-                        <ListChecks size={13} /> Tổng kết
+                        <ListChecks size={13} /> {t('quiz.summary')}
                     </button>
                 )}
 

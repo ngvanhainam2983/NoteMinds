@@ -241,7 +241,7 @@ export default function OfflinePage({ onBack, onRetry, onDisable }) {
           <div className="space-y-2">
             <div className="flex items-center justify-between px-1 mb-1">
               <span className="text-xs font-medium text-muted">
-                {filteredDocs.length} tài liệu {search && `• "${search}"`}
+                {filteredDocs.length} {t('offline.documents')} {search && `• "${search}"`}
               </span>
             </div>
             {filteredDocs.map((doc) => {
@@ -253,7 +253,7 @@ export default function OfflinePage({ onBack, onRetry, onDisable }) {
                   key={doc.id}
                   onClick={() => {
                     if (!expired && hasContent) {
-                      setSelectedDoc({ id: doc.id, name: doc.original_name || 'Tài liệu không tên' });
+                      setSelectedDoc({ id: doc.id, name: doc.original_name || t('user.untitledDoc') });
                     }
                   }}
                   className={`flex items-center gap-4 rounded-xl px-5 py-4 transition-all border ${
@@ -275,7 +275,7 @@ export default function OfflinePage({ onBack, onRetry, onDisable }) {
                       <p className={`text-sm font-medium truncate ${
                         expired ? 'text-muted/60 line-through' : 'text-txt'
                       }`}>
-                        {doc.original_name || 'Tài liệu không tên'}
+                        {doc.original_name || t('user.untitledDoc')}
                       </p>
                       {!expired && doc.folder_id && getFolderName(doc.folder_id) && (
                         <span
@@ -301,7 +301,7 @@ export default function OfflinePage({ onBack, onRetry, onDisable }) {
                         {doc.status === 'ready' ? t('user.completed') : doc.status === 'error' ? t('user.errorStatus') : t('user.processingStatus')}
                       </span>
                       {doc.text_length > 0 && (
-                        <span className="text-[11px] text-muted/60">{(doc.text_length / 1000).toFixed(1)}k ký tự</span>
+                        <span className="text-[11px] text-muted/60">{(doc.text_length / 1000).toFixed(1)}k {t('user.chars')}</span>
                       )}
                       <span className="text-[11px] text-muted/60 flex items-center gap-1">
                         <Clock size={11} />
@@ -350,9 +350,9 @@ export default function OfflinePage({ onBack, onRetry, onDisable }) {
             <span className="text-xs">💡</span>
           </div>
           <div>
-            <p className="text-xs font-medium text-txt mb-0.5">Mẹo</p>
+            <p className="text-xs font-medium text-txt mb-0.5">{t('offline.tip')}</p>
             <p className="text-[11px] text-muted leading-relaxed">
-              {t('offline.tip')}
+              {t('offline.tipDesc')}
             </p>
           </div>
         </div>

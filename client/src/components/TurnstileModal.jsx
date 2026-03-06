@@ -1,9 +1,11 @@
 import { useRef, useEffect } from 'react';
 import { Shield, X } from 'lucide-react';
+import { useLanguage } from '../LanguageContext';
 
 const TURNSTILE_SITE_KEY = '0x4AAAAAACCkEz_zQ397q5Sv';
 
 export default function TurnstileModal({ isOpen, onClose, onVerified, onError }) {
+  const { t } = useLanguage();
   const turnstileRef = useRef(null);
   const widgetIdRef = useRef(null);
 
@@ -31,17 +33,17 @@ export default function TurnstileModal({ isOpen, onClose, onVerified, onError })
             onVerified(token);
           },
           'expired-callback': () => {
-            onError?.('Xác minh đã hết hạn, vui lòng thử lại');
+            onError?.(t('turnstile.expired'));
           },
           'error-callback': () => {
-            onError?.('Lỗi xác minh, vui lòng thử lại');
+            onError?.(t('turnstile.verifyError'));
           },
           theme: 'dark',
           size: 'normal',
         });
       } catch (e) {
         console.error('Failed to render turnstile:', e);
-        onError?.('Không thể tải xác minh bảo mật');
+        onError?.(t('turnstile.loadError'));
       }
     };
 
@@ -69,7 +71,7 @@ export default function TurnstileModal({ isOpen, onClose, onVerified, onError })
         widgetIdRef.current = null;
       }
     };
-  }, [isOpen, onVerified, onError]);
+  }, [isOpen, onVerified, onError, t]);
 
   if (!isOpen) return null;
 
@@ -91,10 +93,10 @@ export default function TurnstileModal({ isOpen, onClose, onVerified, onError })
           </div>
           <div className="text-center">
             <h2 className="text-2xl font-bold text-text mb-2">
-              Xác minh rằng bạn là con người
+              {t('turnstile.title')}
             </h2>
             <p className="text-text-secondary text-sm">
-              Vui lòng hoàn thành bước xác minh bảo mật để tiếp tục
+              {t('turnstile.subtitle')}
             </p>
           </div>
         </div>
@@ -106,7 +108,7 @@ export default function TurnstileModal({ isOpen, onClose, onVerified, onError })
 
         {/* Info text */}
         <p className="text-xs text-text-secondary text-center mt-6">
-          Được bảo vệ bởi Cloudflare Turnstile
+          {t('turnstile.protectedBy')}
         </p>
       </div>
     </div>

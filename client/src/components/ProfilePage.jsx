@@ -97,10 +97,10 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
             const result = await updatePresenceStatus(nextStatus);
             onUserUpdate?.(result.user);
             setPresenceStatus(result.user?.presenceStatus || nextStatus);
-            setSuccess('Đã cập nhật trạng thái hiển thị');
+            setSuccess(t('profile.presenceUpdateSuccess'));
             setTimeout(() => setSuccess(''), 2500);
         } catch (err) {
-            setError(err.response?.data?.error || err.message || 'Không thể cập nhật trạng thái');
+            setError(err.response?.data?.error || err.message || t('profile.presenceUpdateError'));
         } finally {
             setPresenceSaving(false);
         }
@@ -115,10 +115,10 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
             const result = await updatePlanBadgeVisibility(visible);
             onUserUpdate?.(result.user);
             setShowPlanBadge(result.user?.showPlanBadge !== false);
-            setSuccess('Đã cập nhật hiển thị badge gói');
+            setSuccess(t('profile.planBadgeUpdateSuccess'));
             setTimeout(() => setSuccess(''), 2500);
         } catch (err) {
-            setError(err.response?.data?.error || err.message || 'Không thể cập nhật hiển thị badge gói');
+            setError(err.response?.data?.error || err.message || t('profile.planBadgeUpdateError'));
         } finally {
             setPlanBadgeSaving(false);
         }
@@ -165,7 +165,7 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                 });
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(errorData.error || 'Lỗi khi tải lên ảnh đại diện');
+                    throw new Error(errorData.error || t('profile.avatarUploadError'));
                 }
                 const data = await response.json();
                 onUserUpdate?.(data.user);
@@ -176,7 +176,7 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                 onUserUpdate?.(result.user);
             }
 
-            setSuccess('Đã cập nhật thông tin thành công!');
+            setSuccess(t('profile.profileUpdateSuccess'));
             setEditing(false);
             setAvatarFile(null);
             setTimeout(() => setSuccess(''), 3000);
@@ -188,8 +188,8 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
     const handleChangeEmail = async () => {
         setError(''); setSuccess('');
         const trimmed = newEmail.trim().toLowerCase();
-        if (!trimmed) return setError('Email không được để trống');
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return setError('Email không hợp lệ');
+        if (!trimmed) return setError(t('profile.emailEmpty'));
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return setError(t('profile.emailInvalid'));
         if (trimmed === user?.email?.toLowerCase()) {
             setEditingEmail(false);
             return;
@@ -208,7 +208,7 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
         try {
             const result = await updateProfile(undefined, trimmed);
             onUserUpdate?.(result.user);
-            setSuccess('Đã cập nhật email thành công!');
+            setSuccess(t('profile.emailUpdateSuccess'));
             setEditingEmail(false);
             setTimeout(() => setSuccess(''), 3000);
         } catch (err) {
@@ -230,7 +230,7 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
         setVerificationSending(true);
         try {
             await resendVerification(user.email);
-            setSuccess('Email xác minh đã được gửi! Vui lòng kiểm tra hộp thư.');
+            setSuccess(t('profile.verificationEmailSent'));
             setTimeout(() => setSuccess(''), 5000);
         } catch (err) {
             setError(err.response?.data?.error || err.message);
@@ -242,7 +242,7 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
     const handleAvatarChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            if (file.size > 2 * 1024 * 1024) return setError('Ảnh đại diện không được vượt quá 2MB');
+            if (file.size > 2 * 1024 * 1024) return setError(t('profile.avatarTooLarge'));
             setAvatarFile(file);
             setAvatarPreview(URL.createObjectURL(file));
         }
@@ -251,7 +251,7 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
     const handleQuickAvatarUpload = async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        if (file.size > 2 * 1024 * 1024) return setError('Ảnh đại diện không được vượt quá 2MB');
+        if (file.size > 2 * 1024 * 1024) return setError(t('profile.avatarTooLarge'));
         setAvatarUploading(true);
         setError('');
         try {
@@ -266,11 +266,11 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
             });
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || 'Lỗi khi tải lên ảnh đại diện');
+                throw new Error(errorData.error || t('profile.avatarUploadError'));
             }
             const data = await response.json();
             onUserUpdate?.(data.user);
-            setSuccess('Đã cập nhật ảnh đại diện!');
+            setSuccess(t('profile.avatarUpdateSuccess'));
             setTimeout(() => setSuccess(''), 3000);
         } catch (err) {
             setError(err.message);
@@ -283,8 +283,8 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
     const handleChangePassword = async (e) => {
         e.preventDefault();
         setError(''); setSuccess('');
-        if (newPw !== confirmPw) return setError('Mật khẩu xác nhận không khớp');
-        if (newPw.length < 6) return setError('Mật khẩu mới phải có ít nhất 6 ký tự');
+        if (newPw !== confirmPw) return setError(t('profile.passwordMismatch'));
+        if (newPw.length < 6) return setError(t('profile.passwordTooShort'));
         setShowPwConfirm(true);
     };
 
@@ -293,7 +293,7 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
         setLoading(true); setError(''); setSuccess('');
         try {
             await changePassword(oldPw, newPw);
-            setSuccess('Đổi mật khẩu thành công!');
+            setSuccess(t('profile.passwordChanged'));
             setOldPw(''); setNewPw(''); setConfirmPw('');
         } catch (err) {
             setError(err.response?.data?.error || err.message);
@@ -334,7 +334,7 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
             setTwoFAStatus({ enabled: false, recoveryCodesRemaining: 0 });
             setTwoFAStep('status');
             setDisablePassword('');
-            setSuccess('Đã tắt xác thực hai bước');
+            setSuccess(t('profile.disabled2faSuccess'));
             onUserUpdate?.(result.user);
         } catch (err) {
             setError(err.response?.data?.error || err.message);
@@ -361,14 +361,14 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
             const options = await getPasskeyRegisterOptions();
             const regResponse = await startRegistration({ optionsJSON: options });
             await verifyPasskeyRegistration(regResponse, passkeyName || 'Passkey');
-            setSuccess('Đã thêm Passkey thành công!');
+            setSuccess(t('profile.passkeyAdded'));
             setPasskeyName('');
             loadPasskeys();
         } catch (err) {
             if (err.name === 'NotAllowedError') {
-                setError('Đăng ký passkey bị hủy');
+                setError(t('profile.passkeyRegisterCanceled'));
             } else {
-                setError(err.response?.data?.error || err.message || 'Đăng ký passkey thất bại');
+                setError(err.response?.data?.error || err.message || t('profile.passkeyRegisterFailed'));
             }
         } finally { setLoading(false); }
     };
@@ -377,7 +377,7 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
         setLoading(true); setError(''); setSuccess('');
         try {
             await deletePasskey(id);
-            setSuccess('Đã xóa Passkey');
+            setSuccess(t('profile.passkeyDeleted'));
             loadPasskeys();
         } catch (err) {
             setError(err.response?.data?.error || err.message);
@@ -431,14 +431,14 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                         <div className="relative group">
                             <div className={`w-24 h-24 rounded-2xl flex items-center justify-center text-3xl font-bold border-4 border-surface shadow-xl overflow-hidden ${user.plan === 'premium' || user.plan === 'pro' ? 'bg-gradient-to-br from-amber-400 to-primary-600 shadow-amber-500/20' : 'bg-gradient-to-br from-primary-500 to-purple-600'}`}>
                                 {avatarPreview || user.avatar_url ? (
-                                    <img src={avatarPreview || (user.avatar_url.startsWith('http') ? user.avatar_url : `${getApiBaseUrl()}${user.avatar_url}`)} alt="Avatar" className="w-full h-full object-cover" />
+                                    <img src={avatarPreview || (user.avatar_url.startsWith('http') ? user.avatar_url : `${getApiBaseUrl()}${user.avatar_url}`)} alt={t('profile.avatarAlt')} className="w-full h-full object-cover" />
                                 ) : (
                                     initials
                                 )}
                             </div>
 
                             {/* Quick avatar upload button */}
-                            <label className="absolute -top-1 -right-1 w-7 h-7 bg-primary-600 hover:bg-primary-700 rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-colors z-10" title="Đổi ảnh đại diện">
+                            <label className="absolute -top-1 -right-1 w-7 h-7 bg-primary-600 hover:bg-primary-700 rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-colors z-10" title={t('profile.changeAvatar')}>
                                 {avatarUploading ? <Loader2 size={14} className="text-white animate-spin" /> : <Camera size={14} className="text-white" />}
                                 <input type="file" accept="image/png, image/jpeg, image/jpg, image/webp" className="hidden" onChange={handleQuickAvatarUpload} disabled={avatarUploading} />
                             </label>
@@ -446,7 +446,7 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                             {editing && (
                                 <label className="absolute inset-0 bg-black/60 rounded-2xl flex flex-col items-center justify-center text-white cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
                                     <Edit3 size={20} className="mb-1" />
-                                    <span className="text-[10px] uppercase font-bold tracking-wider">Đổi ảnh</span>
+                                    <span className="text-[10px] uppercase font-bold tracking-wider">{t('profile.changePhoto')}</span>
                                     <input type="file" accept="image/png, image/jpeg, image/jpg" className="hidden" onChange={handleAvatarChange} />
                                 </label>
                             )}
@@ -471,8 +471,8 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                                         <button onClick={() => setEditing(true)} className="p-1.5 hover:bg-surface-2 rounded-lg text-muted hover:text-txt"><Edit3 size={14} /></button>
                                     </>
                                 )}
-                                {user.role === 'admin' && <span className="px-2 py-0.5 bg-purple-500/20 border border-purple-500/30 rounded-md text-[10px] font-bold text-purple-400 uppercase">Admin</span>}
-                                {user.role === 'admin' && <span className="px-2 py-0.5 bg-emerald-500/15 border border-emerald-500/30 rounded-md text-[10px] font-bold text-emerald-400 uppercase">Verified</span>}
+                                {user.role === 'admin' && <span className="px-2 py-0.5 bg-purple-500/20 border border-purple-500/30 rounded-md text-[10px] font-bold text-purple-400 uppercase">{t('profile.admin')}</span>}
+                                {user.role === 'admin' && <span className="px-2 py-0.5 bg-emerald-500/15 border border-emerald-500/30 rounded-md text-[10px] font-bold text-emerald-400 uppercase">{t('profile.verified')}</span>}
                             </div>
                             <p className="text-sm text-muted mt-0.5">@{user.username}</p>
                             <div className="flex items-center gap-3 mt-2 flex-wrap text-xs text-muted">
@@ -513,48 +513,48 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div className="bg-surface border border-line rounded-xl p-5 hover:border-primary-500/30 transition-colors">
-                            <div className="flex items-center justify-between mb-3"><span className="text-xs text-muted uppercase tracking-wider font-medium">Gói hiện tại</span><Crown size={16} className="text-amber-400" /></div>
+                            <div className="flex items-center justify-between mb-3"><span className="text-xs text-muted uppercase tracking-wider font-medium">{t('profile.currentPlan')}</span><Crown size={16} className="text-amber-400" /></div>
                             <p className={`text-2xl font-bold bg-gradient-to-r ${planColors[user.plan] || planColors.free} bg-clip-text text-transparent`}>{user.planLabel || 'Free'}</p>
-                            {user.planExpiresAt && <p className="text-[11px] text-muted mt-1">Hết hạn: {new Date(user.planExpiresAt).toLocaleDateString('vi-VN')}</p>}
+                            {user.planExpiresAt && <p className="text-[11px] text-muted mt-1">{t('profile.expiresAt')} {new Date(user.planExpiresAt).toLocaleDateString('vi-VN')}</p>}
                         </div>
                         <div className="bg-surface border border-line rounded-xl p-5 hover:border-primary-500/30 transition-colors">
-                            <div className="flex items-center justify-between mb-3"><span className="text-xs text-muted uppercase tracking-wider font-medium">Bảo mật</span><Shield size={16} className="text-primary-400" /></div>
+                            <div className="flex items-center justify-between mb-3"><span className="text-xs text-muted uppercase tracking-wider font-medium">{t('profile.securityLabel')}</span><Shield size={16} className="text-primary-400" /></div>
                             <div className="space-y-1.5">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-xs text-muted">2FA (TOTP)</span>
-                                    {twoFAStatus?.enabled ? <span className="flex items-center gap-1 text-xs text-green-400"><ShieldCheck size={12} /> Bật</span> : <span className="flex items-center gap-1 text-xs text-muted"><XCircle size={12} /> Tắt</span>}
+                                    <span className="text-xs text-muted">{t('profile.totp2fa')}</span>
+                                    {twoFAStatus?.enabled ? <span className="flex items-center gap-1 text-xs text-green-400"><ShieldCheck size={12} /> {t('profile.enabled')}</span> : <span className="flex items-center gap-1 text-xs text-muted"><XCircle size={12} /> {t('profile.disabled')}</span>}
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-xs text-muted">Passkey</span>
-                                    {passkeys.length > 0 ? <span className="flex items-center gap-1 text-xs text-green-400"><Fingerprint size={12} /> {passkeys.length}</span> : <span className="flex items-center gap-1 text-xs text-muted"><XCircle size={12} /> Chưa có</span>}
+                                    <span className="text-xs text-muted">{t('profile.passkeys')}</span>
+                                    {passkeys.length > 0 ? <span className="flex items-center gap-1 text-xs text-green-400"><Fingerprint size={12} /> {passkeys.length}</span> : <span className="flex items-center gap-1 text-xs text-muted"><XCircle size={12} /> {t('profile.noneYet')}</span>}
                                 </div>
                             </div>
                         </div>
                         <div className="bg-surface border border-line rounded-xl p-5 hover:border-primary-500/30 transition-colors">
-                            <div className="flex items-center justify-between mb-3"><span className="text-xs text-muted uppercase tracking-wider font-medium">Hoạt động</span><Clock size={16} className="text-primary-400" /></div>
+                            <div className="flex items-center justify-between mb-3"><span className="text-xs text-muted uppercase tracking-wider font-medium">{t('profile.activity')}</span><Clock size={16} className="text-primary-400" /></div>
                             <div className="space-y-2">
-                                <div><p className="text-[11px] text-muted mb-0.5">Đăng nhập lần cuối</p><p className="text-sm font-medium">{lastLogin}</p></div>
-                                {user.lastIp && <div><p className="text-[11px] text-muted mb-0.5">IP gần nhất</p><p className="text-sm font-medium font-mono">{user.lastIp}</p></div>}
+                                <div><p className="text-[11px] text-muted mb-0.5">{t('profile.lastLogin')}</p><p className="text-sm font-medium">{lastLogin}</p></div>
+                                {user.lastIp && <div><p className="text-[11px] text-muted mb-0.5">{t('profile.latestIp')}</p><p className="text-sm font-medium font-mono">{user.lastIp}</p></div>}
                             </div>
                         </div>
                     </div>
                     <div className="bg-surface border border-line rounded-xl p-5">
-                        <h3 className="text-sm font-semibold mb-4 flex items-center gap-2"><User size={16} className="text-primary-400" /> Thông tin tài khoản</h3>
+                        <h3 className="text-sm font-semibold mb-4 flex items-center gap-2"><User size={16} className="text-primary-400" /> {t('profile.accountInfo')}</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <InfoRow label="ID" value={`#${user.id}`} />
-                            <InfoRow label="Username" value={`@${user.username}`} />
-                            <InfoRow label="Tên hiển thị" value={user.displayName || '—'} />
+                            <InfoRow label={t('profile.id')} value={`#${user.id}`} />
+                            <InfoRow label={t('profile.username')} value={`@${user.username}`} />
+                            <InfoRow label={t('profile.displayNameLabel')} value={user.displayName || '—'} />
                         </div>
                     </div>
 
                     <div className="bg-surface border border-line rounded-xl p-5">
-                        <h3 className="text-sm font-semibold mb-4 flex items-center gap-2"><Clock size={16} className="text-primary-400" /> Trạng thái hiển thị</h3>
+                        <h3 className="text-sm font-semibold mb-4 flex items-center gap-2"><Clock size={16} className="text-primary-400" /> {t('profile.presenceStatus')}</h3>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                             {[
-                                { key: 'online', label: 'Online', active: 'bg-green-500/15 border-green-500/30 text-green-400' },
-                                { key: 'idle', label: 'Idle', active: 'bg-yellow-500/15 border-yellow-500/30 text-yellow-400' },
-                                { key: 'dnd', label: 'Do Not Disturb', active: 'bg-rose-500/15 border-rose-500/30 text-rose-400' },
-                                { key: 'invisible', label: 'Invisible', active: 'bg-zinc-500/15 border-zinc-500/30 text-zinc-300' },
+                                { key: 'online', label: t('profile.statusOnline'), active: 'bg-green-500/15 border-green-500/30 text-green-400' },
+                                { key: 'idle', label: t('profile.statusIdle'), active: 'bg-yellow-500/15 border-yellow-500/30 text-yellow-400' },
+                                { key: 'dnd', label: t('profile.statusDnd'), active: 'bg-rose-500/15 border-rose-500/30 text-rose-400' },
+                                { key: 'invisible', label: t('profile.statusInvisible'), active: 'bg-zinc-500/15 border-zinc-500/30 text-zinc-300' },
                             ].map((option) => (
                                 <button
                                     key={option.key}
@@ -569,15 +569,15 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                                 </button>
                             ))}
                         </div>
-                        <p className="text-[11px] text-muted mt-3">Trạng thái sẽ hiển thị ở hồ sơ công khai của bạn.</p>
+                        <p className="text-[11px] text-muted mt-3">{t('profile.presenceDesc')}</p>
                     </div>
 
                     <div className="bg-surface border border-line rounded-xl p-5">
-                        <h3 className="text-sm font-semibold mb-4 flex items-center gap-2"><Crown size={16} className="text-primary-400" /> Hiển thị badge gói</h3>
+                        <h3 className="text-sm font-semibold mb-4 flex items-center gap-2"><Crown size={16} className="text-primary-400" /> {t('profile.planBadge')}</h3>
                         <div className="flex items-center justify-between gap-3">
                             <div>
-                                <p className="text-sm font-medium">Hiển thị badge gói ở hồ sơ công khai</p>
-                                <p className="text-[11px] text-muted mt-1">Bạn có thể bật/tắt badge như Unlimited, Pro, Basic trên trang hồ sơ công khai.</p>
+                                <p className="text-sm font-medium">{t('profile.planBadgeOnProfile')}</p>
+                                <p className="text-[11px] text-muted mt-1">{t('profile.planBadgeDesc')}</p>
                             </div>
                             <button
                                 onClick={() => handlePlanBadgeVisibilityChange(!showPlanBadge)}
@@ -591,7 +591,7 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
 
                     {/* ── Email Change ── */}
                     <div className="bg-surface border border-line rounded-xl p-5">
-                        <h3 className="text-sm font-semibold mb-4 flex items-center gap-2"><Mail size={16} className="text-primary-400" /> Địa chỉ email</h3>
+                        <h3 className="text-sm font-semibold mb-4 flex items-center gap-2"><Mail size={16} className="text-primary-400" /> {t('profile.emailAddress')}</h3>
                         {editingEmail ? (
                             <div className="max-w-md space-y-3">
                                 <div className="relative flex items-center">
@@ -603,7 +603,7 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                                         onChange={(e) => setNewEmail(e.target.value)}
                                         onKeyDown={(e) => { if (e.key === 'Enter') handleChangeEmail(); if (e.key === 'Escape') { setEditingEmail(false); setNewEmail(user?.email || ''); } }}
                                         className="w-full bg-bg border border-line rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary-500 transition-colors"
-                                        placeholder="email@example.com"
+                                        placeholder={t('profile.emailPlaceholder')}
                                     />
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -612,13 +612,13 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                                         disabled={emailSaving}
                                         className="py-2 px-5 bg-primary-600 hover:bg-primary-700 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-2"
                                     >
-                                        {emailSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Lưu email
+                                        {emailSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} {t('profile.saveEmail')}
                                     </button>
                                     <button
                                         onClick={() => { setEditingEmail(false); setNewEmail(user?.email || ''); setError(''); }}
                                         className="py-2 px-4 bg-surface-2 hover:bg-line rounded-xl text-sm font-medium text-muted transition-colors"
                                     >
-                                        Hủy
+                                        {t('profile.cancel')}
                                     </button>
                                 </div>
                             </div>
@@ -633,7 +633,7 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                                             {user.email}
                                             {user.emailVerified ? <CheckCircle2 size={14} className="text-green-400" /> : <XCircle size={14} className="text-amber-400" />}
                                         </p>
-                                        <p className="text-[11px] text-muted">{user.emailVerified ? 'Đã xác minh' : 'Chưa xác minh'}</p>
+                                        <p className="text-[11px] text-muted">{user.emailVerified ? t('profile.verified') : t('profile.unverified')}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -643,14 +643,14 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                                             disabled={verificationSending}
                                             className="py-2 px-4 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-xl text-sm font-medium transition-colors flex items-center gap-1.5 disabled:opacity-50"
                                         >
-                                            {verificationSending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} Gửi xác minh
+                                            {verificationSending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} {t('profile.sendVerification')}
                                         </button>
                                     )}
                                     <button
                                         onClick={() => { setEditingEmail(true); setNewEmail(user?.email || ''); setError(''); setSuccess(''); }}
                                         className="py-2 px-4 bg-surface-2 hover:bg-line rounded-xl text-sm font-medium text-muted hover:text-txt transition-colors flex items-center gap-1.5"
                                     >
-                                        <Edit3 size={14} /> Đổi email
+                                        <Edit3 size={14} /> {t('profile.changeEmail')}
                                     </button>
                                 </div>
                             </div>
@@ -664,10 +664,10 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                 <div className="space-y-6">
                     {/* Change Password */}
                     <div className="bg-surface border border-line rounded-xl p-6">
-                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><Lock size={18} className="text-primary-400" /> Đổi mật khẩu</h3>
+                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><Lock size={18} className="text-primary-400" /> {t('profile.changePassword')}</h3>
                         <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
                             <div>
-                                <label className="text-xs text-muted mb-1.5 block">Mật khẩu hiện tại</label>
+                                <label className="text-xs text-muted mb-1.5 block">{t('profile.currentPassword')}</label>
                                 <div className="relative flex items-center">
                                     <span className="absolute left-3 text-muted"><Lock size={16} /></span>
                                     <input type="password" value={oldPw} onChange={e => setOldPw(e.target.value)}
@@ -675,15 +675,15 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                                 </div>
                             </div>
                             <div>
-                                <label className="text-xs text-muted mb-1.5 block">Mật khẩu mới</label>
+                                <label className="text-xs text-muted mb-1.5 block">{t('profile.newPassword')}</label>
                                 <div className="relative flex items-center">
                                     <span className="absolute left-3 text-muted"><Lock size={16} /></span>
-                                    <input type="password" value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="Ít nhất 6 ký tự"
+                                    <input type="password" value={newPw} onChange={e => setNewPw(e.target.value)} placeholder={t('profile.newPasswordPlaceholder')}
                                         className="w-full bg-bg border border-line rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary-500" required />
                                 </div>
                             </div>
                             <div>
-                                <label className="text-xs text-muted mb-1.5 block">Xác nhận mật khẩu mới</label>
+                                <label className="text-xs text-muted mb-1.5 block">{t('profile.confirmNewPassword')}</label>
                                 <div className="relative flex items-center">
                                     <span className="absolute left-3 text-muted"><Lock size={16} /></span>
                                     <input type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)}
@@ -691,7 +691,7 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                                 </div>
                             </div>
                             <button type="submit" disabled={loading} className="py-2.5 px-6 bg-primary-600 hover:bg-primary-700 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-                                {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Cập nhật mật khẩu
+                                {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} {t('profile.updatePassword')}
                             </button>
                         </form>
                     </div>
@@ -699,7 +699,7 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* TOTP 2FA */}
                         <div className="bg-surface border border-line rounded-xl p-6">
-                            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><ShieldCheck size={18} className="text-primary-400" /> Xác thực ứng dụng (TOTP)</h3>
+                                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><ShieldCheck size={18} className="text-primary-400" /> {t('profile.totp')}</h3>
 
                             {twoFAStep === 'status' && (
                                 <div className="space-y-4">
@@ -708,23 +708,23 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                                             {twoFAStatus?.enabled ? <ShieldCheck size={20} className="text-emerald-400" /> : <ShieldOff size={20} className="text-muted" />}
                                         </div>
                                         <div>
-                                            <p className="text-sm font-medium">{twoFAStatus?.enabled ? 'Đã bật' : 'Chưa bật'}</p>
-                                            <p className="text-xs text-muted">{twoFAStatus?.enabled ? `Còn ${twoFAStatus.recoveryCodesRemaining} mã khôi phục` : 'Dùng Google Auth/Authy'}</p>
+                                            <p className="text-sm font-medium">{twoFAStatus?.enabled ? t('profile.totpEnabled') : t('profile.totpDisabled')}</p>
+                                            <p className="text-xs text-muted">{twoFAStatus?.enabled ? t('profile.totpRecoveryRemaining', { count: twoFAStatus.recoveryCodesRemaining }) : t('profile.totpUseApp')}</p>
                                         </div>
                                     </div>
 
                                     {twoFAStatus?.enabled ? (
                                         <div className="flex gap-2">
                                             <button onClick={() => { setTwoFAStep('regen'); setRegenPassword(''); }} className="flex-1 py-2bg-surface-2 bg-line hover:bg-surface-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1">
-                                                <RefreshCw size={14} /> Mã phục hồi
+                                                <RefreshCw size={14} /> {t('profile.recoveryCodes')}
                                             </button>
                                             <button onClick={() => { setTwoFAStep('disable'); setDisablePassword(''); }} className="flex-1 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1">
-                                                <ShieldOff size={14} /> Tắt 2FA
+                                                <ShieldOff size={14} /> {t('profile.disable2fa')}
                                             </button>
                                         </div>
                                     ) : (
                                         <button onClick={handleSetup2FA} disabled={loading} className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50">
-                                            Thiết lập 2FA
+                                            {t('profile.setup2fa')}
                                         </button>
                                     )}
                                 </div>
@@ -732,16 +732,16 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
 
                             {twoFAStep === 'setup' && setupData && (
                                 <div className="space-y-4">
-                                    <div className="bg-white p-3 rounded-xl mx-auto w-max"><img src={setupData.qrCode} alt="QR Code" className="w-40 h-40" /></div>
+                                    <div className="bg-white p-3 rounded-xl mx-auto w-max"><img src={setupData.qrCode} alt={t('profile.qrCodeAlt')} className="w-40 h-40" /></div>
                                     <div className="bg-bg border border-line rounded-xl p-3 flex items-center gap-2">
                                         <code className="flex-1 text-xs font-mono text-primary-400 break-all">{setupData.secret}</code>
                                         <button onClick={() => navigator.clipboard.writeText(setupData.secret)} className="p-1.5 hover:bg-surface-2 rounded-lg text-muted"><Copy size={14} /></button>
                                     </div>
-                                    <input type="text" maxLength={6} value={totpCode} onChange={e => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="000000"
+                                    <input type="text" maxLength={6} value={totpCode} onChange={e => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder={t('profile.totpCodePlaceholder')}
                                         className="w-full bg-bg border border-line rounded-xl px-4 py-3 text-center text-lg font-mono tracking-[0.5em] focus:outline-none focus:border-primary-500" autoFocus />
                                     <div className="flex gap-2">
-                                        <button onClick={() => { setTwoFAStep('status'); setSetupData(null); }} className="flex-1 py-2 bg-surface-2 hover:bg-line rounded-xl text-sm font-medium">Huỷ</button>
-                                        <button onClick={handleEnable2FA} disabled={loading || totpCode.length !== 6} className="flex-1 py-2 bg-primary-600 hover:bg-primary-700 rounded-xl text-sm font-semibold">Xác nhận</button>
+                                        <button onClick={() => { setTwoFAStep('status'); setSetupData(null); }} className="flex-1 py-2 bg-surface-2 hover:bg-line rounded-xl text-sm font-medium">{t('profile.cancelSetup')}</button>
+                                        <button onClick={handleEnable2FA} disabled={loading || totpCode.length !== 6} className="flex-1 py-2 bg-primary-600 hover:bg-primary-700 rounded-xl text-sm font-semibold">{t('profile.confirm')}</button>
                                     </div>
                                 </div>
                             )}
@@ -749,8 +749,8 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                             {twoFAStep === 'recovery-codes' && recoveryCodes && (
                                 <div className="space-y-4">
                                     <div className="text-center">
-                                        <p className="text-sm font-bold text-emerald-400">Lưu mã khôi phục mới</p>
-                                        <p className="text-xs text-muted mt-1">Lưu các mã này ở nơi an toàn. Bạn sẽ <strong className="text-red-400">KHÔNG</strong> thể xem lại chúng sau khi đóng.</p>
+                                        <p className="text-sm font-bold text-emerald-400">{t('profile.saveRecoveryCodes')}</p>
+                                        <p className="text-xs text-muted mt-1">{t('profile.recoveryCodesWarning')} <strong className="text-red-400">{t('profile.recoveryCodesNever')}</strong> {t('profile.recoveryCodesAfterClose')}</p>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-2">
@@ -767,49 +767,49 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                                                 a.download = 'notemind-recovery-codes.txt';
                                                 a.click();
                                                 URL.revokeObjectURL(url);
-                                                setSuccess('Đã tải xuống mã khôi phục!');
+                                                setSuccess(t('profile.downloadedRecoveryCodes'));
                                                 setTimeout(() => setSuccess(''), 3000);
                                             }}
                                             className="flex-1 py-2.5 bg-surface-2 hover:bg-line rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-colors border border-line"
                                         >
-                                            <Download size={15} /> Tải .txt
+                                            <Download size={15} /> {t('profile.downloadTxt')}
                                         </button>
                                         <button
                                             onClick={() => {
                                                 navigator.clipboard.writeText(recoveryCodes.join('\n'));
-                                                setSuccess('Đã sao chép vào bộ nhớ tạm!');
+                                                setSuccess(t('profile.copiedToClipboard'));
                                                 setTimeout(() => setSuccess(''), 3000);
                                             }}
                                             className="flex-1 py-2.5 bg-surface-2 hover:bg-line rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-colors border border-line"
                                         >
-                                            <Copy size={15} /> Sao chép
+                                            <Copy size={15} /> {t('profile.copy')}
                                         </button>
                                     </div>
 
                                     <button onClick={() => { setTwoFAStep('status'); load2FAStatus(); setRecoveryCodes(null); }} className="w-full py-2.5 hover:opacity-90 transition-opacity bg-primary-600 rounded-xl text-sm font-bold text-white shadow-lg shadow-primary-500/20">
-                                        Đã lưu, đóng cửa sổ
+                                        {t('profile.savedCloseWindow')}
                                     </button>
                                 </div>
                             )}
 
                             {twoFAStep === 'disable' && (
                                 <div className="space-y-3">
-                                    <p className="text-sm font-bold text-red-400">Tắt 2FA</p>
-                                    <input type="password" value={disablePassword} onChange={e => setDisablePassword(e.target.value)} placeholder="Nhập mật khẩu" className="w-full bg-bg border border-line rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-red-500" />
+                                    <p className="text-sm font-bold text-red-400">{t('profile.disable2faTitle')}</p>
+                                    <input type="password" value={disablePassword} onChange={e => setDisablePassword(e.target.value)} placeholder={t('profile.enterPassword')} className="w-full bg-bg border border-line rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-red-500" />
                                     <div className="flex gap-2">
-                                        <button onClick={() => { setTwoFAStep('status'); setDisablePassword(''); }} className="flex-1 py-2 bg-surface-2 rounded-xl text-sm font-medium">Huỷ</button>
-                                        <button onClick={handleDisable2FA} disabled={!disablePassword} className="flex-1 py-2 bg-red-600 hover:bg-red-700 rounded-xl text-sm font-semibold">Xác nhận tắt</button>
+                                        <button onClick={() => { setTwoFAStep('status'); setDisablePassword(''); }} className="flex-1 py-2 bg-surface-2 rounded-xl text-sm font-medium">{t('profile.cancel')}</button>
+                                        <button onClick={handleDisable2FA} disabled={!disablePassword} className="flex-1 py-2 bg-red-600 hover:bg-red-700 rounded-xl text-sm font-semibold">{t('profile.confirmDisable')}</button>
                                     </div>
                                 </div>
                             )}
 
                             {twoFAStep === 'regen' && (
                                 <div className="space-y-3">
-                                    <p className="text-sm font-bold text-amber-400">Tạo lại mã khôi phục</p>
-                                    <input type="password" value={regenPassword} onChange={e => setRegenPassword(e.target.value)} placeholder="Nhập mật khẩu" className="w-full bg-bg border border-line rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-500" />
+                                    <p className="text-sm font-bold text-amber-400">{t('profile.recoveryCodes')}</p>
+                                    <input type="password" value={regenPassword} onChange={e => setRegenPassword(e.target.value)} placeholder={t('profile.enterPassword')} className="w-full bg-bg border border-line rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-500" />
                                     <div className="flex gap-2">
-                                        <button onClick={() => { setTwoFAStep('status'); setRegenPassword(''); }} className="flex-1 py-2 bg-surface-2 rounded-xl text-sm font-medium">Huỷ</button>
-                                        <button onClick={handleRegenCodes} disabled={!regenPassword} className="flex-1 py-2 bg-amber-600 hover:bg-amber-700 rounded-xl text-sm font-semibold">Tạo mới</button>
+                                        <button onClick={() => { setTwoFAStep('status'); setRegenPassword(''); }} className="flex-1 py-2 bg-surface-2 rounded-xl text-sm font-medium">{t('profile.cancel')}</button>
+                                        <button onClick={handleRegenCodes} disabled={!regenPassword} className="flex-1 py-2 bg-amber-600 hover:bg-amber-700 rounded-xl text-sm font-semibold">{t('profile.saveRecoveryCodes')}</button>
                                     </div>
                                 </div>
                             )}
@@ -817,18 +817,18 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
 
                         {/* Passkeys */}
                         <div className="bg-surface border border-line rounded-xl p-6">
-                            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><Fingerprint size={18} className="text-primary-400" /> Xác thực phần cứng (Passkey)</h3>
+                            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><Fingerprint size={18} className="text-primary-400" /> {t('profile.passkeys')}</h3>
 
                             <div className="space-y-3 mb-4">
                                 {passkeys.length === 0 ? (
-                                    <p className="text-sm text-muted">Chưa có passkey nào. Thêm passkey để đăng nhập nhanh qua vân tay, khuôn mặt hoặc USB token.</p>
+                                    <p className="text-sm text-muted">{t('profile.passkeysEmptyDesc')}</p>
                                 ) : (
                                     passkeys.map(pk => (
                                         <div key={pk.id} className="flex items-center gap-3 bg-bg border border-line rounded-lg px-3 py-2.5">
                                             <Fingerprint size={16} className="text-primary-400 shrink-0" />
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-sm font-medium truncate">{pk.name}</p>
-                                                <p className="text-[10px] text-muted truncate">{pk.deviceType === 'multiDevice' ? 'Đa thiết bị' : 'Đơn thiết bị'}</p>
+                                                <p className="text-[10px] text-muted truncate">{pk.deviceType === 'multiDevice' ? t('profile.multiDevice') : t('profile.singleDevice')}</p>
                                             </div>
                                             <button onClick={() => handleDeletePasskey(pk.id)} className="p-1.5 hover:bg-red-500/10 rounded-md text-muted hover:text-red-400"><Trash2 size={14} /></button>
                                         </div>
@@ -837,10 +837,10 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                             </div>
 
                             <div className="flex gap-2">
-                                <input type="text" value={passkeyName} onChange={e => setPasskeyName(e.target.value)} placeholder="Tên (VD: MacBook)"
+                                <input type="text" value={passkeyName} onChange={e => setPasskeyName(e.target.value)} placeholder={t('profile.passkeyNamePlaceholder')}
                                     className="flex-1 bg-bg border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary-500" />
                                 <button onClick={handleRegisterPasskey} disabled={loading} className="px-4 py-2 bg-surface-2 hover:bg-line rounded-lg text-sm font-medium flex items-center gap-1.5 border border-line">
-                                    {loading ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Thêm
+                                    {loading ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} {t('profile.addPasskey')}
                                 </button>
                             </div>
                         </div>
@@ -851,37 +851,37 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
             {/* ── Tab Content: Theme ── */}
             {activeTab === 'theme' && (
                 <div className="bg-surface border border-line rounded-xl p-6">
-                    <h3 className="text-lg font-semibold mb-2 flex items-center gap-2"><Palette size={18} className="text-primary-400" /> Giao diện hiển thị</h3>
+                            <h3 className="text-lg font-semibold mb-2 flex items-center gap-2"><Palette size={18} className="text-primary-400" /> {t('profile.appearance')}</h3>
 
                     <div className="mb-8 p-4 bg-bg border border-line rounded-xl flex items-center justify-between flex-wrap gap-4">
                         <div>
-                            <h4 className="text-sm font-medium">Chế độ hiển thị</h4>
-                            <p className="text-xs text-muted">Chọn chế độ tối, sáng hoặc theo hệ thống.</p>
+                            <h4 className="text-sm font-medium">{t('theme.displayMode')}</h4>
+                            <p className="text-xs text-muted">{t('profile.displayModeDesc')}</p>
                         </div>
                         <div className="flex bg-surface border border-line rounded-lg p-1">
                             <button
                                 onClick={() => setMode('light')}
                                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${mode === 'light' ? 'bg-primary-600 text-white shadow-sm' : 'text-muted hover:text-txt hover:bg-surface-2'}`}
                             >
-                                <Sun size={14} /> Sáng
+                                <Sun size={14} /> {t('theme.light')}
                             </button>
                             <button
                                 onClick={() => setMode('dark')}
                                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${mode === 'dark' ? 'bg-primary-600 text-white shadow-sm' : 'text-muted hover:text-txt hover:bg-surface-2'}`}
                             >
-                                <Moon size={14} /> Tối
+                                <Moon size={14} /> {t('theme.dark')}
                             </button>
                             <button
                                 onClick={() => setMode('auto')}
                                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${mode === 'auto' ? 'bg-primary-600 text-white shadow-sm' : 'text-muted hover:text-txt hover:bg-surface-2'}`}
                             >
-                                <Monitor size={14} /> Tự động
+                                <Monitor size={14} /> {t('theme.auto')}
                             </button>
                         </div>
                     </div>
 
-                    <h4 className="text-sm font-medium mb-1">Màu chủ đạo (Accent Color)</h4>
-                    <p className="text-xs text-muted mb-4">Lựa chọn màu nhấn cho NoteMinds. Giao diện được lưu trực tiếp trên trình duyệt của bạn.</p>
+                    <h4 className="text-sm font-medium mb-1">{t('theme.colorTheme')}</h4>
+                    <p className="text-xs text-muted mb-4">{t('profile.colorThemeDesc')}</p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                         {Object.entries(THEMES).map(([key, thm]) => (
                             <button
@@ -917,8 +917,8 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                         >
                             <span className="text-2xl">🇻🇳</span>
                             <div className="text-left">
-                                <p className="text-sm font-semibold">Tiếng Việt</p>
-                                <p className="text-[11px] text-muted">Vietnamese</p>
+                                <p className="text-sm font-semibold">{t('profile.languageVietnameseNative')}</p>
+                                <p className="text-[11px] text-muted">{t('profile.languageVietnameseEnglish')}</p>
                             </div>
                             {currentLang === 'vi' && <CheckCircle2 size={16} className="text-primary-400 ml-auto" />}
                         </button>
@@ -931,8 +931,8 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
                         >
                             <span className="text-2xl">🇬🇧</span>
                             <div className="text-left">
-                                <p className="text-sm font-semibold">English</p>
-                                <p className="text-[11px] text-muted">Tiếng Anh</p>
+                                <p className="text-sm font-semibold">{t('profile.languageEnglishNative')}</p>
+                                <p className="text-[11px] text-muted">{t('profile.languageEnglishEnglish')}</p>
                             </div>
                             {currentLang === 'en' && <CheckCircle2 size={16} className="text-primary-400 ml-auto" />}
                         </button>
@@ -942,9 +942,9 @@ export default function ProfilePage({ user, onBack, onUserUpdate, onOpenAuth }) 
 
             <ConfirmModal
                 open={showPwConfirm}
-                title="Đổi mật khẩu"
-                message="Bạn có chắc chắn muốn đổi mật khẩu? Bạn sẽ dùng mật khẩu mới này cho lần đăng nhập sau."
-                confirmLabel="Đổi mật khẩu"
+                title={t('profile.changePassword')}
+                message={t('profile.changePasswordConfirm')}
+                confirmLabel={t('profile.changePassword')}
                 variant="warning"
                 onConfirm={executeChangePassword}
                 onCancel={() => setShowPwConfirm(false)}

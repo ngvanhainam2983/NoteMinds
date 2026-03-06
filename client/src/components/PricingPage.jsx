@@ -217,20 +217,20 @@ export default function PricingPage({ user, onLoginClick }) {
             <div className="space-y-3">
               <p className="text-xs font-semibold text-primary-400 uppercase tracking-wider px-1 mb-1">{t('pricing.aboutProduct')}</p>
               <FaqItem
-                q="NoteMinds hoạt động như thế nào?"
-                a="Bạn chỉ cần upload tài liệu (PDF, Word, PowerPoint, Excel, ảnh, ghi âm...), AI sẽ tự động phân tích và tạo Sơ đồ tư duy, Flashcard, Quiz và cho phép bạn Chat hỏi đáp trực tiếp với nội dung tài liệu."
+                q={t('pricing.faqItems.q1')}
+                a={t('pricing.faqItems.a1')}
               />
               <FaqItem
-                q="Hỗ trợ những định dạng file nào?"
-                a="NoteMinds hỗ trợ PDF, DOCX, PPTX, XLSX, TXT, MD, và các file ảnh (JPG, PNG — dùng OCR). Ngoài ra còn hỗ trợ file ghi âm MP3, WAV, M4A, OGG, WEBM với tính năng phiên âm tự động."
+                q={t('pricing.faqItems.q2')}
+                a={t('pricing.faqItems.a2')}
               />
               <FaqItem
-                q="Flashcard có xuất sang Anki/Quizlet được không?"
-                a="Có! Bạn có thể export flashcard sang định dạng Anki (.apkg) hoặc Quizlet-compatible CSV chỉ với 1 click."
+                q={t('pricing.faqItems.q3')}
+                a={t('pricing.faqItems.a3')}
               />
               <FaqItem
-                q="Dữ liệu của tôi có an toàn không?"
-                a="Hoàn toàn an toàn. Toàn bộ dữ liệu được mã hóa end-to-end (AES-256). Tài liệu của bạn chỉ bạn mới có thể truy cập, ngay cả admin cũng không thể đọc nội dung."
+                q={t('pricing.faqItems.q4')}
+                a={t('pricing.faqItems.a4')}
               />
             </div>
 
@@ -238,20 +238,20 @@ export default function PricingPage({ user, onLoginClick }) {
             <div className="space-y-3">
               <p className="text-xs font-semibold text-accent-400 uppercase tracking-wider px-1 mb-1">{t('pricing.paymentAccount')}</p>
               <FaqItem
-                q="Thanh toán bằng cách nào?"
-                a="NoteMinds hỗ trợ thanh toán qua chuyển khoản ngân hàng, MoMo và ZaloPay. Sau khi thanh toán, admin sẽ kích hoạt gói cho bạn trong vòng 5 phút."
+                q={t('pricing.faqItems.q5')}
+                a={t('pricing.faqItems.a5')}
               />
               <FaqItem
-                q="Có thể hủy gói bất cứ lúc nào không?"
-                a="Có. Bạn có thể liên hệ admin để hủy gói. Gói sẽ tiếp tục hoạt động cho đến khi hết thời hạn đã thanh toán, không bị cắt giữa chừng."
+                q={t('pricing.faqItems.q6')}
+                a={t('pricing.faqItems.a6')}
               />
               <FaqItem
-                q="Upload không giới hạn nghĩa là gì?"
-                a="Gói Unlimited cho phép bạn upload không giới hạn số lượng file trong ngày, không bị ràng buộc bởi quota hàng ngày. File size tối đa cũng được nâng lên đáng kể."
+                q={t('pricing.faqItems.q7')}
+                a={t('pricing.faqItems.a7')}
               />
               <FaqItem
-                q="Gói Free có bị giới hạn tính năng không?"
-                a="Gói Free vẫn được truy cập đầy đủ các tính năng cốt lõi: Sơ đồ tư duy, Flashcard, Chat AI, Quiz. Chỉ giới hạn về số lượt upload mỗi ngày và dung lượng file."
+                q={t('pricing.faqItems.q8')}
+                a={t('pricing.faqItems.a8')}
               />
             </div>
           </div>
@@ -290,6 +290,7 @@ function FaqItem({ q, a }) {
 }
 
 function ContactModal({ plan, currentPlan, onClose }) {
+  const { t } = useLanguage();
   if (!plan) return null;
 
   const PLAN_ORDER = ['free', 'basic', 'pro', 'unlimited'];
@@ -301,37 +302,37 @@ function ContactModal({ plan, currentPlan, onClose }) {
       <div className="relative w-full max-w-sm bg-surface border border-line rounded-2xl shadow-2xl animate-fade-in p-6 text-center">
         <div className="text-4xl mb-3">{plan.badge}</div>
         <h3 className="text-lg font-bold mb-1">
-          {isDowngrade ? `Hạ xuống gói ${plan.name}` : `Nâng cấp gói ${plan.name}`}
+          {isDowngrade ? t('pricing.downgradeToName', { name: plan.name }) : t('pricing.upgradeToName', { name: plan.name })}
         </h3>
         <p className="text-muted text-sm mb-4">{plan.price} {plan.priceNote}</p>
 
         {isDowngrade ? (
           <div className="bg-bg rounded-xl p-4 mb-4 text-left space-y-2">
-            <p className="text-sm font-medium text-yellow-400">Lưu ý khi hạ gói:</p>
-            <p className="text-xs text-muted">• Gói hiện tại sẽ được sử dụng đến hết thời hạn đã thanh toán</p>
-            <p className="text-xs text-muted">• Sau khi hết hạn, tài khoản sẽ tự động chuyển sang gói {plan.name}</p>
-            <p className="text-xs text-muted">• Vui lòng liên hệ admin để yêu cầu hạ gói</p>
+            <p className="text-sm font-medium text-yellow-400">{t('pricing.downgradeNote')}</p>
+            <p className="text-xs text-muted">• {t('pricing.downgradeDesc1')}</p>
+            <p className="text-xs text-muted">• {t('pricing.downgradeDesc3', { name: plan.name })}</p>
+            <p className="text-xs text-muted">• {t('pricing.downgradeDesc2')}</p>
             <div className="border-t border-line pt-2 mt-2">
-              <p className="text-xs text-muted">Liên hệ qua <strong className="text-txt">Zalo/Telegram</strong> hoặc email admin để được hỗ trợ</p>
+              <p className="text-xs text-muted">{t('pricing.downgradeContact')}</p>
             </div>
           </div>
         ) : (
           <div className="bg-bg rounded-xl p-4 mb-4 text-left space-y-2">
-            <p className="text-sm font-medium text-primary-400">Hướng dẫn thanh toán:</p>
-            <p className="text-xs text-muted">1. Chuyển khoản <strong className="text-txt">{plan.price}</strong> đến tài khoản bên dưới</p>
-            <p className="text-xs text-muted">2. Nội dung chuyển khoản: <strong className="text-txt font-mono">NOTEMIND [username]</strong></p>
-            <p className="text-xs text-muted">3. Admin sẽ kích hoạt gói trong vòng 5 phút</p>
+            <p className="text-sm font-medium text-primary-400">{t('pricing.paymentGuide')}</p>
+            <p className="text-xs text-muted">1. {t('pricing.paymentStep1', { price: plan.price })}</p>
+            <p className="text-xs text-muted">2. {t('pricing.paymentStep2')}</p>
+            <p className="text-xs text-muted">3. {t('pricing.paymentStep3')}</p>
 
             <div className="border-t border-line pt-2 mt-2">
-              <p className="text-xs text-muted">Ngân hàng: <strong className="text-txt">MB Bank</strong></p>
-              <p className="text-xs text-muted">STK: <strong className="text-txt font-mono">0123456789</strong></p>
-              <p className="text-xs text-muted">Tên: <strong className="text-txt">NGUYEN VAN A</strong></p>
+              <p className="text-xs text-muted">{t('pricing.bank')} <strong className="text-txt">{t('pricing.bankName')}</strong></p>
+              <p className="text-xs text-muted">{t('pricing.accountNo')} <strong className="text-txt font-mono">{t('pricing.accountNoValue')}</strong></p>
+              <p className="text-xs text-muted">{t('pricing.accountName')} <strong className="text-txt">{t('pricing.accountNameValue')}</strong></p>
             </div>
           </div>
         )}
 
         <p className="text-xs text-muted mb-4">
-          Hoặc liên hệ qua Zalo/Telegram để được hỗ trợ nhanh nhất
+          {t('pricing.contactSupportMsg')}
         </p>
 
         <button

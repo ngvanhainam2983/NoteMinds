@@ -17,7 +17,7 @@ function UserAvatar({ user, size = 'sm' }) {
     return (
       <img
         src={src}
-        alt="Avatar"
+        alt=""
         className={`${sizeClasses} rounded-full object-cover ring-2 ring-primary-500/30`}
       />
     );

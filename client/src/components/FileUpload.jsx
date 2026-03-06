@@ -87,13 +87,13 @@ export default function FileUpload({ onUploadComplete, user, onAuthRequired }) {
             });
           } else if (statusResult.status === 'error') {
             setStatus('error');
-            setError(statusResult.error || 'Processing failed');
+            setError(statusResult.error || t('upload.processingFailed'));
             setUploading(false);
           } else if (attempts < maxAttempts) {
             setTimeout(pollStatus, 1000);
           } else {
             setStatus('error');
-            setError('Processing timeout');
+            setError(t('upload.processingTimeout'));
             setUploading(false);
           }
         } catch (err) {
@@ -101,7 +101,7 @@ export default function FileUpload({ onUploadComplete, user, onAuthRequired }) {
             setTimeout(pollStatus, 1000);
           } else {
             setStatus('error');
-            setError('Connection error');
+            setError(t('upload.connectionError'));
             setUploading(false);
           }
         }

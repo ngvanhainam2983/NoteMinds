@@ -5,6 +5,13 @@ import { useLanguage } from '../LanguageContext';
 
 export default function CommunityFeed({ user }) {
     const { t } = useLanguage();
+    const reportReasons = [
+        t('community.reasonInappropriate'),
+        t('community.reasonCopyright'),
+        t('community.reasonSpam'),
+        t('community.reasonMisinformation'),
+        t('community.reasonOther'),
+    ];
     const [documents, setDocuments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -134,7 +141,7 @@ export default function CommunityFeed({ user }) {
                         <div className="w-10 h-10 bg-primary-600/15 border border-primary-500/20 rounded-xl flex items-center justify-center">
                             <Globe className="text-primary-400" size={22} />
                         </div>
-                        Cộng đồng
+                        {t('community.title')}
                     </h1>
                     <p className="text-muted">{t('community.subtitle')}</p>
                 </div>
@@ -267,7 +274,7 @@ export default function CommunityFeed({ user }) {
                                                 setReportModal({ docId: doc.id, title: doc.title });
                                             }}
                                             className="flex items-center gap-1 text-xs font-medium text-muted hover:text-amber-400 transition-colors"
-                                            title="Báo cáo vi phạm"
+                                            title={t('community.reportTitle')}
                                         >
                                             <Flag size={13} />
                                         </button>
@@ -354,7 +361,7 @@ export default function CommunityFeed({ user }) {
                                 <div className="flex items-center justify-between mb-5">
                                     <h3 className="text-lg font-bold flex items-center gap-2">
                                         <Flag size={18} className="text-amber-400" />
-                                        Báo cáo vi phạm
+                                        {t('community.reportTitle')}
                                     </h3>
                                     <button onClick={() => setReportModal(null)} className="p-1.5 rounded-lg hover:bg-surface-2 text-muted hover:text-txt transition-colors">
                                         <X size={18} />
@@ -363,7 +370,7 @@ export default function CommunityFeed({ user }) {
                                 <p className="text-xs text-muted mb-4 truncate">{t('community.reportDocument')} <strong className="text-txt">{reportModal.title}</strong></p>
 
                                 <div className="space-y-2 mb-4">
-                                    {['Nội dung không phù hợp', 'Vi phạm bản quyền', 'Spam hoặc lừa đảo', 'Thông tin sai lệch', 'Khác'].map(reason => (
+                                    {reportReasons.map(reason => (
                                         <button
                                             key={reason}
                                             onClick={() => setReportReason(reason)}
@@ -380,7 +387,7 @@ export default function CommunityFeed({ user }) {
                                 <textarea
                                     value={reportDetails}
                                     onChange={e => setReportDetails(e.target.value)}
-                                    placeholder="Chi tiết thêm (không bắt buộc)..."
+                                    placeholder={t('community.reportReasonPlaceholder')}
                                     rows={2}
                                     className="w-full bg-bg border border-line rounded-xl px-4 py-2.5 text-sm resize-none focus:outline-none focus:border-primary-500/50 mb-4 placeholder:text-muted/50"
                                 />
@@ -390,7 +397,7 @@ export default function CommunityFeed({ user }) {
                                         onClick={() => setReportModal(null)}
                                         className="flex-1 py-2.5 rounded-xl bg-surface-2 hover:bg-line text-sm font-medium transition-colors"
                                     >
-                                        Huỷ
+                                        {t('community.reportCancel')}
                                     </button>
                                     <button
                                         onClick={handleReport}
@@ -398,7 +405,7 @@ export default function CommunityFeed({ user }) {
                                         className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                     >
                                         {reportLoading ? <Loader2 size={14} className="animate-spin" /> : <Flag size={14} />}
-                                        Gửi báo cáo
+                                        {t('community.reportSubmit')}
                                     </button>
                                 </div>
                             </>

@@ -21,12 +21,12 @@ const CARD_PALETTE = [
 ];
 
 const SR_GRADES = [
-  { grade: 0, label: 'Quên', color: 'bg-red-500/80', emoji: '😞', ring: 'ring-red-500/30' },
-  { grade: 1, label: 'Khó', color: 'bg-orange-500/80', emoji: '😟', ring: 'ring-orange-500/30' },
-  { grade: 2, label: 'Nhớ mờ', color: 'bg-amber-500/80', emoji: '🤔', ring: 'ring-amber-500/30' },
-  { grade: 3, label: 'Khá', color: 'bg-yellow-500/80', emoji: '😐', ring: 'ring-yellow-500/30' },
-  { grade: 4, label: 'Tốt', color: 'bg-green-500/80', emoji: '😊', ring: 'ring-green-500/30' },
-  { grade: 5, label: 'Xuất sắc', color: 'bg-emerald-500/80', emoji: '🤩', ring: 'ring-emerald-500/30' },
+  { grade: 0, labelKey: 'gradeForgot', color: 'bg-red-500/80', emoji: '😞', ring: 'ring-red-500/30' },
+  { grade: 1, labelKey: 'gradeHard', color: 'bg-orange-500/80', emoji: '😟', ring: 'ring-orange-500/30' },
+  { grade: 2, labelKey: 'gradeBlurred', color: 'bg-amber-500/80', emoji: '🤔', ring: 'ring-amber-500/30' },
+  { grade: 3, labelKey: 'gradeFair', color: 'bg-yellow-500/80', emoji: '😐', ring: 'ring-yellow-500/30' },
+  { grade: 4, labelKey: 'gradeGood', color: 'bg-green-500/80', emoji: '😊', ring: 'ring-green-500/30' },
+  { grade: 5, labelKey: 'gradeExcellent', color: 'bg-emerald-500/80', emoji: '🤩', ring: 'ring-emerald-500/30' },
 ];
 
 export default function FlashcardView({ data, loading, error, onGenerate, docId, isLocked }) {
@@ -38,15 +38,15 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
   const [reviewResult, setReviewResult] = useState(null);
   const cardStartTime = useRef(Date.now());
 
-  const [loadingText, setLoadingText] = useState("Đang phân tích và chia nhỏ kiến thức...");
+  const [loadingText, setLoadingText] = useState(() => t('flashcard.loadingStep1'));
 
   useEffect(() => {
     if (!loading) return;
     const texts = [
-      "Đang phân tích và chia nhỏ kiến thức...",
-      "Trích xuất các thuật ngữ quan trọng...",
-      "Tạo câu hỏi Active Recall...",
-      "Thiết kế bộ thẻ ghi nhớ hoàn chỉnh..."
+      t('flashcard.loadingStep1'),
+      t('flashcard.loadingStep2'),
+      t('flashcard.loadingStep3'),
+      t('flashcard.loadingStep4')
     ];
     let i = 0;
     const interval = setInterval(() => {
@@ -54,7 +54,7 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
       setLoadingText(texts[i]);
     }, 2500);
     return () => clearInterval(interval);
-  }, [loading]);
+  }, [loading, t]);
 
   if (loading) {
     return (
@@ -138,8 +138,8 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
           </div>
         </div>
         <div className="text-center">
-          <p className="font-bold text-lg text-txt mb-1">{isLocked ? 'Tài liệu gốc đã bị xóa' : 'Chưa có Flashcard'}</p>
-          <p className="text-sm text-muted">{isLocked ? 'Không thể tạo mới vì file gốc không còn tồn tại' : 'Tạo flashcard từ nội dung tài liệu'}</p>
+          <p className="font-bold text-lg text-txt mb-1">{isLocked ? t('flashcard.sourceDeletedTitle') : t('flashcard.emptyTitle')}</p>
+          <p className="text-sm text-muted">{isLocked ? t('flashcard.sourceDeletedDesc') : t('flashcard.emptyDesc')}</p>
         </div>
         <button
           onClick={onGenerate}
@@ -149,7 +149,7 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
               : 'bg-gradient-to-r from-accent-600 to-accent-500 hover:shadow-lg hover:shadow-accent-600/20'
             }`}
         >
-          <RefreshCw size={14} /> {t('flashcard.generateButton', 'Tạo Flashcard')}
+          <RefreshCw size={14} /> {t('flashcard.generateButton')}
         </button>
       </div>
     );
@@ -203,12 +203,12 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
 
   const exportAnki = () => {
     const content = cards.map(c => `${c.question}\t${c.answer}\t${c.tag || ''}`).join('\n');
-    downloadFile(content, `${data.title || 'flashcards'}_anki.txt`, 'text/plain');
+    downloadFile(content, `${data.title || t('flashcard.defaultFileName')}_anki.txt`, 'text/plain');
   };
 
   const exportQuizlet = () => {
     const content = cards.map(c => `${c.question}\t${c.answer}`).join('\n');
-    downloadFile(content, `${data.title || 'flashcards'}_quizlet.txt`, 'text/plain');
+    downloadFile(content, `${data.title || t('flashcard.defaultFileName')}_quizlet.txt`, 'text/plain');
   };
 
   const downloadFile = (content, filename, type) => {
@@ -226,11 +226,11 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel(); // Stop any currently playing speech
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'vi-VN';
+      utterance.lang = t('flashcard.speechLang');
       utterance.rate = 1.0;
       window.speechSynthesis.speak(utterance);
     } else {
-      alert("Trình duyệt của bạn không hỗ trợ tính năng đọc văn bản.");
+      alert(t('flashcard.speechNotSupported'));
     }
   };
 
@@ -243,7 +243,7 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
             <Brain size={16} className="text-white" />
           </div>
           <div className="min-w-0">
-            <h3 className="font-bold text-sm truncate">{data.title || 'Flashcards'}</h3>
+            <h3 className="font-bold text-sm truncate">{data.title || t('flashcard.defaultTitle')}</h3>
             <p className="text-[11px] text-muted">{t('flashcard.cardOf').replace('{current}', currentIndex + 1).replace('{total}', total)}</p>
           </div>
         </div>
@@ -252,15 +252,15 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
           <button
             onClick={() => setViewMode(viewMode === 'card' ? 'list' : 'card')}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-surface-2 border border-line rounded-lg hover:bg-line hover:border-primary-500/30 transition-all"
-            title={viewMode === 'card' ? 'Xem danh sách' : 'Xem thẻ'}
+            title={viewMode === 'card' ? t('flashcard.viewList') : t('flashcard.viewCard')}
           >
             {viewMode === 'card' ? <List size={13} /> : <Layers size={13} />}
-            {viewMode === 'card' ? 'Danh sách' : 'Thẻ'}
+            {viewMode === 'card' ? t('flashcard.list') : t('flashcard.card')}
           </button>
           {/* Export dropdown */}
           <div className="relative group">
             <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-surface-2 border border-line rounded-lg hover:bg-line hover:border-primary-500/30 transition-all">
-              <Download size={12} /> Xuất
+              <Download size={12} /> {t('flashcard.export')}
             </button>
             <div className="absolute right-0 top-full mt-1 bg-surface border border-line rounded-xl overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 min-w-[140px] shadow-xl shadow-black/20">
               <button onClick={exportAnki} className="w-full px-4 py-2.5 text-xs text-left hover:bg-line transition-colors font-medium flex items-center gap-2">
@@ -303,12 +303,12 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
                 <div className="flip-card-front bg-gradient-to-br from-surface to-surface-2 border border-line/60 rounded-2xl p-8 flex flex-col items-center justify-center relative shadow-lg shadow-black/5">
                   <span className="absolute top-4 left-4 text-[10px] font-bold flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
                     style={{ background: CARD_PALETTE[currentIndex % CARD_PALETTE.length].bg, color: CARD_PALETTE[currentIndex % CARD_PALETTE.length].fg }}>
-                    <Tag size={10} /> {currentCard?.tag || `Câu ${currentIndex + 1}`}
+                    <Tag size={10} /> {currentCard?.tag || t('flashcard.questionNumber', { number: currentIndex + 1 })}
                   </span>
                   <button
                     onClick={(e) => speakText(e, currentCard?.question || '')}
                     className="absolute top-4 right-4 p-2 text-muted hover:text-txt bg-surface-2/80 hover:bg-line rounded-lg transition-all"
-                    title="Đọc câu hỏi"
+                    title={t('flashcard.readQuestion')}
                   >
                     <Volume2 size={14} />
                   </button>
@@ -326,13 +326,13 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
                   }}>
                   <span className="absolute top-4 left-4 text-[10px] font-bold px-2.5 py-1 rounded-lg"
                     style={{ background: CARD_PALETTE[currentIndex % CARD_PALETTE.length].fg + '15', color: CARD_PALETTE[currentIndex % CARD_PALETTE.length].fg }}>
-                    Đáp án
+                    {t('flashcard.answer')}
                   </span>
                   <button
                     onClick={(e) => speakText(e, currentCard?.answer || '')}
                     className="absolute top-4 right-4 p-2 rounded-lg transition-all"
                     style={{ color: CARD_PALETTE[currentIndex % CARD_PALETTE.length].fg, background: CARD_PALETTE[currentIndex % CARD_PALETTE.length].bg }}
-                    title="Đọc đáp án"
+                    title={t('flashcard.readAnswer')}
                   >
                     <Volume2 size={14} />
                   </button>
@@ -349,7 +349,7 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
               <div className="w-full max-w-lg mb-4 animate-fade-in">
                 {reviewResult ? (
                   <div className="text-center py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-                    <p className="text-sm text-emerald-400 font-semibold">✓ Đã ghi nhận! Ôn lại sau {reviewResult.interval || 1} ngày</p>
+                    <p className="text-sm text-emerald-400 font-semibold">✓ {t('flashcard.reviewSaved', { days: reviewResult.interval || 1 })}</p>
                   </div>
                 ) : (
                   <div>
@@ -362,7 +362,7 @@ export default function FlashcardView({ data, loading, error, onGenerate, docId,
                           className={`${g.color} ${g.ring} ring-1 hover:opacity-90 rounded-xl py-2 text-center transition-all hover:scale-105 active:scale-95`}
                         >
                           <div className="text-base">{g.emoji}</div>
-                          <div className="text-[9px] font-bold mt-0.5 text-white/90">{g.label}</div>
+                          <div className="text-[9px] font-bold mt-0.5 text-white/90">{t(`flashcard.${g.labelKey}`)}</div>
                         </button>
                       ))}
                     </div>

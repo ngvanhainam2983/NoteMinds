@@ -24,6 +24,7 @@ import {
   adminGetLoginActivity, adminUpdateSystemSetting, getSystemSettings,
 } from '../api';
 import ConfirmModal from './ConfirmModal';
+import { useLanguage } from '../LanguageContext';
 
 const PLAN_STYLES = {
   free:      { badge: '📦', label: 'Free',      color: '#9496a1' },
@@ -33,6 +34,8 @@ const PLAN_STYLES = {
 };
 
 export default function AdminPanel({ onBack }) {
+  const { t, language } = useLanguage();
+  const dateLocale = language === 'vi' ? 'vi-VN' : 'en-US';
   const [tab, setTab] = useState('realtime');
   const [users, setUsers] = useState([]);
   const [plans, setPlans] = useState([]);
@@ -51,7 +54,7 @@ export default function AdminPanel({ onBack }) {
       setUsers(u);
       setPlans(p);
       setBannedIps(ips);
-    } catch { setToast({ type: 'error', msg: 'Không thể tải dữ liệu' }); }
+    } catch { setToast({ type: 'error', msg: t('admin.loadDataError') }); }
     setLoading(false);
   };
 
@@ -74,15 +77,15 @@ export default function AdminPanel({ onBack }) {
     const user = users.find((u) => u.id === userId);
     const planLabel = PLAN_STYLES[plan]?.label || plan;
     askConfirm(
-      'Thay đổi gói dịch vụ',
-      `Bạn có chắc muốn chuyển gói của @${user?.username || userId} sang ${planLabel}?`,
+      t('admin.changePlanTitle'),
+      t('admin.changePlanMessage', { username: user?.username || userId, plan: planLabel }),
       'info',
       async () => {
         try {
           const updated = await adminSetPlan(userId, plan);
           setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, ...updated } : u)));
-          showToast('success', `Đã cập nhật gói → ${planLabel}`);
-        } catch { showToast('error', 'Lỗi cập nhật gói'); }
+          showToast('success', t('admin.planUpdated', { plan: planLabel }));
+        } catch { showToast('error', t('admin.planUpdateError')); }
       }
     );
   };
@@ -90,15 +93,15 @@ export default function AdminPanel({ onBack }) {
   const handleSetRole = (userId, role) => {
     const user = users.find((u) => u.id === userId);
     askConfirm(
-      'Thay đổi quyền',
-      `Bạn có chắc muốn đổi quyền của @${user?.username || userId} thành ${role}?`,
+      t('admin.changeRoleTitle'),
+      t('admin.changeRoleMessage', { username: user?.username || userId, role }),
       role === 'admin' ? 'warning' : 'info',
       async () => {
         try {
           const updated = await adminSetRole(userId, role);
           setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, ...updated } : u)));
-          showToast('success', `Đã cập nhật quyền → ${role}`);
-        } catch { showToast('error', 'Lỗi cập nhật quyền'); }
+          showToast('success', t('admin.roleUpdated', { role }));
+        } catch { showToast('error', t('admin.roleUpdateError')); }
       }
     );
   };
@@ -106,15 +109,15 @@ export default function AdminPanel({ onBack }) {
   const handleBanUser = (userId, reason) => {
     const user = users.find((u) => u.id === userId);
     askConfirm(
-      'Khóa tài khoản',
-      `Bạn có chắc muốn khóa tài khoản @${user?.username || userId}?${reason ? ` Lý do: ${reason}` : ''}`,
+      t('admin.banAccountTitle'),
+      t('admin.banAccountMessage', { username: user?.username || userId, reason: reason ? ` ${t('admin.reasonLabel')}: ${reason}` : '' }),
       'danger',
       async () => {
         try {
           const updated = await adminBanUser(userId, reason);
           setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, ...updated } : u)));
-          showToast('success', 'Đã khóa tài khoản');
-        } catch { showToast('error', 'Lỗi khóa tài khoản'); }
+          showToast('success', t('admin.banAccountSuccess'));
+        } catch { showToast('error', t('admin.banAccountError')); }
       }
     );
   };
@@ -122,45 +125,45 @@ export default function AdminPanel({ onBack }) {
   const handleUnbanUser = (userId) => {
     const user = users.find((u) => u.id === userId);
     askConfirm(
-      'Mở khóa tài khoản',
-      `Bạn có chắc muốn mở khóa tài khoản @${user?.username || userId}?`,
+      t('admin.unbanAccountTitle'),
+      t('admin.unbanAccountMessage', { username: user?.username || userId }),
       'info',
       async () => {
         try {
           const updated = await adminUnbanUser(userId);
           setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, ...updated } : u)));
-          showToast('success', 'Đã mở khóa tài khoản');
-        } catch { showToast('error', 'Lỗi mở khóa'); }
+          showToast('success', t('admin.unbanAccountSuccess'));
+        } catch { showToast('error', t('admin.unbanAccountError')); }
       }
     );
   };
 
   const handleBanIp = (ip, reason) => {
     askConfirm(
-      'Chặn địa chỉ IP',
-      `Bạn có chắc muốn chặn IP ${ip}?${reason ? ` Lý do: ${reason}` : ''} Tất cả truy cập từ IP này sẽ bị từ chối.`,
+      t('admin.banIpTitle'),
+      t('admin.banIpMessage', { ip, reason: reason ? ` ${t('admin.reasonLabel')}: ${reason}` : '' }),
       'danger',
       async () => {
         try {
           await adminBanIp(ip, reason);
           await load();
-          showToast('success', `Đã chặn IP ${ip}`);
-        } catch (err) { showToast('error', err.response?.data?.error || 'Lỗi chặn IP'); }
+          showToast('success', t('admin.banIpSuccess', { ip }));
+        } catch (err) { showToast('error', err.response?.data?.error || t('admin.banIpError')); }
       }
     );
   };
 
   const handleUnbanIp = (ip) => {
     askConfirm(
-      'Bỏ chặn IP',
-      `Bạn có chắc muốn bỏ chặn IP ${ip}?`,
+      t('admin.unbanIpTitle'),
+      t('admin.unbanIpMessage', { ip }),
       'info',
       async () => {
         try {
           await adminUnbanIp(ip);
           setBannedIps((prev) => prev.filter((b) => b.ip_address !== ip));
-          showToast('success', `Đã bỏ chặn IP ${ip}`);
-        } catch { showToast('error', 'Lỗi bỏ chặn IP'); }
+          showToast('success', t('admin.unbanIpSuccess', { ip }));
+        } catch { showToast('error', t('admin.unbanIpError')); }
       }
     );
   };
@@ -186,23 +189,23 @@ export default function AdminPanel({ onBack }) {
     else setSelectedUserIds(new Set(filtered.map(u => u.id)));
   };
   const handleBulkSetPlan = (plan) => {
-    askConfirm('Bulk Set Plan', `Chuyển ${selectedUserIds.size} users sang ${plan}?`, 'warning', async () => {
+    askConfirm(t('admin.bulkSetPlanTitle'), t('admin.bulkSetPlanMessage', { count: selectedUserIds.size, plan }), 'warning', async () => {
       try {
         await adminBulkSetPlan([...selectedUserIds], plan);
-        showToast('success', `Đã cập nhật ${selectedUserIds.size} users`);
+        showToast('success', t('admin.bulkSetPlanSuccess', { count: selectedUserIds.size }));
         setSelectedUserIds(new Set());
         load();
-      } catch { showToast('error', 'Lỗi bulk update'); }
+      } catch { showToast('error', t('admin.bulkUpdateError')); }
     });
   };
   const handleBulkBan = () => {
-    askConfirm('Bulk Ban', `Khóa ${selectedUserIds.size} tài khoản?`, 'danger', async () => {
+    askConfirm(t('admin.bulkBanTitle'), t('admin.bulkBanMessage', { count: selectedUserIds.size }), 'danger', async () => {
       try {
         await adminBulkBanUsers([...selectedUserIds], 'Bulk ban');
-        showToast('success', `Đã khóa ${selectedUserIds.size} users`);
+        showToast('success', t('admin.bulkBanSuccess', { count: selectedUserIds.size }));
         setSelectedUserIds(new Set());
         load();
-      } catch { showToast('error', 'Lỗi bulk ban'); }
+      } catch { showToast('error', t('admin.bulkBanError')); }
     });
   };
 
@@ -213,43 +216,43 @@ export default function AdminPanel({ onBack }) {
 
   const SIDEBAR_SECTIONS = [
     {
-      title: 'Tổng quan',
+      title: t('admin.sidebarOverview'),
       items: [
-        { id: 'realtime', icon: <Activity size={17} />, label: 'Dashboard' },
-        { id: 'stats', icon: <BarChart3 size={17} />, label: 'Thống kê' },
+        { id: 'realtime', icon: <Activity size={17} />, label: t('admin.dashboard') },
+        { id: 'stats', icon: <BarChart3 size={17} />, label: t('admin.stats') },
       ]
     },
     {
-      title: 'Quản lý người dùng',
+      title: t('admin.sidebarUsers'),
       items: [
-        { id: 'users', icon: <Users size={17} />, label: 'Người dùng', badge: totalUsers },
-        { id: 'ips', icon: <Globe size={17} />, label: 'IP bị chặn', badge: bannedIps.length },
-        { id: 'logins', icon: <MapPin size={17} />, label: 'Lịch sử đăng nhập' },
+        { id: 'users', icon: <Users size={17} />, label: t('admin.users'), badge: totalUsers },
+        { id: 'ips', icon: <Globe size={17} />, label: t('admin.bannedIps'), badge: bannedIps.length },
+        { id: 'logins', icon: <MapPin size={17} />, label: t('admin.loginHistory') },
       ]
     },
     {
-      title: 'Nội dung',
+      title: t('admin.sidebarContent'),
       items: [
-        { id: 'docs', icon: <FileText size={17} />, label: 'Tài liệu' },
-        { id: 'moderation', icon: <Flag size={17} />, label: 'Kiểm duyệt' },
-        { id: 'ai', icon: <Brain size={17} />, label: 'AI Usage' },
+        { id: 'docs', icon: <FileText size={17} />, label: t('admin.documents') },
+        { id: 'moderation', icon: <Flag size={17} />, label: t('admin.moderation') },
+        { id: 'ai', icon: <Brain size={17} />, label: t('admin.aiUsageMonitoring') },
       ]
     },
     {
-      title: 'Truyền thông',
+      title: t('admin.sidebarCommunication'),
       items: [
-        { id: 'email', icon: <Mail size={17} />, label: 'Email Blast' },
-        { id: 'announcements', icon: <Megaphone size={17} />, label: 'Thông báo' },
+        { id: 'email', icon: <Mail size={17} />, label: t('admin.emailBlast') },
+        { id: 'announcements', icon: <Megaphone size={17} />, label: t('admin.announcements') },
       ]
     },
     {
-      title: 'Hệ thống',
+      title: t('admin.sidebarSystem'),
       items: [
-        { id: 'health', icon: <Server size={17} />, label: 'Sức khoẻ hệ thống' },
-        { id: 'flags', icon: <ToggleLeft size={17} />, label: 'Feature Flags' },
-        { id: 'maintenance', icon: <Wrench size={17} />, label: 'Bảo trì' },
-        { id: 'audit', icon: <ScrollText size={17} />, label: 'Nhật ký' },
-        { id: 'export', icon: <Download size={17} />, label: 'Export dữ liệu' },
+        { id: 'health', icon: <Server size={17} />, label: t('admin.systemHealth') },
+        { id: 'flags', icon: <ToggleLeft size={17} />, label: t('admin.featureFlags') },
+        { id: 'maintenance', icon: <Wrench size={17} />, label: t('admin.maintenance') },
+        { id: 'audit', icon: <ScrollText size={17} />, label: t('admin.auditLogs') },
+        { id: 'export', icon: <Download size={17} />, label: t('admin.exportData') },
       ]
     },
   ];
@@ -271,7 +274,7 @@ export default function AdminPanel({ onBack }) {
                 <Shield size={18} className="text-primary-400" />
               </div>
               <div>
-                <h1 className="text-sm font-bold tracking-tight">Admin Panel</h1>
+                <h1 className="text-sm font-bold tracking-tight">{t('admin.panelTitle')}</h1>
                 <p className="text-[11px] text-muted">NoteMind</p>
               </div>
             </div>
@@ -318,7 +321,7 @@ export default function AdminPanel({ onBack }) {
             className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-muted hover:text-txt hover:bg-surface-2 transition-all"
           >
             <ArrowLeft size={17} />
-            <span>Quay lại trang chủ</span>
+            <span>{t('admin.backHome')}</span>
           </button>
         </div>
       </aside>
@@ -336,11 +339,11 @@ export default function AdminPanel({ onBack }) {
                 <BarChart3 size={18} />
               </button>
               <h2 className="text-lg font-bold tracking-tight">
-                {SIDEBAR_SECTIONS.flatMap(s => s.items).find(i => i.id === tab)?.label || 'Dashboard'}
+                {SIDEBAR_SECTIONS.flatMap(s => s.items).find(i => i.id === tab)?.label || t('admin.dashboard')}
               </h2>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={load} disabled={loading} className="p-2 rounded-lg bg-surface hover:bg-surface-2 border border-line transition-colors" title="Làm mới">
+              <button onClick={load} disabled={loading} className="p-2 rounded-lg bg-surface hover:bg-surface-2 border border-line transition-colors" title={t('admin.refresh')}>
                 <RefreshCw size={15} className={loading ? 'animate-spin text-primary-400' : 'text-muted'} />
               </button>
             </div>
@@ -350,9 +353,9 @@ export default function AdminPanel({ onBack }) {
         {/* Quick stats bar */}
         <div className="px-6 pt-5">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-            <StatCard icon={<Users size={16} />} label="Tổng users" value={totalUsers} color="#60a5fa" />
-            <StatCard icon={<UserX size={16} />} label="Bị khóa" value={bannedUsers} color="#f87171" />
-            <StatCard icon={<Ban size={16} />} label="IP bị chặn" value={bannedIps.length} color="#fb923c" />
+            <StatCard icon={<Users size={16} />} label={t('admin.totalUsers')} value={totalUsers} color="#60a5fa" />
+            <StatCard icon={<UserX size={16} />} label={t('admin.banned')} value={bannedUsers} color="#f87171" />
+            <StatCard icon={<Ban size={16} />} label={t('admin.bannedIps')} value={bannedIps.length} color="#fb923c" />
             {Object.entries(PLAN_STYLES).slice(1).map(([key, { badge, label, color }]) => (
               <StatCard key={key} icon={<span className="text-sm">{badge}</span>} label={label} value={users.filter((u) => u.plan === key).length} color={color} />
             ))}
@@ -367,7 +370,7 @@ export default function AdminPanel({ onBack }) {
               <div className="relative flex-1">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
                 <input
-                  placeholder="Tìm user, email hoặc IP..."
+                  placeholder={t('admin.searchUserPlaceholder')}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="w-full bg-surface border border-line rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary-500/50"
@@ -375,12 +378,12 @@ export default function AdminPanel({ onBack }) {
               </div>
               {selectedUserIds.size > 0 && (
                 <div className="flex items-center gap-2 bg-primary-600/10 border border-primary-500/20 rounded-xl px-3 py-2">
-                  <span className="text-xs font-medium text-primary-400">{selectedUserIds.size} đã chọn</span>
+                  <span className="text-xs font-medium text-primary-400">{t('admin.selectedCount', { count: selectedUserIds.size })}</span>
                   <select onChange={(e) => e.target.value && handleBulkSetPlan(e.target.value)} className="bg-bg border border-line rounded-lg px-2 py-1 text-xs cursor-pointer">
-                    <option value="">Set Plan...</option>
+                    <option value="">{t('admin.setPlan')}</option>
                     {Object.entries(PLAN_STYLES).map(([k, { label }]) => <option key={k} value={k}>{label}</option>)}
                   </select>
-                  <button onClick={handleBulkBan} className="px-2 py-1 bg-red-500/10 text-red-400 rounded-lg text-xs hover:bg-red-500/20">Ban</button>
+                  <button onClick={handleBulkBan} className="px-2 py-1 bg-red-500/10 text-red-400 rounded-lg text-xs hover:bg-red-500/20">{t('admin.ban')}</button>
                   <button onClick={() => setSelectedUserIds(new Set())} className="p-1 hover:bg-surface-2 rounded-lg text-muted"><X size={12} /></button>
                 </div>
               )}
@@ -397,11 +400,11 @@ export default function AdminPanel({ onBack }) {
                     <thead>
                       <tr className="border-b border-line text-muted text-xs uppercase tracking-wider">
                         <th className="py-3 px-2 w-8"><button onClick={selectAllUsers} className="text-muted hover:text-txt">{selectedUserIds.size === filtered.length && filtered.length > 0 ? <CheckSquare size={14} /> : <Square size={14} />}</button></th>
-                        <th className="text-left py-3 px-4">User</th>
-                        <th className="text-left py-3 px-4">Gói</th>
-                        <th className="text-left py-3 px-4">Quyền</th>
-                        <th className="text-left py-3 px-4 hidden lg:table-cell">IP / Hoạt động</th>
-                        <th className="text-left py-3 px-4">Hành động</th>
+                        <th className="text-left py-3 px-4">{t('admin.user')}</th>
+                        <th className="text-left py-3 px-4">{t('admin.plan')}</th>
+                        <th className="text-left py-3 px-4">{t('admin.role')}</th>
+                        <th className="text-left py-3 px-4 hidden lg:table-cell">{t('admin.ipAndActivity')}</th>
+                        <th className="text-left py-3 px-4">{t('admin.actions')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -417,13 +420,14 @@ export default function AdminPanel({ onBack }) {
                           onUnban={handleUnbanUser}
                           onBanIp={handleBanIp}
                           onOpenDetail={() => setUserDetailId(u.id)}
+                          dateLocale={dateLocale}
                         />
                       ))}
                       {filtered.length === 0 && (
                         <tr>
                           <td colSpan={6} className="text-center py-8 text-muted">
                             <Users size={28} className="mx-auto mb-2 opacity-50" />
-                            <p>Không tìm thấy user</p>
+                            <p>{t('admin.noUserFound')}</p>
                           </td>
                         </tr>
                       )}
@@ -490,7 +494,8 @@ function StatCard({ icon, label, value, color }) {
   );
 }
 
-function UserRow({ user, selected, onToggleSelect, onSetPlan, onSetRole, onBan, onUnban, onBanIp, onOpenDetail }) {
+function UserRow({ user, selected, onToggleSelect, onSetPlan, onSetRole, onBan, onUnban, onBanIp, onOpenDetail, dateLocale }) {
+  const { t } = useLanguage();
   const [showBanInput, setShowBanInput] = useState(false);
   const [banReason, setBanReason] = useState('');
   const style = PLAN_STYLES[user.plan] || PLAN_STYLES.free;
@@ -518,10 +523,10 @@ function UserRow({ user, selected, onToggleSelect, onSetPlan, onSetRole, onBan, 
               <p className="font-medium text-sm flex items-center gap-1.5 flex-wrap">
                 <span className="truncate">{user.displayName || user.username}</span>
                 {user.role === 'admin' && (
-                  <span className="px-1.5 py-0.5 bg-primary-600/20 text-primary-400 text-[10px] rounded-md font-bold shrink-0">ADMIN</span>
+                  <span className="px-1.5 py-0.5 bg-primary-600/20 text-primary-400 text-[10px] rounded-md font-bold shrink-0">{t('admin.admin')}</span>
                 )}
                 {user.isBanned && (
-                  <span className="px-1.5 py-0.5 bg-red-500/20 text-red-400 text-[10px] rounded-md font-bold shrink-0">BỊ KHÓA</span>
+                  <span className="px-1.5 py-0.5 bg-red-500/20 text-red-400 text-[10px] rounded-md font-bold shrink-0">{t('admin.bannedUpper')}</span>
                 )}
               </p>
               <p className="text-xs text-muted truncate">@{user.username} · {user.email}</p>
@@ -548,8 +553,8 @@ function UserRow({ user, selected, onToggleSelect, onSetPlan, onSetRole, onBan, 
             onChange={(e) => onSetRole(user.id, e.target.value)}
             className="bg-bg border border-line rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-primary-500/50 cursor-pointer"
           >
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
+            <option value="user">{t('admin.user')}</option>
+            <option value="admin">{t('admin.admin')}</option>
           </select>
         </td>
 
@@ -560,9 +565,9 @@ function UserRow({ user, selected, onToggleSelect, onSetPlan, onSetRole, onBan, 
                 <Wifi size={11} />
                 <span className="font-mono">{user.lastIp}</span>
                 <button
-                  onClick={() => onBanIp(user.lastIp, `Liên kết với user @${user.username}`)}
+                  onClick={() => onBanIp(user.lastIp, t('admin.linkedToUser', { username: user.username }))}
                   className="p-0.5 rounded hover:bg-red-500/20 text-muted hover:text-red-400 transition-colors"
-                  title="Chặn IP này"
+                  title={t('admin.banThisIp')}
                 >
                   <Ban size={11} />
                 </button>
@@ -571,11 +576,11 @@ function UserRow({ user, selected, onToggleSelect, onSetPlan, onSetRole, onBan, 
             {user.lastLoginAt && (
               <div className="flex items-center gap-1.5 text-xs text-[#666]">
                 <Clock size={11} />
-                {new Date(user.lastLoginAt).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                {new Date(user.lastLoginAt).toLocaleString(dateLocale, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
               </div>
             )}
             {!user.lastIp && !user.lastLoginAt && (
-              <span className="text-xs text-muted/60">Chưa đăng nhập</span>
+              <span className="text-xs text-muted/60">{t('admin.neverLoggedIn')}</span>
             )}
           </div>
         </td>
@@ -586,14 +591,14 @@ function UserRow({ user, selected, onToggleSelect, onSetPlan, onSetRole, onBan, 
               onClick={() => onUnban(user.id)}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-xs transition-colors"
             >
-              <UserCheck size={13} /> Mở khóa
+              <UserCheck size={13} /> {t('admin.unban')}
             </button>
           ) : (
             <button
               onClick={() => setShowBanInput(!showBanInput)}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs transition-colors"
             >
-              <UserX size={13} /> Khóa
+              <UserX size={13} /> {t('admin.ban')}
             </button>
           )}
         </td>
@@ -605,15 +610,15 @@ function UserRow({ user, selected, onToggleSelect, onSetPlan, onSetRole, onBan, 
               <input
                 value={banReason}
                 onChange={(e) => setBanReason(e.target.value)}
-                placeholder="Lý do khóa (tuỳ chọn)..."
+                placeholder={t('admin.banReasonPlaceholder')}
                 className="flex-1 bg-bg border border-red-500/30 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-red-500/50"
                 onKeyDown={(e) => e.key === 'Enter' && confirmBan()}
               />
               <button onClick={confirmBan} className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-xs font-medium transition-colors">
-                Xác nhận khóa
+                {t('admin.confirmBan')}
               </button>
               <button onClick={() => setShowBanInput(false)} className="px-3 py-1.5 rounded-lg bg-surface-2 hover:bg-line text-xs transition-colors">
-                Hủy
+                {t('common.cancel')}
               </button>
             </div>
           </td>
@@ -624,6 +629,8 @@ function UserRow({ user, selected, onToggleSelect, onSetPlan, onSetRole, onBan, 
 }
 
 function IpBanPanel({ bannedIps, onBanIp, onUnbanIp, loading }) {
+  const { t, language } = useLanguage();
+  const dateLocale = language === 'vi' ? 'vi-VN' : 'en-US';
   const [newIp, setNewIp] = useState('');
   const [reason, setReason] = useState('');
 
@@ -638,19 +645,19 @@ function IpBanPanel({ bannedIps, onBanIp, onUnbanIp, loading }) {
     <div className="space-y-4">
       <div className="bg-surface border border-line rounded-xl p-4">
         <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-          <Plus size={14} className="text-primary-400" /> Chặn IP mới
+          <Plus size={14} className="text-primary-400" /> {t('admin.newIpBan')}
         </h3>
         <div className="flex flex-col sm:flex-row gap-2">
           <input
             value={newIp}
             onChange={(e) => setNewIp(e.target.value)}
-            placeholder="Nhập địa chỉ IP (vd: 192.168.1.100)"
+            placeholder={t('admin.ipPlaceholder')}
             className="flex-1 bg-bg border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary-500/50 font-mono"
           />
           <input
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="Lý do (tuỳ chọn)"
+            placeholder={t('admin.reasonOptional')}
             className="flex-1 bg-bg border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary-500/50"
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
           />
@@ -659,7 +666,7 @@ function IpBanPanel({ bannedIps, onBanIp, onUnbanIp, loading }) {
             disabled={!newIp.trim()}
             className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-40 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1.5"
           >
-            <Ban size={14} /> Chặn
+            <Ban size={14} /> {t('admin.ban')}
           </button>
         </div>
       </div>
@@ -672,15 +679,15 @@ function IpBanPanel({ bannedIps, onBanIp, onUnbanIp, loading }) {
         ) : bannedIps.length === 0 ? (
           <div className="text-center py-10 text-muted">
             <ShieldCheck size={32} className="mx-auto mb-2 opacity-50" />
-            <p className="text-sm">Chưa có IP nào bị chặn</p>
+            <p className="text-sm">{t('admin.noBannedIps')}</p>
           </div>
         ) : (
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-line text-muted text-xs uppercase tracking-wider">
-                <th className="text-left py-3 px-4">IP</th>
-                <th className="text-left py-3 px-4">Lý do</th>
-                <th className="text-left py-3 px-4 hidden sm:table-cell">Ngày chặn</th>
+                <th className="text-left py-3 px-4">{t('admin.ip')}</th>
+                <th className="text-left py-3 px-4">{t('admin.reason')}</th>
+                <th className="text-left py-3 px-4 hidden sm:table-cell">{t('admin.banDate')}</th>
                 <th className="text-left py-3 px-4"></th>
               </tr>
             </thead>
@@ -694,14 +701,14 @@ function IpBanPanel({ bannedIps, onBanIp, onUnbanIp, loading }) {
                   </td>
                   <td className="py-3 px-4 text-muted">{b.reason || '—'}</td>
                   <td className="py-3 px-4 text-xs text-[#666] hidden sm:table-cell">
-                    {b.created_at ? new Date(b.created_at).toLocaleString('vi-VN') : '—'}
+                    {b.created_at ? new Date(b.created_at).toLocaleString(dateLocale) : '—'}
                   </td>
                   <td className="py-3 px-4">
                     <button
                       onClick={() => onUnbanIp(b.ip_address)}
                       className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-xs transition-colors"
                     >
-                      <Trash2 size={12} /> Bỏ chặn
+                      <Trash2 size={12} /> {t('admin.unban')}
                     </button>
                   </td>
                 </tr>
@@ -715,6 +722,7 @@ function IpBanPanel({ bannedIps, onBanIp, onUnbanIp, loading }) {
 }
 // ── Admin Stats Panel ─────────────────────────────────
 function AdminStatsPanel() {
+  const { t } = useLanguage();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -723,24 +731,24 @@ function AdminStatsPanel() {
   }, []);
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-primary-400" /></div>;
-  if (!stats) return <div className="text-center py-8 text-muted">Không thể tải dữ liệu thống kê</div>;
+  if (!stats) return <div className="text-center py-8 text-muted">{t('admin.statsLoadError')}</div>;
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard icon={<Users size={16} />} label="Tổng user" value={stats.totalUsers} color="#60a5fa" />
-        <StatCard icon={<TrendingUp size={16} />} label="User mới hôm nay" value={stats.newUsersToday} color="#34d399" />
-        <StatCard icon={<TrendingUp size={16} />} label="User mới tuần" value={stats.newUsersThisWeek} color="#a78bfa" />
-        <StatCard icon={<FileText size={16} />} label="Tổng tài liệu" value={stats.totalDocuments} color="#fbbf24" />
+        <StatCard icon={<Users size={16} />} label={t('admin.totalUsers')} value={stats.totalUsers} color="#60a5fa" />
+        <StatCard icon={<TrendingUp size={16} />} label={t('admin.newUsersToday')} value={stats.newUsersToday} color="#34d399" />
+        <StatCard icon={<TrendingUp size={16} />} label={t('admin.newUsersWeek')} value={stats.newUsersThisWeek} color="#a78bfa" />
+        <StatCard icon={<FileText size={16} />} label={t('admin.totalDocuments')} value={stats.totalDocuments} color="#fbbf24" />
       </div>
 
       {stats.planDistribution && (
         <div className="bg-surface border border-line rounded-xl p-4">
-          <h3 className="text-sm font-semibold mb-3">Phân bổ gói dịch vụ</h3>
+          <h3 className="text-sm font-semibold mb-3">{t('admin.planDistribution')}</h3>
           <div className="space-y-2">
             {stats.planDistribution.map(p => (
               <div key={p.plan} className="flex items-center gap-3">
-                <span className="w-20 text-xs font-medium">{p.plan || 'free'}</span>
+                <span className="w-20 text-xs font-medium">{p.plan || t('admin.planFree')}</span>
                 <div className="flex-1 h-3 bg-surface-2 rounded-full overflow-hidden">
                   <div className="h-full bg-primary-500 rounded-full" style={{ width: `${stats.totalUsers > 0 ? (p.count / stats.totalUsers) * 100 : 0}%` }} />
                 </div>
@@ -753,7 +761,7 @@ function AdminStatsPanel() {
 
       {stats.registrationTrend && stats.registrationTrend.length > 0 && (
         <div className="bg-surface border border-line rounded-xl p-4">
-          <h3 className="text-sm font-semibold mb-3">Đăng ký 7 ngày qua</h3>
+          <h3 className="text-sm font-semibold mb-3">{t('admin.registrations7Days')}</h3>
           <div className="flex items-end gap-2 h-32">
             {stats.registrationTrend.map((d, i) => {
               const max = Math.max(1, ...stats.registrationTrend.map(x => x.count || 0));
@@ -775,13 +783,13 @@ function AdminStatsPanel() {
 
       {stats.topUsers && stats.topUsers.length > 0 && (
         <div className="bg-surface border border-line rounded-xl p-4">
-          <h3 className="text-sm font-semibold mb-3">Top users (theo tài liệu)</h3>
+          <h3 className="text-sm font-semibold mb-3">{t('admin.topUsersByDocs')}</h3>
           <div className="space-y-2">
             {stats.topUsers.map((u, i) => (
               <div key={u.id} className="flex items-center gap-3 text-sm">
                 <span className="w-6 text-center font-bold text-muted">{i + 1}</span>
                 <span className="flex-1 truncate">{u.display_name || u.username}</span>
-                <span className="text-primary-400 font-medium">{u.doc_count} tài liệu</span>
+                <span className="text-primary-400 font-medium">{t('admin.documentsCount', { count: u.doc_count })}</span>
               </div>
             ))}
           </div>
@@ -793,6 +801,8 @@ function AdminStatsPanel() {
 
 // ── Admin Documents Panel ─────────────────────────────
 function AdminDocsPanel({ showToast, askConfirm }) {
+  const { t, language } = useLanguage();
+  const dateLocale = language === 'vi' ? 'vi-VN' : 'en-US';
   const [docs, setDocs] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -806,7 +816,7 @@ function AdminDocsPanel({ showToast, askConfirm }) {
       const data = await adminGetDocuments({ page, limit: 20, search, filter });
       setDocs(data.documents || []);
       setTotal(data.total || 0);
-    } catch { showToast('error', 'Lỗi tải tài liệu'); }
+    } catch { showToast('error', t('admin.docsLoadError')); }
     setLoading(false);
   };
 
@@ -819,12 +829,12 @@ function AdminDocsPanel({ showToast, askConfirm }) {
   };
 
   const handleDelete = (docId, title) => {
-    askConfirm('Xóa tài liệu', `Bạn có chắc muốn xóa "${title}"?`, 'danger', async () => {
+    askConfirm(t('admin.deleteDocumentTitle'), t('admin.deleteDocumentMessage', { title }), 'danger', async () => {
       try {
         await adminDeleteDocument(docId);
-        showToast('success', 'Đã xóa tài liệu');
+        showToast('success', t('admin.documentDeleted'));
         fetchDocs();
-      } catch { showToast('error', 'Lỗi xóa tài liệu'); }
+      } catch { showToast('error', t('admin.deleteDocumentError')); }
     });
   };
 
@@ -832,8 +842,8 @@ function AdminDocsPanel({ showToast, askConfirm }) {
     try {
       const result = await adminToggleDocPublic(docId);
       setDocs(prev => prev.map(d => d.id === docId ? { ...d, is_public: result.is_public } : d));
-      showToast('success', result.is_public ? 'Đã công khai' : 'Đã ẩn');
-    } catch { showToast('error', 'Lỗi cập nhật'); }
+      showToast('success', result.is_public ? t('admin.publicSet') : t('admin.hiddenSet'));
+    } catch { showToast('error', t('admin.updateError')); }
   };
 
   const totalPages = Math.ceil(total / 20);
@@ -846,7 +856,7 @@ function AdminDocsPanel({ showToast, askConfirm }) {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm tài liệu..."
+            placeholder={t('admin.searchDocumentPlaceholder')}
             className="w-full bg-surface border border-line rounded-xl pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-primary-500/50"
           />
         </div>
@@ -855,9 +865,9 @@ function AdminDocsPanel({ showToast, askConfirm }) {
           onChange={(e) => { setFilter(e.target.value); setPage(1); }}
           className="bg-surface border border-line rounded-xl px-3 py-2 text-sm focus:outline-none cursor-pointer"
         >
-          <option value="all">Tất cả</option>
-          <option value="public">Công khai</option>
-          <option value="private">Riêng tư</option>
+          <option value="all">{t('admin.all')}</option>
+          <option value="public">{t('admin.public')}</option>
+          <option value="private">{t('admin.private')}</option>
         </select>
       </form>
 
@@ -868,18 +878,18 @@ function AdminDocsPanel({ showToast, askConfirm }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-line text-muted text-xs uppercase tracking-wider">
-                <th className="text-left py-3 px-4">Tài liệu</th>
-                <th className="text-left py-3 px-4 hidden sm:table-cell">Tác giả</th>
-                <th className="text-center py-3 px-4">Trạng thái</th>
-                <th className="text-left py-3 px-4">Hành động</th>
+                <th className="text-left py-3 px-4">{t('admin.document')}</th>
+                <th className="text-left py-3 px-4 hidden sm:table-cell">{t('admin.author')}</th>
+                <th className="text-center py-3 px-4">{t('admin.status')}</th>
+                <th className="text-left py-3 px-4">{t('admin.actions')}</th>
               </tr>
             </thead>
             <tbody>
               {docs.map(d => (
                 <tr key={d.id} className="border-b border-line last:border-b-0 hover:bg-surface-2/50">
                   <td className="py-3 px-4">
-                    <p className="font-medium text-sm truncate max-w-xs">{d.original_name || d.title || 'Không rõ'}</p>
-                    <p className="text-[11px] text-muted">{new Date(d.created_at).toLocaleDateString('vi-VN')}</p>
+                    <p className="font-medium text-sm truncate max-w-xs">{d.original_name || d.title || t('admin.unknown')}</p>
+                    <p className="text-[11px] text-muted">{new Date(d.created_at).toLocaleDateString(dateLocale)}</p>
                   </td>
                   <td className="py-3 px-4 hidden sm:table-cell text-muted text-xs">{d.owner_username || '?'}</td>
                   <td className="py-3 px-4 text-center">
@@ -887,7 +897,7 @@ function AdminDocsPanel({ showToast, askConfirm }) {
                       onClick={() => handleTogglePublic(d.id)}
                       className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-colors ${d.is_public ? 'bg-emerald-500/10 text-emerald-400' : 'bg-surface-2 text-muted'}`}
                     >
-                      {d.is_public ? <><Eye size={11} /> Công khai</> : <><EyeOff size={11} /> Riêng tư</>}
+                      {d.is_public ? <><Eye size={11} /> {t('admin.public')}</> : <><EyeOff size={11} /> {t('admin.private')}</>}
                     </button>
                   </td>
                   <td className="py-3 px-4">
@@ -895,13 +905,13 @@ function AdminDocsPanel({ showToast, askConfirm }) {
                       onClick={() => handleDelete(d.id, d.original_name || d.title)}
                       className="flex items-center gap-1 px-2 py-1 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs transition-colors"
                     >
-                      <Trash2 size={11} /> Xóa
+                      <Trash2 size={11} /> {t('common.delete')}
                     </button>
                   </td>
                 </tr>
               ))}
               {docs.length === 0 && (
-                <tr><td colSpan={4} className="text-center py-8 text-muted">Không tìm thấy tài liệu</td></tr>
+                <tr><td colSpan={4} className="text-center py-8 text-muted">{t('admin.noDocumentsFound')}</td></tr>
               )}
             </tbody>
           </table>
@@ -911,7 +921,7 @@ function AdminDocsPanel({ showToast, askConfirm }) {
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">
           <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1} className="p-1.5 rounded-lg bg-surface hover:bg-surface-2 disabled:opacity-40 transition-colors"><ChevronLeft size={16} /></button>
-          <span className="text-sm text-muted">Trang {page}/{totalPages}</span>
+          <span className="text-sm text-muted">{t('admin.pageOf', { page, total: totalPages })}</span>
           <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="p-1.5 rounded-lg bg-surface hover:bg-surface-2 disabled:opacity-40 transition-colors"><ChevronRight size={16} /></button>
         </div>
       )}
@@ -921,6 +931,8 @@ function AdminDocsPanel({ showToast, askConfirm }) {
 
 // ── Admin Announcements Panel ─────────────────────────
 function AdminAnnouncementsPanel({ showToast, askConfirm }) {
+  const { t, language } = useLanguage();
+  const dateLocale = language === 'vi' ? 'vi-VN' : 'en-US';
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null); // null | 'new' | announcementObj
@@ -996,41 +1008,41 @@ function AdminAnnouncementsPanel({ showToast, askConfirm }) {
       if (editing === 'new') {
         const a = await createAnnouncement(payload);
         setAnnouncements(prev => [a, ...prev]);
-        showToast('success', 'Đã tạo thông báo');
+        showToast('success', t('admin.announcementCreated'));
       } else {
         const a = await updateAnnouncement(editing.id, payload);
         setAnnouncements(prev => prev.map(x => x.id === editing.id ? a : x));
-        showToast('success', 'Đã cập nhật');
+        showToast('success', t('admin.updated'));
       }
       setEditing(null);
-    } catch { showToast('error', 'Lỗi lưu thông báo'); }
+    } catch { showToast('error', t('admin.saveAnnouncementError')); }
   };
 
   const handleDelete = (id) => {
-    askConfirm('Xóa thông báo', 'Bạn có chắc muốn xóa thông báo này?', 'danger', async () => {
+    askConfirm(t('admin.deleteAnnouncementTitle'), t('admin.deleteAnnouncementMessage'), 'danger', async () => {
       try {
         await deleteAnnouncement(id);
         setAnnouncements(prev => prev.filter(a => a.id !== id));
-        showToast('success', 'Đã xóa');
-      } catch { showToast('error', 'Lỗi xóa'); }
+        showToast('success', t('admin.deleted'));
+      } catch { showToast('error', t('admin.deleteError')); }
     });
   };
 
   const TARGET_LABELS = {
-    all: '🌍 Tất cả',
-    registered: '👤 Đã đăng ký',
-    free: '📦 Free',
-    basic: '⭐ Basic',
-    pro: '💎 Pro',
-    unlimited: '👑 Unlimited'
+    all: `🌍 ${t('admin.targetAll')}`,
+    registered: `👤 ${t('admin.targetRegistered')}`,
+    free: `📦 ${t('admin.targetPlanFree')}`,
+    basic: `⭐ ${t('admin.targetPlanBasic')}`,
+    pro: `💎 ${t('admin.targetPlanPro')}`,
+    unlimited: `👑 ${t('admin.targetPlanUnlimited')}`
   };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold flex items-center gap-2"><Megaphone size={14} className="text-primary-400" /> Quản lý thông báo</h3>
+        <h3 className="text-sm font-semibold flex items-center gap-2"><Megaphone size={14} className="text-primary-400" /> {t('admin.manageAnnouncements')}</h3>
         <button onClick={startNew} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 rounded-lg text-xs font-medium transition-colors">
-          <Plus size={12} /> Tạo mới
+          <Plus size={12} /> {t('admin.createNew')}
         </button>
       </div>
 
@@ -1039,52 +1051,52 @@ function AdminAnnouncementsPanel({ showToast, askConfirm }) {
           <input
             value={form.title}
             onChange={(e) => setForm(p => ({ ...p, title: e.target.value }))}
-            placeholder="Tiêu đề thông báo..."
+            placeholder={t('admin.announcementTitlePlaceholder')}
             className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary-500/50"
           />
           <textarea
             value={form.content}
             onChange={(e) => setForm(p => ({ ...p, content: e.target.value }))}
-            placeholder="Nội dung chi tiết (tùy chọn)..."
+            placeholder={t('admin.announcementContentPlaceholder')}
             rows={3}
             className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-primary-500/50"
           />
           
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-muted mb-1 block">Loại thông báo</label>
+              <label className="text-xs text-muted mb-1 block">{t('admin.announcementType')}</label>
               <select
                 value={form.type}
                 onChange={(e) => setForm(p => ({ ...p, type: e.target.value }))}
                 className="w-full bg-bg border border-line rounded-lg px-2 py-1.5 text-xs focus:outline-none cursor-pointer"
               >
-                <option value="info">ℹ️ Thông tin</option>
-                <option value="warning">⚠️ Cảnh báo</option>
-                <option value="update">🔔 Cập nhật</option>
-                <option value="important">📢 Quan trọng</option>
+                <option value="info">ℹ️ {t('admin.typeInfo')}</option>
+                <option value="warning">⚠️ {t('admin.typeWarning')}</option>
+                <option value="update">🔔 {t('admin.typeUpdate')}</option>
+                <option value="important">📢 {t('admin.typeImportant')}</option>
               </select>
             </div>
             
             <div>
-              <label className="text-xs text-muted mb-1 block">Đối tượng</label>
+              <label className="text-xs text-muted mb-1 block">{t('admin.targetAudience')}</label>
               <select
                 value={form.target_audience}
                 onChange={(e) => setForm(p => ({ ...p, target_audience: e.target.value }))}
                 className="w-full bg-bg border border-line rounded-lg px-2 py-1.5 text-xs focus:outline-none cursor-pointer"
               >
-                <option value="all">🌍 Tất cả (cả chưa đăng ký)</option>
-                <option value="registered">👤 Người dùng đã đăng ký</option>
-                <option value="free">📦 Gói Free</option>
-                <option value="basic">⭐ Gói Basic</option>
-                <option value="pro">💎 Gói Pro</option>
-                <option value="unlimited">👑 Gói Unlimited</option>
+                <option value="all">🌍 {t('admin.targetAllWithGuests')}</option>
+                <option value="registered">👤 {t('admin.targetRegisteredUsers')}</option>
+                <option value="free">📦 {t('admin.targetPlanFreeFull')}</option>
+                <option value="basic">⭐ {t('admin.targetPlanBasicFull')}</option>
+                <option value="pro">💎 {t('admin.targetPlanProFull')}</option>
+                <option value="unlimited">👑 {t('admin.targetPlanUnlimitedFull')}</option>
               </select>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-muted mb-1 block">Hết hạn (tùy chọn)</label>
+              <label className="text-xs text-muted mb-1 block">{t('admin.expiryOptional')}</label>
               <input
                 type="datetime-local"
                 value={form.expires_at}
@@ -1094,12 +1106,12 @@ function AdminAnnouncementsPanel({ showToast, askConfirm }) {
             </div>
             
             <div>
-              <label className="text-xs text-muted mb-1 block">Tự ẩn sau (ngày)</label>
+              <label className="text-xs text-muted mb-1 block">{t('admin.autoDismissDays')}</label>
               <input
                 type="number"
                 value={form.auto_dismiss_days}
                 onChange={(e) => setForm(p => ({ ...p, auto_dismiss_days: e.target.value }))}
-                placeholder="Vĩnh viễn nếu để trống"
+                placeholder={t('admin.permanentIfEmpty')}
                 className="w-full bg-bg border border-line rounded-lg px-2 py-1.5 text-xs focus:outline-none"
                 min="1"
               />
@@ -1108,23 +1120,23 @@ function AdminAnnouncementsPanel({ showToast, askConfirm }) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-muted mb-1 block">Link URL (tùy chọn)</label>
+              <label className="text-xs text-muted mb-1 block">{t('admin.linkUrlOptional')}</label>
               <input
                 type="url"
                 value={form.link_url}
                 onChange={(e) => setForm(p => ({ ...p, link_url: e.target.value }))}
-                placeholder="https://..."
+                placeholder={t('admin.urlPlaceholder')}
                 className="w-full bg-bg border border-line rounded-lg px-2 py-1.5 text-xs focus:outline-none"
               />
             </div>
             
             <div>
-              <label className="text-xs text-muted mb-1 block">Văn bản link</label>
+              <label className="text-xs text-muted mb-1 block">{t('admin.linkText')}</label>
               <input
                 type="text"
                 value={form.link_text}
                 onChange={(e) => setForm(p => ({ ...p, link_text: e.target.value }))}
-                placeholder="Xem thêm"
+                placeholder={t('announcement.readMore')}
                 className="w-full bg-bg border border-line rounded-lg px-2 py-1.5 text-xs focus:outline-none"
               />
             </div>
@@ -1132,7 +1144,7 @@ function AdminAnnouncementsPanel({ showToast, askConfirm }) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-muted mb-1 block">Độ ưu tiên (càng cao càng lên trên)</label>
+              <label className="text-xs text-muted mb-1 block">{t('admin.priority')}</label>
               <input
                 type="number"
                 value={form.priority}
@@ -1144,21 +1156,21 @@ function AdminAnnouncementsPanel({ showToast, askConfirm }) {
             <div className="flex flex-col gap-2 pt-5">
               <label className="flex items-center gap-1.5 text-xs">
                 <input type="checkbox" checked={!!form.is_active} onChange={(e) => setForm(p => ({ ...p, is_active: e.target.checked ? 1 : 0 }))} />
-                Đang hoạt động
+                {t('admin.active')}
               </label>
               <label className="flex items-center gap-1.5 text-xs">
                 <input type="checkbox" checked={!!form.dismissible} onChange={(e) => setForm(p => ({ ...p, dismissible: e.target.checked ? 1 : 0 }))} />
-                Cho phép ẩn
+                {t('admin.allowDismiss')}
               </label>
             </div>
           </div>
 
           <div className="flex gap-2 pt-2">
             <button onClick={handleSave} className="flex items-center gap-1 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 rounded-lg text-xs font-medium transition-colors">
-              <Save size={12} /> Lưu
+              <Save size={12} /> {t('common.save')}
             </button>
             <button onClick={() => setEditing(null)} className="px-3 py-1.5 bg-surface-2 hover:bg-line rounded-lg text-xs transition-colors">
-              Hủy
+              {t('common.cancel')}
             </button>
           </div>
         </div>
@@ -1169,7 +1181,7 @@ function AdminAnnouncementsPanel({ showToast, askConfirm }) {
       ) : announcements.length === 0 ? (
         <div className="text-center py-8 text-muted">
           <Megaphone size={28} className="mx-auto mb-2 opacity-40" />
-          <p className="text-sm">Chưa có thông báo nào</p>
+          <p className="text-sm">{t('admin.noAnnouncements')}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -1179,7 +1191,7 @@ function AdminAnnouncementsPanel({ showToast, askConfirm }) {
                 <div className="flex items-center gap-2 flex-wrap mb-1">
                   <p className="font-medium text-sm">{a.title}</p>
                   <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${a.is_active ? 'bg-emerald-500/15 text-emerald-400' : 'bg-surface-2 text-muted'}`}>
-                    {a.is_active ? 'Đang hiển thị' : 'Đã ẩn'}
+                    {a.is_active ? t('admin.showing') : t('admin.hidden')}
                   </span>
                   <span className="px-1.5 py-0.5 bg-blue-500/15 text-blue-400 rounded text-[10px] font-medium">{a.type}</span>
                   <span className="px-1.5 py-0.5 bg-purple-500/15 text-purple-400 rounded text-[10px] font-medium">
@@ -1187,16 +1199,16 @@ function AdminAnnouncementsPanel({ showToast, askConfirm }) {
                   </span>
                   {a.priority > 0 && (
                     <span className="px-1.5 py-0.5 bg-amber-500/15 text-amber-400 rounded text-[10px] font-medium">
-                      ⚡ Ưu tiên {a.priority}
+                      ⚡ {t('admin.priorityValue', { value: a.priority })}
                     </span>
                   )}
                 </div>
                 {a.content && <p className="text-xs text-muted line-clamp-2">{a.content}</p>}
                 <div className="flex items-center gap-3 mt-2 text-[10px] text-muted">
-                  {a.expires_at && <span>⏰ Hết hạn: {new Date(a.expires_at).toLocaleString('vi-VN')}</span>}
-                  {a.auto_dismiss_days && <span>🔄 Tự ẩn sau {a.auto_dismiss_days} ngày</span>}
-                  {a.link_url && <span>🔗 Có link</span>}
-                  {!a.dismissible && <span>🔒 Không cho ẩn</span>}
+                  {a.expires_at && <span>⏰ {t('admin.expiredAt')}: {new Date(a.expires_at).toLocaleString(dateLocale)}</span>}
+                  {a.auto_dismiss_days && <span>🔄 {t('admin.autoDismissAfterDays', { days: a.auto_dismiss_days })}</span>}
+                  {a.link_url && <span>🔗 {t('admin.hasLink')}</span>}
+                  {!a.dismissible && <span>🔒 {t('admin.notDismissible')}</span>}
                 </div>
               </div>
               <div className="flex items-center gap-1 shrink-0">
@@ -1213,6 +1225,8 @@ function AdminAnnouncementsPanel({ showToast, askConfirm }) {
 
 // ── Admin Audit Log Panel ─────────────────────────────
 function AdminAuditPanel() {
+  const { t, language } = useLanguage();
+  const dateLocale = language === 'vi' ? 'vi-VN' : 'en-US';
   const [logs, setLogs] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -1241,26 +1255,26 @@ function AdminAuditPanel() {
       ) : logs.length === 0 ? (
         <div className="text-center py-8 text-muted">
           <ScrollText size={28} className="mx-auto mb-2 opacity-40" />
-          <p className="text-sm">Chưa có nhật ký hoạt động</p>
+          <p className="text-sm">{t('admin.noAuditLogs')}</p>
         </div>
       ) : (
         <div className="bg-surface border border-line rounded-xl overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-line text-muted text-xs uppercase tracking-wider">
-                <th className="text-left py-3 px-4">Thời gian</th>
-                <th className="text-left py-3 px-4">Admin</th>
-                <th className="text-left py-3 px-4">Hành động</th>
-                <th className="text-left py-3 px-4 hidden sm:table-cell">Chi tiết</th>
+                <th className="text-left py-3 px-4">{t('admin.time')}</th>
+                <th className="text-left py-3 px-4">{t('admin.admin')}</th>
+                <th className="text-left py-3 px-4">{t('admin.actions')}</th>
+                <th className="text-left py-3 px-4 hidden sm:table-cell">{t('admin.details')}</th>
               </tr>
             </thead>
             <tbody>
               {logs.map(log => (
                 <tr key={log.id} className="border-b border-line last:border-b-0 hover:bg-surface-2/50">
                   <td className="py-2.5 px-4 text-xs text-muted whitespace-nowrap">
-                    {new Date(log.created_at).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                    {new Date(log.created_at).toLocaleString(dateLocale, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                   </td>
-                  <td className="py-2.5 px-4 text-xs font-medium">{log.admin_username || 'System'}</td>
+                  <td className="py-2.5 px-4 text-xs font-medium">{log.admin_username || t('admin.system')}</td>
                   <td className="py-2.5 px-4">
                     <span className="px-2 py-0.5 bg-primary-500/10 text-primary-400 rounded text-[11px] font-medium">{log.action}</span>
                   </td>
@@ -1277,7 +1291,7 @@ function AdminAuditPanel() {
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">
           <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1} className="p-1.5 rounded-lg bg-surface hover:bg-surface-2 disabled:opacity-40 transition-colors"><ChevronLeft size={16} /></button>
-          <span className="text-sm text-muted">Trang {page}/{totalPages}</span>
+          <span className="text-sm text-muted">{t('admin.pageOf', { page, total: totalPages })}</span>
           <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="p-1.5 rounded-lg bg-surface hover:bg-surface-2 disabled:opacity-40 transition-colors"><ChevronRight size={16} /></button>
         </div>
       )}
@@ -1290,6 +1304,7 @@ function AdminAuditPanel() {
 // ═══════════════════════════════════════════════════════
 
 function RealtimeDashboard() {
+  const { t } = useLanguage();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -1308,7 +1323,7 @@ function RealtimeDashboard() {
   }, []);
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-primary-400" /></div>;
-  if (!data) return <div className="text-center py-8 text-muted">Không thể tải dữ liệu</div>;
+  if (!data) return <div className="text-center py-8 text-muted">{t('admin.loadDataError')}</div>;
 
   const uptimeStr = data.uptime ? `${Math.floor(data.uptime / 3600000)}h ${Math.floor((data.uptime % 3600000) / 60000)}m` : '—';
   const sparkMax = Math.max(1, ...(data.sparkline || []));
@@ -1317,34 +1332,34 @@ function RealtimeDashboard() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center gap-2 text-xs text-muted">
         <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-        Tự động cập nhật mỗi 10 giây · Uptime: {uptimeStr}
+        {t('admin.autoRefresh10s', { uptime: uptimeStr })}
       </div>
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <StatCard icon={<Users size={16} />} label="Users hôm nay" value={data.activeUsersToday} color="#60a5fa" />
-        <StatCard icon={<TrendingUp size={16} />} label="Uploads/giờ" value={data.uploadsLastHour} color="#34d399" />
-        <StatCard icon={<Brain size={16} />} label="AI calls/giờ" value={data.aiCallsLastHour} color="#a78bfa" />
-        <StatCard icon={<AlertOctagon size={16} />} label="AI errors/giờ" value={data.aiErrorsLastHour} color="#f87171" />
-        <StatCard icon={<Zap size={16} />} label="Chat msgs/giờ" value={data.chatMsgsLastHour} color="#fbbf24" />
+        <StatCard icon={<Users size={16} />} label={t('admin.usersToday')} value={data.activeUsersToday} color="#60a5fa" />
+        <StatCard icon={<TrendingUp size={16} />} label={t('admin.uploadsPerHour')} value={data.uploadsLastHour} color="#34d399" />
+        <StatCard icon={<Brain size={16} />} label={t('admin.aiCallsPerHour')} value={data.aiCallsLastHour} color="#a78bfa" />
+        <StatCard icon={<AlertOctagon size={16} />} label={t('admin.aiErrorsPerHour')} value={data.aiErrorsLastHour} color="#f87171" />
+        <StatCard icon={<Zap size={16} />} label={t('admin.chatMessagesPerHour')} value={data.chatMsgsLastHour} color="#fbbf24" />
       </div>
 
       {/* Sparkline — AI calls last 12 hours */}
       {data.sparkline?.length > 0 && (
         <div className="bg-surface border border-line rounded-xl p-4">
-          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><Activity size={14} className="text-primary-400" /> AI Calls - 12 giờ qua</h3>
+          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><Activity size={14} className="text-primary-400" /> {t('admin.aiCallsLast12h')}</h3>
           <div className="flex items-end gap-1 h-20">
             {data.sparkline.map((v, i) => {
               const h = Math.max(4, (v / sparkMax) * 100);
               return (
-                <div key={i} className="flex-1 flex flex-col items-center gap-1" title={`${v} calls`}>
+                <div key={i} className="flex-1 flex flex-col items-center gap-1" title={t('admin.callsCount', { count: v })}>
                   <div className="w-full bg-primary-500/60 rounded-t transition-all" style={{ height: `${h}%` }} />
                 </div>
               );
             })}
           </div>
           <div className="flex justify-between text-[9px] text-muted mt-1">
-            <span>-12h</span>
-            <span>-6h</span>
-            <span>Now</span>
+            <span>{t('admin.minus12h')}</span>
+            <span>{t('admin.minus6h')}</span>
+            <span>{t('admin.now')}</span>
           </div>
         </div>
       )}
@@ -1357,6 +1372,8 @@ function RealtimeDashboard() {
 // ═══════════════════════════════════════════════════════
 
 function UserDetailDrawer({ userId, onClose }) {
+  const { t, language } = useLanguage();
+  const dateLocale = language === 'vi' ? 'vi-VN' : 'en-US';
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -1369,14 +1386,14 @@ function UserDetailDrawer({ userId, onClose }) {
       <div className="absolute inset-0 bg-black/40" />
       <div className="relative w-full max-w-lg bg-bg border-l border-line h-full overflow-y-auto animate-slide-in-right" onClick={e => e.stopPropagation()}>
         <div className="sticky top-0 bg-bg/80 backdrop-blur-md border-b border-line px-5 py-4 flex items-center justify-between z-10">
-          <h2 className="font-bold flex items-center gap-2"><Users size={16} className="text-primary-400" /> Chi tiết User</h2>
+          <h2 className="font-bold flex items-center gap-2"><Users size={16} className="text-primary-400" /> {t('admin.userDetails')}</h2>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-surface-2"><X size={16} /></button>
         </div>
 
         {loading ? (
           <div className="flex justify-center py-20"><Loader2 size={24} className="animate-spin text-primary-400" /></div>
         ) : !data ? (
-          <div className="text-center py-12 text-muted">Không tìm thấy dữ liệu</div>
+          <div className="text-center py-12 text-muted">{t('admin.noDataFound')}</div>
         ) : (
           <div className="p-5 space-y-6">
             {/* User info */}
@@ -1390,7 +1407,7 @@ function UserDetailDrawer({ userId, onClose }) {
                 <div className="flex items-center gap-2 mt-1">
                   <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-primary-600/15 text-primary-400">{data.user.plan}</span>
                   <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-surface-2 text-muted">{data.user.role}</span>
-                  {data.user.is_banned && <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-red-500/15 text-red-400">BANNED</span>}
+                  {data.user.is_banned && <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-red-500/15 text-red-400">{t('admin.bannedUpper')}</span>}
                 </div>
               </div>
             </div>
@@ -1399,36 +1416,36 @@ function UserDetailDrawer({ userId, onClose }) {
             <div className="grid grid-cols-3 gap-3">
               <div className="bg-surface border border-line rounded-xl p-3 text-center">
                 <p className="text-lg font-bold text-primary-400">{data.totalDocs}</p>
-                <p className="text-[10px] text-muted">Tài liệu</p>
+                <p className="text-[10px] text-muted">{t('admin.documents')}</p>
               </div>
               <div className="bg-surface border border-line rounded-xl p-3 text-center">
                 <p className="text-lg font-bold text-emerald-400">{data.streak?.current_streak || 0}</p>
-                <p className="text-[10px] text-muted">Streak</p>
+                <p className="text-[10px] text-muted">{t('admin.streak')}</p>
               </div>
               <div className="bg-surface border border-line rounded-xl p-3 text-center">
                 <p className="text-lg font-bold text-purple-400">{data.aiUsage?.count || 0}</p>
-                <p className="text-[10px] text-muted">AI Calls</p>
+                <p className="text-[10px] text-muted">{t('admin.aiCalls')}</p>
               </div>
             </div>
 
             {/* Account info */}
             <div className="bg-surface border border-line rounded-xl p-4 space-y-2">
-              <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Thông tin</h3>
-              <div className="flex justify-between text-xs"><span className="text-muted">Đăng ký</span><span>{new Date(data.user.created_at).toLocaleDateString('vi-VN')}</span></div>
-              <div className="flex justify-between text-xs"><span className="text-muted">Email verified</span><span>{data.user.email_verified ? '✓' : '✗'}</span></div>
-              <div className="flex justify-between text-xs"><span className="text-muted">AI Tokens used</span><span>{(data.aiUsage?.tokens || 0).toLocaleString()}</span></div>
-              {data.user.plan_expires_at && <div className="flex justify-between text-xs"><span className="text-muted">Plan hết hạn</span><span>{new Date(data.user.plan_expires_at).toLocaleDateString('vi-VN')}</span></div>}
+              <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">{t('admin.info')}</h3>
+              <div className="flex justify-between text-xs"><span className="text-muted">{t('admin.registeredAt')}</span><span>{new Date(data.user.created_at).toLocaleDateString(dateLocale)}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted">{t('admin.emailVerified')}</span><span>{data.user.email_verified ? '✓' : '✗'}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted">{t('admin.aiTokensUsed')}</span><span>{(data.aiUsage?.tokens || 0).toLocaleString()}</span></div>
+              {data.user.plan_expires_at && <div className="flex justify-between text-xs"><span className="text-muted">{t('admin.planExpires')}</span><span>{new Date(data.user.plan_expires_at).toLocaleDateString(dateLocale)}</span></div>}
             </div>
 
             {/* Recent Documents */}
             {data.documents?.length > 0 && (
               <div className="bg-surface border border-line rounded-xl p-4">
-                <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Tài liệu gần đây ({data.documents.length})</h3>
+                <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">{t('admin.recentDocumentsCount', { count: data.documents.length })}</h3>
                 <div className="space-y-1.5 max-h-40 overflow-y-auto">
                   {data.documents.slice(0, 10).map(d => (
                     <div key={d.id} className="flex items-center justify-between text-xs">
-                      <span className="truncate flex-1 mr-2">{d.original_name || 'Untitled'}</span>
-                      <span className="text-muted shrink-0">{new Date(d.created_at).toLocaleDateString('vi-VN')}</span>
+                      <span className="truncate flex-1 mr-2">{d.original_name || t('admin.untitled')}</span>
+                      <span className="text-muted shrink-0">{new Date(d.created_at).toLocaleDateString(dateLocale)}</span>
                     </div>
                   ))}
                 </div>
@@ -1438,12 +1455,12 @@ function UserDetailDrawer({ userId, onClose }) {
             {/* Login History */}
             {data.loginHistory?.length > 0 && (
               <div className="bg-surface border border-line rounded-xl p-4">
-                <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Lịch sử đăng nhập</h3>
+                <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">{t('admin.loginHistory')}</h3>
                 <div className="space-y-1.5 max-h-40 overflow-y-auto">
                   {data.loginHistory.map((l, i) => (
                     <div key={i} className="flex items-center justify-between text-xs">
                       <span className="font-mono text-muted">{l.ip_address || '?'}</span>
-                      <span className="text-muted">{new Date(l.created_at).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                      <span className="text-muted">{new Date(l.created_at).toLocaleString(dateLocale, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                   ))}
                 </div>
@@ -1453,7 +1470,7 @@ function UserDetailDrawer({ userId, onClose }) {
             {/* Activity timeline */}
             {data.recentActivity?.length > 0 && (
               <div className="bg-surface border border-line rounded-xl p-4">
-                <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">Hoạt động gần đây</h3>
+                <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">{t('admin.recentActivity')}</h3>
                 <div className="flex items-end gap-1 h-16">
                   {data.recentActivity.slice(0, 14).reverse().map((a, i) => {
                     const total = (a.flashcards_reviewed || 0) + (a.quizzes_completed || 0) + (a.documents_uploaded || 0) + (a.chat_messages || 0);
@@ -1475,6 +1492,7 @@ function UserDetailDrawer({ userId, onClose }) {
 // ═══════════════════════════════════════════════════════
 
 function AiUsagePanel() {
+  const { t } = useLanguage();
   const [data, setData] = useState(null);
   const [days, setDays] = useState(7);
   const [loading, setLoading] = useState(true);
@@ -1485,32 +1503,32 @@ function AiUsagePanel() {
   }, [days]);
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-primary-400" /></div>;
-  if (!data) return <div className="text-center py-8 text-muted">Không thể tải dữ liệu</div>;
+  if (!data) return <div className="text-center py-8 text-muted">{t('admin.loadDataError')}</div>;
 
   const dailyMax = Math.max(1, ...(data.daily || []).map(d => d.calls || 0));
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold flex items-center gap-2"><Brain size={14} className="text-primary-400" /> AI Usage Monitoring</h3>
+        <h3 className="text-sm font-semibold flex items-center gap-2"><Brain size={14} className="text-primary-400" /> {t('admin.aiUsageMonitoring')}</h3>
         <div className="flex gap-1 bg-surface p-1 rounded-xl">
           {[7, 14, 30].map(d => (
-            <button key={d} onClick={() => setDays(d)} className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${days === d ? 'bg-primary-600 text-white' : 'text-muted hover:text-txt'}`}>{d}d</button>
+            <button key={d} onClick={() => setDays(d)} className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${days === d ? 'bg-primary-600 text-white' : 'text-muted hover:text-txt'}`}>{t('admin.daysShort', { count: d })}</button>
           ))}
         </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard icon={<Zap size={16} />} label="Tổng calls" value={data.totalCalls} color="#a78bfa" />
-        <StatCard icon={<Database size={16} />} label="Tổng tokens" value={(data.totalTokens || 0).toLocaleString()} color="#60a5fa" />
-        <StatCard icon={<Clock size={16} />} label="Avg latency" value={`${data.avgLatency}ms`} color="#34d399" />
-        <StatCard icon={<AlertOctagon size={16} />} label="Errors" value={data.errorRate} color="#f87171" />
+        <StatCard icon={<Zap size={16} />} label={t('admin.totalCalls')} value={data.totalCalls} color="#a78bfa" />
+        <StatCard icon={<Database size={16} />} label={t('admin.totalTokens')} value={(data.totalTokens || 0).toLocaleString()} color="#60a5fa" />
+        <StatCard icon={<Clock size={16} />} label={t('admin.avgLatency')} value={`${data.avgLatency}ms`} color="#34d399" />
+        <StatCard icon={<AlertOctagon size={16} />} label={t('admin.errors')} value={data.errorRate} color="#f87171" />
       </div>
 
       {/* Daily chart */}
       {data.daily?.length > 0 && (
         <div className="bg-surface border border-line rounded-xl p-4">
-          <h4 className="text-xs font-semibold mb-3">Calls theo ngày</h4>
+          <h4 className="text-xs font-semibold mb-3">{t('admin.callsByDay')}</h4>
           <div className="flex items-end gap-1 h-24">
             {data.daily.map(d => (
               <div key={d.date} className="flex-1 flex flex-col items-center gap-1">
@@ -1526,7 +1544,7 @@ function AiUsagePanel() {
       {/* By action */}
       {data.byAction?.length > 0 && (
         <div className="bg-surface border border-line rounded-xl p-4">
-          <h4 className="text-xs font-semibold mb-3">Theo hành động</h4>
+          <h4 className="text-xs font-semibold mb-3">{t('admin.byAction')}</h4>
           <div className="space-y-2">
             {data.byAction.map(a => (
               <div key={a.action} className="flex items-center gap-3 text-xs">
@@ -1545,13 +1563,13 @@ function AiUsagePanel() {
       {/* Top users */}
       {data.topUsers?.length > 0 && (
         <div className="bg-surface border border-line rounded-xl p-4">
-          <h4 className="text-xs font-semibold mb-3">Top Users (AI calls)</h4>
+          <h4 className="text-xs font-semibold mb-3">{t('admin.topUsersAiCalls')}</h4>
           <div className="space-y-2">
             {data.topUsers.map((u, i) => (
               <div key={u.id} className="flex items-center gap-3 text-xs">
                 <span className="w-5 text-center font-bold text-muted">{i + 1}</span>
                 <span className="flex-1 truncate">{u.display_name || u.username}</span>
-                <span className="text-primary-400 font-medium">{u.calls} calls</span>
+                <span className="text-primary-400 font-medium">{t('admin.callsCount', { count: u.calls })}</span>
                 <span className="text-muted">{(u.tokens || 0).toLocaleString()} tokens</span>
               </div>
             ))}
@@ -1567,6 +1585,8 @@ function AiUsagePanel() {
 // ═══════════════════════════════════════════════════════
 
 function ModerationPanel({ showToast, askConfirm }) {
+  const { t, language } = useLanguage();
+  const dateLocale = language === 'vi' ? 'vi-VN' : 'en-US';
   const [reports, setReports] = useState([]);
   const [statusFilter, setStatusFilter] = useState('pending');
   const [loading, setLoading] = useState(true);
@@ -1586,12 +1606,12 @@ function ModerationPanel({ showToast, askConfirm }) {
   useEffect(() => { fetchReports(); }, [statusFilter, page]);
 
   const handleReview = (reportId, status, label) => {
-    askConfirm('Xem xét báo cáo', `Đánh dấu báo cáo là "${label}"?`, status === 'approved' ? 'danger' : 'info', async () => {
+    askConfirm(t('admin.reviewReportTitle'), t('admin.reviewReportMessage', { label }), status === 'approved' ? 'danger' : 'info', async () => {
       try {
         await adminReviewReport(reportId, status);
-        showToast('success', `Đã ${label}`);
+        showToast('success', t('admin.reviewReportSuccess', { label }));
         fetchReports();
-      } catch { showToast('error', 'Lỗi xử lý'); }
+      } catch { showToast('error', t('admin.processError')); }
     });
   };
 
@@ -1600,11 +1620,11 @@ function ModerationPanel({ showToast, askConfirm }) {
   return (
     <div className="space-y-4 animate-fade-in">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold flex items-center gap-2"><Flag size={14} className="text-primary-400" /> Kiểm duyệt nội dung</h3>
+        <h3 className="text-sm font-semibold flex items-center gap-2"><Flag size={14} className="text-primary-400" /> {t('admin.contentModeration')}</h3>
         <div className="flex gap-1 bg-surface p-1 rounded-xl">
           {['pending', 'approved', 'rejected'].map(s => (
             <button key={s} onClick={() => { setStatusFilter(s); setPage(1); }} className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${statusFilter === s ? 'bg-primary-600 text-white' : 'text-muted hover:text-txt'}`}>
-              {s === 'pending' ? 'Chờ duyệt' : s === 'approved' ? 'Đã duyệt' : 'Từ chối'}
+              {s === 'pending' ? t('admin.pendingReview') : s === 'approved' ? t('admin.approved') : t('admin.rejected')}
             </button>
           ))}
         </div>
@@ -1615,7 +1635,7 @@ function ModerationPanel({ showToast, askConfirm }) {
       ) : reports.length === 0 ? (
         <div className="bg-surface border border-line rounded-xl p-12 text-center text-muted">
           <Flag size={32} className="mx-auto mb-2 opacity-40" />
-          <p className="text-sm">Không có báo cáo nào</p>
+          <p className="text-sm">{t('admin.noReports')}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -1625,17 +1645,17 @@ function ModerationPanel({ showToast, askConfirm }) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
                     <span className="px-2 py-0.5 bg-amber-500/10 text-amber-400 rounded text-[10px] font-bold">{r.target_type}</span>
-                    <span className="text-xs text-muted">bởi {r.reporter_name || r.reporter_username}</span>
-                    <span className="text-[10px] text-muted">{new Date(r.created_at).toLocaleDateString('vi-VN')}</span>
+                    <span className="text-xs text-muted">{t('admin.by')} {r.reporter_name || r.reporter_username}</span>
+                    <span className="text-[10px] text-muted">{new Date(r.created_at).toLocaleDateString(dateLocale)}</span>
                   </div>
-                  <p className="text-sm font-medium mb-1">Lý do: {r.reason}</p>
+                  <p className="text-sm font-medium mb-1">{t('admin.reason')}: {r.reason}</p>
                   {r.details && <p className="text-xs text-muted">{r.details}</p>}
-                  <p className="text-[10px] text-muted mt-1">Target ID: {r.target_id}</p>
+                  <p className="text-[10px] text-muted mt-1">{t('admin.targetId')}: {r.target_id}</p>
                 </div>
                 {r.status === 'pending' && (
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <button onClick={() => handleReview(r.id, 'approved', 'Chấp nhận & xóa nội dung')} className="px-2.5 py-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg text-xs transition-colors">Chấp nhận</button>
-                    <button onClick={() => handleReview(r.id, 'rejected', 'Từ chối')} className="px-2.5 py-1.5 bg-surface-2 text-muted hover:text-txt rounded-lg text-xs transition-colors">Từ chối</button>
+                    <button onClick={() => handleReview(r.id, 'approved', t('admin.approveAndDeleteContent'))} className="px-2.5 py-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg text-xs transition-colors">{t('admin.approve')}</button>
+                    <button onClick={() => handleReview(r.id, 'rejected', t('admin.rejected'))} className="px-2.5 py-1.5 bg-surface-2 text-muted hover:text-txt rounded-lg text-xs transition-colors">{t('admin.reject')}</button>
                   </div>
                 )}
               </div>
@@ -1660,6 +1680,7 @@ function ModerationPanel({ showToast, askConfirm }) {
 // ═══════════════════════════════════════════════════════
 
 function SystemHealthPanel() {
+  const { t } = useLanguage();
   const [health, setHealth] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -1671,7 +1692,7 @@ function SystemHealthPanel() {
   useEffect(() => { fetchHealth(); const i = setInterval(fetchHealth, 15000); return () => clearInterval(i); }, []);
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-primary-400" /></div>;
-  if (!health) return <div className="text-center py-8 text-muted">Không thể tải</div>;
+  if (!health) return <div className="text-center py-8 text-muted">{t('admin.loadFailed')}</div>;
 
   const fmt = (bytes) => bytes > 1073741824 ? `${(bytes / 1073741824).toFixed(1)} GB` : `${(bytes / 1048576).toFixed(1)} MB`;
   const memPct = Math.round((1 - (health.system?.freeMem || 0) / (health.system?.totalMem || 1)) * 100);
@@ -1680,24 +1701,24 @@ function SystemHealthPanel() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center gap-2 text-xs text-muted">
-        <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" /> Cập nhật mỗi 15s
+        <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" /> {t('admin.refreshEvery15s')}
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard icon={<Clock size={16} />} label="Uptime" value={uptimeStr} color="#34d399" />
-        <StatCard icon={<Cpu size={16} />} label="CPU cores" value={health.system?.cpuCount} color="#60a5fa" />
-        <StatCard icon={<HardDrive size={16} />} label="RAM used" value={`${memPct}%`} color={memPct > 85 ? '#f87171' : '#a78bfa'} />
-        <StatCard icon={<Database size={16} />} label="DB size" value={fmt(health.storage?.dbSize || 0)} color="#fbbf24" />
+        <StatCard icon={<Clock size={16} />} label={t('admin.uptime')} value={uptimeStr} color="#34d399" />
+        <StatCard icon={<Cpu size={16} />} label={t('admin.cpuCores')} value={health.system?.cpuCount} color="#60a5fa" />
+        <StatCard icon={<HardDrive size={16} />} label={t('admin.ramUsed')} value={`${memPct}%`} color={memPct > 85 ? '#f87171' : '#a78bfa'} />
+        <StatCard icon={<Database size={16} />} label={t('admin.dbSize')} value={fmt(health.storage?.dbSize || 0)} color="#fbbf24" />
       </div>
 
       {/* Memory breakdown */}
       <div className="bg-surface border border-line rounded-xl p-4">
-        <h4 className="text-xs font-semibold mb-3">Memory</h4>
+        <h4 className="text-xs font-semibold mb-3">{t('admin.memory')}</h4>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
           <div><span className="text-muted">RSS</span><p className="font-medium">{fmt(health.memory?.rss || 0)}</p></div>
-          <div><span className="text-muted">Heap Used</span><p className="font-medium">{fmt(health.memory?.heapUsed || 0)}</p></div>
-          <div><span className="text-muted">Heap Total</span><p className="font-medium">{fmt(health.memory?.heapTotal || 0)}</p></div>
-          <div><span className="text-muted">System Free</span><p className="font-medium">{fmt(health.system?.freeMem || 0)}</p></div>
+          <div><span className="text-muted">{t('admin.heapUsed')}</span><p className="font-medium">{fmt(health.memory?.heapUsed || 0)}</p></div>
+          <div><span className="text-muted">{t('admin.heapTotal')}</span><p className="font-medium">{fmt(health.memory?.heapTotal || 0)}</p></div>
+          <div><span className="text-muted">{t('admin.systemFree')}</span><p className="font-medium">{fmt(health.system?.freeMem || 0)}</p></div>
         </div>
         <div className="mt-3 h-3 bg-surface-2 rounded-full overflow-hidden">
           <div className={`h-full rounded-full transition-all ${memPct > 85 ? 'bg-red-500' : memPct > 70 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${memPct}%` }} />
@@ -1707,23 +1728,23 @@ function SystemHealthPanel() {
 
       {/* System info */}
       <div className="bg-surface border border-line rounded-xl p-4">
-        <h4 className="text-xs font-semibold mb-3">System Info</h4>
+        <h4 className="text-xs font-semibold mb-3">{t('admin.systemInfo')}</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-          <div className="flex justify-between"><span className="text-muted">Platform</span><span>{health.system?.platform}</span></div>
+          <div className="flex justify-between"><span className="text-muted">{t('admin.platform')}</span><span>{health.system?.platform}</span></div>
           <div className="flex justify-between"><span className="text-muted">Node.js</span><span>{health.system?.nodeVersion}</span></div>
           <div className="flex justify-between"><span className="text-muted">CPU</span><span className="truncate ml-2">{health.system?.cpuModel}</span></div>
-          <div className="flex justify-between"><span className="text-muted">Uploads</span><span>{fmt(health.storage?.uploadsSize || 0)}</span></div>
-          <div className="flex justify-between"><span className="text-muted">Load avg</span><span>{(health.system?.loadAvg || []).map(l => l.toFixed(2)).join(' / ')}</span></div>
+          <div className="flex justify-between"><span className="text-muted">{t('admin.uploads')}</span><span>{fmt(health.storage?.uploadsSize || 0)}</span></div>
+          <div className="flex justify-between"><span className="text-muted">{t('admin.loadAvg')}</span><span>{(health.system?.loadAvg || []).map(l => l.toFixed(2)).join(' / ')}</span></div>
         </div>
       </div>
 
       {/* API errors */}
       <div className="bg-surface border border-line rounded-xl p-4">
-        <h4 className="text-xs font-semibold mb-3">API Health (24h)</h4>
+        <h4 className="text-xs font-semibold mb-3">{t('admin.apiHealth24h')}</h4>
         <div className="grid grid-cols-3 gap-4 text-xs mb-3">
-          <div><span className="text-muted">Total calls</span><p className="font-medium">{health.errors?.totalCalls24h}</p></div>
-          <div><span className="text-muted">Errors</span><p className="font-medium text-red-400">{health.errors?.totalErrors24h}</p></div>
-          <div><span className="text-muted">Avg response</span><p className="font-medium">{health.errors?.avgResponseTime}ms</p></div>
+          <div><span className="text-muted">{t('admin.totalCalls')}</span><p className="font-medium">{health.errors?.totalCalls24h}</p></div>
+          <div><span className="text-muted">{t('admin.errors')}</span><p className="font-medium text-red-400">{health.errors?.totalErrors24h}</p></div>
+          <div><span className="text-muted">{t('admin.avgResponse')}</span><p className="font-medium">{health.errors?.avgResponseTime}ms</p></div>
         </div>
         {health.errors?.recentErrors?.length > 0 && (
           <div className="space-y-1.5 max-h-32 overflow-y-auto">
@@ -1746,6 +1767,8 @@ function SystemHealthPanel() {
 // ═══════════════════════════════════════════════════════
 
 function EmailBlastPanel({ showToast }) {
+  const { t, language } = useLanguage();
+  const dateLocale = language === 'vi' ? 'vi-VN' : 'en-US';
   const [blasts, setBlasts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -1761,41 +1784,41 @@ function EmailBlastPanel({ showToast }) {
     setSending(true);
     try {
       const result = await adminSendEmailBlast(form.subject, form.content, form.targetFilter);
-      showToast('success', `Đang gửi đến ${result.totalRecipients} người`);
+      showToast('success', t('admin.sendingToRecipients', { count: result.totalRecipients }));
       setShowForm(false);
       setForm({ subject: '', content: '', targetFilter: 'all' });
       setTimeout(() => adminGetEmailBlasts().then(d => setBlasts(d.blasts || [])).catch(() => {}), 2000);
-    } catch { showToast('error', 'Lỗi gửi email'); }
+    } catch { showToast('error', t('admin.sendEmailError')); }
     setSending(false);
   };
 
   return (
     <div className="space-y-4 animate-fade-in">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold flex items-center gap-2"><Mail size={14} className="text-primary-400" /> Email Blast</h3>
+        <h3 className="text-sm font-semibold flex items-center gap-2"><Mail size={14} className="text-primary-400" /> {t('admin.emailBlast')}</h3>
         <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 rounded-lg text-xs font-medium transition-colors">
-          <Send size={12} /> Tạo email mới
+          <Send size={12} /> {t('admin.createNewEmail')}
         </button>
       </div>
 
       {showForm && (
         <div className="bg-surface border border-primary-500/30 rounded-xl p-4 space-y-3">
-          <input value={form.subject} onChange={e => setForm(p => ({ ...p, subject: e.target.value }))} placeholder="Tiêu đề email..." className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary-500/50" />
-          <textarea value={form.content} onChange={e => setForm(p => ({ ...p, content: e.target.value }))} placeholder="Nội dung email..." rows={4} className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-primary-500/50" />
+          <input value={form.subject} onChange={e => setForm(p => ({ ...p, subject: e.target.value }))} placeholder={t('admin.emailSubjectPlaceholder')} className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary-500/50" />
+          <textarea value={form.content} onChange={e => setForm(p => ({ ...p, content: e.target.value }))} placeholder={t('admin.emailContentPlaceholder')} rows={4} className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-primary-500/50" />
           <div className="flex items-center gap-3">
             <select value={form.targetFilter} onChange={e => setForm(p => ({ ...p, targetFilter: e.target.value }))} className="bg-bg border border-line rounded-lg px-2 py-1.5 text-xs cursor-pointer">
-              <option value="all">Tất cả users</option>
-              <option value="active">Hoạt động (7 ngày)</option>
-              <option value="inactive">Không hoạt động (30 ngày)</option>
-              <option value="plan:free">Free users</option>
-              <option value="plan:basic">Basic users</option>
-              <option value="plan:pro">Pro users</option>
-              <option value="plan:unlimited">Unlimited users</option>
+              <option value="all">{t('admin.targetAllUsers')}</option>
+              <option value="active">{t('admin.targetActive7d')}</option>
+              <option value="inactive">{t('admin.targetInactive30d')}</option>
+              <option value="plan:free">{t('admin.targetFreeUsers')}</option>
+              <option value="plan:basic">{t('admin.targetBasicUsers')}</option>
+              <option value="plan:pro">{t('admin.targetProUsers')}</option>
+              <option value="plan:unlimited">{t('admin.targetUnlimitedUsers')}</option>
             </select>
             <button onClick={handleSend} disabled={sending} className="flex items-center gap-1 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 rounded-lg text-xs font-medium transition-colors disabled:opacity-50">
-              {sending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />} Gửi
+              {sending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />} {t('admin.send')}
             </button>
-            <button onClick={() => setShowForm(false)} className="px-3 py-1.5 bg-surface-2 rounded-lg text-xs hover:bg-line transition-colors">Hủy</button>
+            <button onClick={() => setShowForm(false)} className="px-3 py-1.5 bg-surface-2 rounded-lg text-xs hover:bg-line transition-colors">{t('common.cancel')}</button>
           </div>
         </div>
       )}
@@ -1805,7 +1828,7 @@ function EmailBlastPanel({ showToast }) {
       ) : blasts.length === 0 ? (
         <div className="bg-surface border border-line rounded-xl p-12 text-center text-muted">
           <Mail size={32} className="mx-auto mb-2 opacity-40" />
-          <p className="text-sm">Chưa gửi email nào</p>
+          <p className="text-sm">{t('admin.noEmailSent')}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -1816,16 +1839,16 @@ function EmailBlastPanel({ showToast }) {
                 <div className="flex items-center gap-2 mt-1 text-xs text-muted">
                   <span>{b.sender_name || b.sender_username}</span>
                   <span>·</span>
-                  <span>{new Date(b.created_at).toLocaleDateString('vi-VN')}</span>
+                  <span>{new Date(b.created_at).toLocaleDateString(dateLocale)}</span>
                   <span>·</span>
-                  <span>Target: {b.target_filter}</span>
+                  <span>{t('admin.target')}: {b.target_filter}</span>
                 </div>
               </div>
               <div className="text-right shrink-0">
                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${b.status === 'completed' ? 'bg-emerald-500/15 text-emerald-400' : b.status === 'sending' ? 'bg-amber-500/15 text-amber-400' : 'bg-surface-2 text-muted'}`}>
                   {b.status}
                 </span>
-                <p className="text-xs text-muted mt-1">{b.sent_count}/{b.total_recipients} sent</p>
+                <p className="text-xs text-muted mt-1">{t('admin.sentProgress', { sent: b.sent_count, total: b.total_recipients })}</p>
               </div>
             </div>
           ))}
@@ -1840,6 +1863,7 @@ function EmailBlastPanel({ showToast }) {
 // ═══════════════════════════════════════════════════════
 
 function FeatureFlagsPanel({ showToast, askConfirm }) {
+  const { t } = useLanguage();
   const [flags, setFlags] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
@@ -1865,30 +1889,30 @@ function FeatureFlagsPanel({ showToast, askConfirm }) {
       if (editing === 'new') {
         const d = await adminCreateFeatureFlag(form);
         setFlags(prev => [...prev, d.flag]);
-        showToast('success', 'Đã tạo feature flag');
+        showToast('success', t('admin.featureFlagCreated'));
       } else {
         const d = await adminUpdateFeatureFlag(editing.id, form);
         setFlags(prev => prev.map(f => f.id === editing.id ? d.flag : f));
-        showToast('success', 'Đã cập nhật');
+        showToast('success', t('admin.updated'));
       }
       setEditing(null);
-    } catch { showToast('error', 'Lỗi'); }
+    } catch { showToast('error', t('common.error')); }
   };
 
   const handleToggle = async (flag) => {
     try {
       const d = await adminUpdateFeatureFlag(flag.id, { enabled: !flag.enabled });
       setFlags(prev => prev.map(f => f.id === flag.id ? d.flag : f));
-    } catch { showToast('error', 'Lỗi cập nhật'); }
+    } catch { showToast('error', t('admin.updateError')); }
   };
 
   const handleDelete = (id) => {
-    askConfirm('Xóa Feature Flag', 'Bạn có chắc?', 'danger', async () => {
+    askConfirm(t('admin.deleteFeatureFlagTitle'), t('admin.areYouSure'), 'danger', async () => {
       try {
         await adminDeleteFeatureFlag(id);
         setFlags(prev => prev.filter(f => f.id !== id));
-        showToast('success', 'Đã xóa');
-      } catch { showToast('error', 'Lỗi'); }
+        showToast('success', t('admin.deleted'));
+      } catch { showToast('error', t('common.error')); }
     });
   };
 
@@ -1902,21 +1926,21 @@ function FeatureFlagsPanel({ showToast, askConfirm }) {
   return (
     <div className="space-y-4 animate-fade-in">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold flex items-center gap-2"><ToggleLeft size={14} className="text-primary-400" /> Feature Flags</h3>
+        <h3 className="text-sm font-semibold flex items-center gap-2"><ToggleLeft size={14} className="text-primary-400" /> {t('admin.featureFlags')}</h3>
         <button onClick={startNew} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 rounded-lg text-xs font-medium transition-colors">
-          <Plus size={12} /> Thêm mới
+          <Plus size={12} /> {t('admin.createNew')}
         </button>
       </div>
 
       {editing && (
         <div className="bg-surface border border-primary-500/30 rounded-xl p-4 space-y-3">
-          <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Tên feature (vd: community_likes)..." className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary-500/50 font-mono" />
-          <input value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Mô tả..." className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary-500/50" />
+          <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder={t('admin.featureNamePlaceholder')} className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary-500/50 font-mono" />
+          <input value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder={t('admin.descriptionPlaceholder')} className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary-500/50" />
           <div className="flex items-center gap-3 flex-wrap">
             <label className="flex items-center gap-1.5 text-xs">
-              <input type="checkbox" checked={form.enabled} onChange={e => setForm(p => ({ ...p, enabled: e.target.checked }))} /> Bật
+              <input type="checkbox" checked={form.enabled} onChange={e => setForm(p => ({ ...p, enabled: e.target.checked }))} /> {t('admin.enable')}
             </label>
-            <span className="text-xs text-muted">Plans:</span>
+            <span className="text-xs text-muted">{t('admin.plansLabel')}</span>
             {ALL_PLANS.map(p => (
               <label key={p} className="flex items-center gap-1 text-xs">
                 <input type="checkbox" checked={form.plans.includes(p)} onChange={() => togglePlan(p)} /> {p}
@@ -1924,8 +1948,8 @@ function FeatureFlagsPanel({ showToast, askConfirm }) {
             ))}
           </div>
           <div className="flex gap-2">
-            <button onClick={handleSave} className="flex items-center gap-1 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 rounded-lg text-xs font-medium"><Save size={12} /> Lưu</button>
-            <button onClick={() => setEditing(null)} className="px-3 py-1.5 bg-surface-2 rounded-lg text-xs hover:bg-line">Hủy</button>
+            <button onClick={handleSave} className="flex items-center gap-1 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 rounded-lg text-xs font-medium"><Save size={12} /> {t('common.save')}</button>
+            <button onClick={() => setEditing(null)} className="px-3 py-1.5 bg-surface-2 rounded-lg text-xs hover:bg-line">{t('common.cancel')}</button>
           </div>
         </div>
       )}
@@ -1935,7 +1959,7 @@ function FeatureFlagsPanel({ showToast, askConfirm }) {
       ) : flags.length === 0 ? (
         <div className="bg-surface border border-line rounded-xl p-12 text-center text-muted">
           <ToggleLeft size={32} className="mx-auto mb-2 opacity-40" />
-          <p className="text-sm">Chưa có feature flag nào</p>
+          <p className="text-sm">{t('admin.noFeatureFlags')}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -1972,6 +1996,7 @@ function FeatureFlagsPanel({ showToast, askConfirm }) {
 // ═══════════════════════════════════════════════════════
 
 function ExportDataPanel({ showToast }) {
+  const { t } = useLanguage();
   const [exporting, setExporting] = useState('');
 
   const downloadCSV = (csv, filename) => {
@@ -1990,20 +2015,20 @@ function ExportDataPanel({ showToast }) {
       else if (type === 'documents') data = await adminExportDocuments();
       else data = await adminExportActivity();
       downloadCSV(data.csv, data.filename);
-      showToast('success', `Đã xuất ${data.count} bản ghi`);
-    } catch { showToast('error', 'Lỗi xuất dữ liệu'); }
+      showToast('success', t('admin.exportedRecords', { count: data.count }));
+    } catch { showToast('error', t('admin.exportDataError')); }
     setExporting('');
   };
 
   const exports = [
-    { type: 'users', label: 'Danh sách Users', desc: 'Username, email, plan, role, trạng thái', icon: Users, color: '#60a5fa' },
-    { type: 'documents', label: 'Danh sách Tài liệu', desc: 'ID, tiêu đề, trạng thái, tác giả', icon: FileText, color: '#34d399' },
-    { type: 'activity', label: 'Hoạt động Users', desc: 'Flashcards, quiz, uploads theo ngày', icon: Activity, color: '#a78bfa' },
+    { type: 'users', label: t('admin.exportUsersLabel'), desc: t('admin.exportUsersDesc'), icon: Users, color: '#60a5fa' },
+    { type: 'documents', label: t('admin.exportDocumentsLabel'), desc: t('admin.exportDocumentsDesc'), icon: FileText, color: '#34d399' },
+    { type: 'activity', label: t('admin.exportActivityLabel'), desc: t('admin.exportActivityDesc'), icon: Activity, color: '#a78bfa' },
   ];
 
   return (
     <div className="space-y-4 animate-fade-in">
-      <h3 className="text-sm font-semibold flex items-center gap-2"><Download size={14} className="text-primary-400" /> Xuất dữ liệu (CSV)</h3>
+      <h3 className="text-sm font-semibold flex items-center gap-2"><Download size={14} className="text-primary-400" /> {t('admin.exportDataCsv')}</h3>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {exports.map(exp => {
           const Icon = exp.icon;
@@ -2021,7 +2046,7 @@ function ExportDataPanel({ showToast }) {
                 className="flex items-center gap-1.5 px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
               >
                 {isLoading ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
-                Xuất CSV
+                {t('admin.exportCsv')}
               </button>
             </div>
           );
@@ -2036,6 +2061,8 @@ function ExportDataPanel({ showToast }) {
 // ═══════════════════════════════════════════════════════
 
 function LoginActivityPanel() {
+  const { t, language } = useLanguage();
+  const dateLocale = language === 'vi' ? 'vi-VN' : 'en-US';
   const [data, setData] = useState(null);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -2046,18 +2073,18 @@ function LoginActivityPanel() {
   }, [page]);
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-primary-400" /></div>;
-  if (!data) return <div className="text-center py-8 text-muted">Không thể tải</div>;
+  if (!data) return <div className="text-center py-8 text-muted">{t('admin.loadFailed')}</div>;
 
   const totalPages = data.totalPages || 1;
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <h3 className="text-sm font-semibold flex items-center gap-2"><MapPin size={14} className="text-primary-400" /> Login Activity</h3>
+      <h3 className="text-sm font-semibold flex items-center gap-2"><MapPin size={14} className="text-primary-400" /> {t('admin.loginActivity')}</h3>
 
       {/* IP Summary */}
       {data.ipSummary?.length > 0 && (
         <div className="bg-surface border border-line rounded-xl p-4">
-          <h4 className="text-xs font-semibold mb-3">Top IPs</h4>
+          <h4 className="text-xs font-semibold mb-3">{t('admin.topIps')}</h4>
           <div className="space-y-1.5">
             {data.ipSummary.slice(0, 10).map((ip, i) => (
               <div key={i} className="flex items-center gap-3 text-xs">
@@ -2066,7 +2093,7 @@ function LoginActivityPanel() {
                   <div className="h-full bg-primary-500/60 rounded-full" style={{ width: `${Math.min(100, (ip.count / (data.ipSummary[0]?.count || 1)) * 100)}%` }} />
                 </div>
                 <span className="text-muted w-8 text-right">{ip.count}</span>
-                <span className="text-muted w-10 text-right">{ip.unique_users}u</span>
+                <span className="text-muted w-10 text-right">{t('admin.usersShortCount', { count: ip.unique_users })}</span>
               </div>
             ))}
           </div>
@@ -2078,17 +2105,17 @@ function LoginActivityPanel() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-line text-muted text-xs uppercase tracking-wider">
-              <th className="text-left py-3 px-4">Thời gian</th>
-              <th className="text-left py-3 px-4">User</th>
-              <th className="text-left py-3 px-4">IP</th>
-              <th className="text-left py-3 px-4 hidden md:table-cell">Trạng thái</th>
+              <th className="text-left py-3 px-4">{t('admin.time')}</th>
+              <th className="text-left py-3 px-4">{t('admin.user')}</th>
+              <th className="text-left py-3 px-4">{t('admin.ip')}</th>
+              <th className="text-left py-3 px-4 hidden md:table-cell">{t('admin.status')}</th>
             </tr>
           </thead>
           <tbody>
             {(data.logs || []).map((l, i) => (
               <tr key={i} className="border-b border-line last:border-b-0 hover:bg-surface-2/50">
                 <td className="py-2.5 px-4 text-xs text-muted whitespace-nowrap">
-                  {new Date(l.created_at).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                  {new Date(l.created_at).toLocaleString(dateLocale, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                 </td>
                 <td className="py-2.5 px-4 text-xs font-medium">{l.display_name || l.username}</td>
                 <td className="py-2.5 px-4 text-xs font-mono text-muted">{l.ip_address}</td>
@@ -2119,6 +2146,7 @@ function LoginActivityPanel() {
 // ═══════════════════════════════════════════════════════
 
 function MaintenanceModePanel({ showToast }) {
+  const { t } = useLanguage();
   const [settings, setSettings] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -2129,17 +2157,17 @@ function MaintenanceModePanel({ showToast }) {
     getSystemSettings().then(s => {
       setSettings(s);
       setMaintenanceActive(!!s.maintenance_mode);
-      setMaintenanceMsg(s.maintenance_message || 'Hệ thống đang bảo trì. Vui lòng quay lại sau.');
+      setMaintenanceMsg(s.maintenance_message || t('app.defaultMaintenance'));
     }).catch(() => {}).finally(() => setLoading(false));
-  }, []);
+  }, [t]);
 
   const handleSave = async () => {
     setSaving(true);
     try {
       await adminUpdateSystemSetting('maintenance_mode', maintenanceActive);
       await adminUpdateSystemSetting('maintenance_message', maintenanceMsg);
-      showToast('success', maintenanceActive ? 'Đã bật chế độ bảo trì' : 'Đã tắt chế độ bảo trì');
-    } catch { showToast('error', 'Lỗi cập nhật'); }
+      showToast('success', maintenanceActive ? t('admin.maintenanceEnabled') : t('admin.maintenanceDisabled'));
+    } catch { showToast('error', t('admin.updateError')); }
     setSaving(false);
   };
 
@@ -2147,13 +2175,13 @@ function MaintenanceModePanel({ showToast }) {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <h3 className="text-sm font-semibold flex items-center gap-2"><Wrench size={14} className="text-primary-400" /> Chế độ bảo trì</h3>
+      <h3 className="text-sm font-semibold flex items-center gap-2"><Wrench size={14} className="text-primary-400" /> {t('admin.maintenanceModeTitle')}</h3>
 
       <div className="bg-surface border border-line rounded-xl p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <p className="font-medium text-sm">Maintenance Mode</p>
-            <p className="text-xs text-muted mt-0.5">Khi bật, người dùng sẽ thấy thông báo bảo trì</p>
+            <p className="font-medium text-sm">{t('admin.maintenanceMode')}</p>
+            <p className="text-xs text-muted mt-0.5">{t('admin.maintenanceModeDesc')}</p>
           </div>
           <button onClick={() => setMaintenanceActive(!maintenanceActive)} className="shrink-0">
             {maintenanceActive ? <ToggleRight size={36} className="text-amber-400" /> : <ToggleLeft size={36} className="text-muted" />}
@@ -2162,7 +2190,7 @@ function MaintenanceModePanel({ showToast }) {
 
         <div className="space-y-3">
           <div>
-            <label className="text-xs text-muted mb-1 block">Thông báo bảo trì</label>
+            <label className="text-xs text-muted mb-1 block">{t('admin.maintenanceMessage')}</label>
             <textarea
               value={maintenanceMsg}
               onChange={e => setMaintenanceMsg(e.target.value)}
@@ -2177,7 +2205,7 @@ function MaintenanceModePanel({ showToast }) {
             className="flex items-center gap-1.5 px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
           >
             {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
-            Lưu cài đặt
+            {t('admin.saveSettings')}
           </button>
         </div>
       </div>
@@ -2185,17 +2213,17 @@ function MaintenanceModePanel({ showToast }) {
       {/* Preview */}
       {maintenanceActive && (
         <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
-          <p className="text-xs font-semibold text-amber-400 mb-2 flex items-center gap-2"><AlertOctagon size={14} /> Preview: Người dùng sẽ thấy</p>
+          <p className="text-xs font-semibold text-amber-400 mb-2 flex items-center gap-2"><AlertOctagon size={14} /> {t('admin.previewUserView')}</p>
           <div className="bg-surface border border-line rounded-xl p-4 mt-2 space-y-3">
             <div className="flex items-center justify-between gap-2">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-[11px] font-semibold text-amber-400">
                 <div className="w-1.5 h-1.5 bg-amber-400 rounded-full" />
-                MAINTENANCE MODE
+                {t('app.maintenanceMode')}
               </div>
               <Wrench size={16} className="text-amber-400" />
             </div>
             <div>
-              <p className="text-sm font-semibold">NoteMind đang bảo trì</p>
+              <p className="text-sm font-semibold">{t('app.maintenanceTitle')}</p>
               <p className="text-xs text-muted mt-1">{maintenanceMsg}</p>
             </div>
           </div>

@@ -124,9 +124,9 @@ export default function LeaderboardPage({ onBack }) {
                   <th className="text-left py-3 px-5 w-12">#</th>
                   <th className="text-left py-3 px-5">{t('leaderboard.user')}</th>
                   <th className="text-center py-3 px-5">{t('leaderboard.score')}</th>
-                  <th className="text-center py-3 px-5 hidden sm:table-cell">Streak</th>
-                  <th className="text-center py-3 px-5 hidden md:table-cell">Flashcards</th>
-                  <th className="text-center py-3 px-5 hidden md:table-cell">Quiz</th>
+                  <th className="text-center py-3 px-5 hidden sm:table-cell">{t('leaderboard.streak')}</th>
+                  <th className="text-center py-3 px-5 hidden md:table-cell">{t('leaderboard.flashcards')}</th>
+                  <th className="text-center py-3 px-5 hidden md:table-cell">{t('leaderboard.quiz')}</th>
                 </tr>
               </thead>
               <tbody>

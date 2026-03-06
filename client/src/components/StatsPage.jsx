@@ -127,7 +127,7 @@ export default function StatsPage({ onBack, user }) {
         <div className="space-y-4">
           <GoalBar
             icon={<CreditCard size={15} />}
-            label="Flashcards"
+            label={t('stats.flashcards')}
             current={todayActivity.flashcards_reviewed}
             target={editingGoals ? goalForm.daily_flashcards : userGoals.daily_flashcards}
             progress={flashcardProgress}
@@ -137,7 +137,7 @@ export default function StatsPage({ onBack, user }) {
           />
           <GoalBar
             icon={<FileText size={15} />}
-            label="Quiz"
+            label={t('stats.quiz')}
             current={todayActivity.quizzes_completed}
             target={editingGoals ? goalForm.daily_quizzes : userGoals.daily_quizzes}
             progress={quizProgress}

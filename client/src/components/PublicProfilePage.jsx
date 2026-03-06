@@ -12,7 +12,7 @@ const PLAN_BADGES = {
 };
 
 export default function PublicProfilePage({ username, onBack, user: currentUser }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -93,8 +93,9 @@ export default function PublicProfilePage({ username, onBack, user: currentUser 
   };
   const presenceStatus = statusMap[u.presenceStatus] ? u.presenceStatus : (u.isOnline ? 'online' : 'offline');
   const statusMeta = statusMap[presenceStatus];
+  const locale = language === 'vi' ? 'vi-VN' : 'en-US';
   const lastSeenText = u.lastSeenAt
-    ? new Date(u.lastSeenAt).toLocaleString('vi-VN', {
+    ? new Date(u.lastSeenAt).toLocaleString(locale, {
       hour: '2-digit',
       minute: '2-digit',
       day: '2-digit',
@@ -178,7 +179,7 @@ export default function PublicProfilePage({ username, onBack, user: currentUser 
               </div>
               <p className="text-xs text-muted mt-1.5 flex items-center gap-1.5 justify-center sm:justify-start">
                 <Calendar size={12} />
-                {t('publicProfile.joined')} {new Date(u.joinedAt).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' })}
+                {t('publicProfile.joined')} {new Date(u.joinedAt).toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' })}
               </p>
               {presenceStatus === 'offline' && lastSeenText && (
                 <p className="text-xs text-muted mt-1">{t('publicProfile.lastActive')}: {lastSeenText}</p>
@@ -227,7 +228,7 @@ export default function PublicProfilePage({ username, onBack, user: currentUser 
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm truncate group-hover:text-primary-400 transition-colors">{doc.title}</p>
                     <p className="text-xs text-muted mt-0.5">
-                      {new Date(doc.created_at).toLocaleDateString('vi-VN')}
+                      {new Date(doc.created_at).toLocaleDateString(locale)}
                     </p>
                   </div>
                 </button>
