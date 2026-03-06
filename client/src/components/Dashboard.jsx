@@ -1,19 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Map, CreditCard, MessageCircle, FileText, Loader2, Upload,
-  Search, BarChart3, Share2, Tag, Settings, Star, Download, Focus, Globe, Lock, XCircle, StickyNote, FileDown
+  Search, BarChart3, Share2, Tag, Settings, Star, Download, Focus, Globe, Lock, XCircle, StickyNote, FileDown, BookOpen
 } from 'lucide-react';
 import MindmapView from './MindmapView';
 import FlashcardView from './FlashcardView';
 import ChatView from './ChatView';
 import QuizView from './QuizView';
+import SummaryView from './SummaryView';
 import PomodoroTimer from './PomodoroTimer';
 import NotesPanel from './NotesPanel';
 import {
   SearchModal, AnalyticsModal, ShareModal, TagsModal,
   PreferencesModal, FavoriteButton
 } from './FeatureModals';
-import { generateMindmap, generateFlashcards, generateQuiz, getRateLimit, getDocumentSessions, downloadDocument, toggleDocumentPublic, exportMarkdown } from '../api';
+import { generateMindmap, generateFlashcards, generateQuiz, generateSummary, getRateLimit, getDocumentSessions, downloadDocument, toggleDocumentPublic, exportMarkdown } from '../api';
 import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts';
 import Joyride, { STATUS } from 'react-joyride';
 import { useLanguage } from '../LanguageContext';
@@ -22,6 +23,7 @@ export default function Dashboard({ doc, user }) {
   const { t } = useLanguage();
 
   const TABS = [
+    { id: 'summary', label: 'Tóm tắt', icon: BookOpen },
     { id: 'mindmap', label: t('dashboard.mindmap'), icon: Map },
     { id: 'flashcard', label: t('dashboard.flashcard'), icon: CreditCard },
     { id: 'quiz', label: t('dashboard.quiz'), icon: FileText },
@@ -32,12 +34,13 @@ export default function Dashboard({ doc, user }) {
     content: t('dashboard.welcomeMessage')
   };
 
-  const [activeTab, setActiveTab] = useState('mindmap');
+  const [activeTab, setActiveTab] = useState('summary');
+  const [summaryData, setSummaryData] = useState(null);
   const [mindmapData, setMindmapData] = useState(null);
   const [flashcardData, setFlashcardData] = useState(null);
   const [quizData, setQuizData] = useState(null);
   const [chatMessages, setChatMessages] = useState([WELCOME_MESSAGE]);
-  const [tabLoading, setTabLoading] = useState({ mindmap: false, flashcard: false, quiz: false });
+  const [tabLoading, setTabLoading] = useState({ summary: false, mindmap: false, flashcard: false, quiz: false });
   const [sessionLoading, setSessionLoading] = useState(true);
   const [tabErrors, setTabErrors] = useState({});
   const [isDownloading, setIsDownloading] = useState(false);
@@ -79,6 +82,17 @@ export default function Dashboard({ doc, user }) {
     if (!hasSeenTour) {
       // slight delay to let the UI load
       setTimeout(() => setRunTour(true), 500);
+    }
+
+    // Check if auto-opening a specific tab (from Learning Paths)
+    const autoOpenTab = localStorage.getItem('notemind_auto_open_tab');
+    if (autoOpenTab) {
+      if (autoOpenTab === 'read_summary') setActiveTab('summary');
+      else if (autoOpenTab === 'flashcards') setActiveTab('flashcard');
+      else if (autoOpenTab === 'quiz') setActiveTab('quiz');
+      else if (autoOpenTab === 'chat') setShowChat(true);
+
+      localStorage.removeItem('notemind_auto_open_tab');
     }
   }, []);
 
@@ -145,6 +159,7 @@ export default function Dashboard({ doc, user }) {
             setIsPublic(!!document.is_public);
           }
         }
+        if (sessions?.summary) setSummaryData(sessions.summary);
         if (sessions?.mindmap) setMindmapData(sessions.mindmap);
         if (sessions?.flashcards) setFlashcardData(sessions.flashcards);
         if (sessions?.quiz) setQuizData(sessions.quiz);
@@ -178,6 +193,20 @@ export default function Dashboard({ doc, user }) {
       return err.response.data.error;
     }
     return err.response?.data?.error || err.message;
+  };
+
+  const handleGenerateSummary = async () => {
+    if (summaryData || docDetails.isLocked) return;
+    setTabLoading(prev => ({ ...prev, summary: true }));
+    setTabErrors(prev => ({ ...prev, summary: null }));
+    try {
+      const data = await generateSummary(doc.docId);
+      setSummaryData(data);
+    } catch (err) {
+      setTabErrors(prev => ({ ...prev, summary: handleRateLimitError(err) }));
+    } finally {
+      setTabLoading(prev => ({ ...prev, summary: false }));
+    }
   };
 
   const handleGenerateMindmap = async () => {
@@ -463,6 +492,15 @@ export default function Dashboard({ doc, user }) {
 
       {/* Tab content */}
       <div className="bg-surface border border-line rounded-2xl min-h-[500px] overflow-hidden shadow-sm">
+        {activeTab === 'summary' && (
+          <SummaryView
+            data={summaryData}
+            loading={tabLoading.summary}
+            error={tabErrors.summary}
+            onGenerate={handleGenerateSummary}
+            isLocked={docDetails.isLocked}
+          />
+        )}
         {activeTab === 'mindmap' && (
           <MindmapView
             data={mindmapData}

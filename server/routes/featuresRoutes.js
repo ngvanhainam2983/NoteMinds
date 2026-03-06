@@ -216,6 +216,58 @@ router.get('/search', requireAuth, (req, res) => {
   }
 });
 
+router.post('/search/chat', requireAuth, async (req, res) => {
+  try {
+    const { query } = req.body;
+    if (!query) return res.status(400).json({ error: 'Câu hỏi không được để trống' });
+
+    // Step 1: Find top 3 relevant documents
+    const results = advancedFeatureService.searchDocuments(req.user.id, query, 3);
+
+    if (!results || results.length === 0) {
+      return res.json({ reply: 'Xin lỗi, tôi không tìm thấy tài liệu nào liên quan đến câu hỏi của bạn trong thư viện.', sourceDocuments: [] });
+    }
+
+    // Step 2: Extract text from top 3 documents
+    const { processDocument } = await import('../services/documentProcessor.js');
+    const fs = await import('fs');
+    let contextDocs = [];
+
+    for (const doc of results) {
+      if (doc.file_path && fs.existsSync(doc.file_path)) {
+        try {
+          const text = await processDocument(doc.file_path);
+          // Limit to 3000 chars per doc to prevent token limit (Qwen context is large, but let's be safe)
+          contextDocs.push(`--- Tài liệu: ${path.basename(doc.file_path)} ---\n${text.substring(0, 3000)}`);
+        } catch (e) {
+          console.warn('Failed to extract text for search chat:', e.message);
+        }
+      }
+    }
+
+    if (contextDocs.length === 0) {
+      return res.json({ reply: 'Các tài liệu liên quan hiện không thể trích xuất nội dung.', sourceDocuments: results });
+    }
+
+    // Step 3: Call Qwen
+    const { callQwen } = await import('../services/qwenClient.js');
+    const systemPrompt = `Bạn là một trợ lý AI thông minh chuyên tổng hợp kiến thức từ tài liệu của người dùng. NHIỆM VỤ của bạn là trả lời câu hỏi DỰA TRÊN các tài liệu được cung cấp dưới đây. Nếu thông tin không có trong tài liệu, hãy nói rõ là không có, hoặc giải thích dựa trên hiểu biết chung nhưng phải ghi chú rõ. Luôn trả lời bằng tiếng Việt, trình bày rõ ràng, dễ hiểu bằng Markdown. Trực tiếp đi thẳng vào vấn đề.`;
+    const userMessage = `Tài liệu tham khảo:\n${contextDocs.join('\n\n')}\n\nCâu hỏi: ${query}`;
+
+    const reply = await callQwen(systemPrompt, userMessage, {
+      userId: req.user.id,
+      action: 'global_search_chat'
+    });
+
+    logAnalytic(req.user.id, 'global_search_chat', null, { query });
+
+    res.json({ reply, sourceDocuments: results });
+  } catch (error) {
+    console.error('Search Chat Error:', error);
+    res.status(500).json({ error: 'Failed to chat with documents' });
+  }
+});
+
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // ANALYTICS
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

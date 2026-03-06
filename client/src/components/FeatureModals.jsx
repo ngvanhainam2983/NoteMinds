@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import {
-  searchDocuments, getAnalytics, createShareLink, getSharedDocuments, deleteShareLink,
+  searchDocuments, searchChat, getAnalytics, createShareLink, getSharedDocuments, deleteShareLink,
   getUserTags, createTag, addTagToDocument, removeTagFromDocument, getDocumentTags,
   getPreferences, setPreference, exportFlashcardsCSV, addFavorite, removeFavorite,
   checkFavorite, getFlashcardStats, getStoredToken
@@ -39,18 +39,40 @@ function Modal({ isOpen, onClose, title, icon: Icon, children, wide }) {
   );
 }
 
+import MarkdownRenderer from './MarkdownRenderer';
+import { Sparkles } from 'lucide-react';
+
 // ── Search Panel ─────────────────────────────────────
 export function SearchModal({ isOpen, onClose }) {
   const [query, setQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('basic'); // 'basic' | 'ai'
   const [results, setResults] = useState(null);
+  const [aiResult, setAiResult] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // Clear results when modal opens/closes
+  useEffect(() => {
+    if (isOpen) {
+      setQuery('');
+      setResults(null);
+      setAiResult(null);
+    }
+  }, [isOpen]);
 
   const handleSearch = async () => {
     if (!query.trim()) return;
     setLoading(true);
+    setResults(null);
+    setAiResult(null);
+
     try {
-      const data = await searchDocuments(query.trim());
-      setResults(data);
+      if (activeTab === 'basic') {
+        const data = await searchDocuments(query.trim());
+        setResults(data);
+      } else {
+        const data = await searchChat(query.trim());
+        setAiResult(data);
+      }
     } catch (err) {
       console.error('Search failed:', err);
     } finally {
@@ -59,61 +81,119 @@ export function SearchModal({ isOpen, onClose }) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Tìm kiếm" icon={Search}>
+    <Modal isOpen={isOpen} onClose={onClose} title="Tìm kiếm & Hỏi AI" icon={Search} wide>
+      <div className="flex bg-bg border border-line rounded-xl p-1 mb-6">
+        <button
+          onClick={() => setActiveTab('basic')}
+          className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 ${activeTab === 'basic' ? 'bg-surface shadow text-txt' : 'text-muted hover:text-txt'}`}
+        >
+          <Search size={16} /> Tìm kiếm cơ bản
+        </button>
+        <button
+          onClick={() => setActiveTab('ai')}
+          className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 ${activeTab === 'ai' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 font-bold shadow' : 'text-muted hover:text-txt'}`}
+        >
+          <Sparkles size={16} /> Hỏi AI (Tất cả tài liệu)
+        </button>
+      </div>
+
       <div className="flex gap-2 mb-6">
         <input
           type="text"
           value={query}
           onChange={e => setQuery(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSearch()}
-          placeholder="Tìm tài liệu, hội thoại..."
+          placeholder={activeTab === 'basic' ? "Tìm tài liệu, hội thoại..." : "Hỏi bất cứ điều gì về các tài liệu của bạn..."}
           className="flex-1 bg-bg border border-line rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary-500"
           autoFocus
         />
         <button
           onClick={handleSearch}
-          disabled={loading}
-          className="px-4 py-2.5 bg-primary-600 rounded-xl text-sm font-medium hover:bg-primary-700 transition-colors disabled:opacity-50"
+          disabled={loading || !query.trim()}
+          className="px-4 py-2.5 bg-primary-600 rounded-xl text-sm font-medium hover:bg-primary-700 transition-colors disabled:opacity-50 text-white flex items-center justify-center w-12"
         >
-          {loading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+          {loading ? <Loader2 size={16} className="animate-spin" /> : activeTab === 'ai' ? <Sparkles size={16} /> : <Search size={16} />}
         </button>
       </div>
-      {results && (
-        <div className="space-y-3">
-          {results.documents?.length > 0 && (
-            <div>
-              <h4 className="text-sm font-medium text-muted mb-2 flex items-center gap-2">
-                <FileText size={14} /> Tài liệu ({results.documents.length})
-              </h4>
-              {results.documents.map((doc, i) => (
-                <div key={i} className="bg-bg border border-line rounded-lg p-3 mb-2">
-                  <p className="text-sm font-medium">{doc.title || doc.filename}</p>
-                  {doc.excerpt && <p className="text-xs text-muted mt-1 line-clamp-2">{doc.excerpt}</p>}
-                </div>
-              ))}
+
+      <div className="flex-1 overflow-y-auto min-h-[200px] max-h-[50vh]">
+        {/* Basic Search Results */}
+        {activeTab === 'basic' && results && (
+          <div className="space-y-3">
+            {results.documents?.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-muted mb-2 flex items-center gap-2">
+                  <FileText size={14} /> Tài liệu ({results.documents.length})
+                </h4>
+                {results.documents.map((doc, i) => (
+                  <div key={i} className="bg-bg border border-line rounded-lg p-3 mb-2">
+                    <p className="text-sm font-medium">{doc.title || doc.filename}</p>
+                    {doc.excerpt && <p className="text-xs text-muted mt-1 line-clamp-2">{doc.excerpt}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
+            {results.conversations?.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-muted mb-2 flex items-center gap-2">
+                  <MessageSquare size={14} /> Hội thoại ({results.conversations.length})
+                </h4>
+                {results.conversations.map((conv, i) => (
+                  <div key={i} className="bg-bg border border-line rounded-lg p-3 mb-2">
+                    <p className="text-sm font-medium">{conv.title || 'Hội thoại'}</p>
+                    {conv.excerpt && <p className="text-xs text-muted mt-1 line-clamp-2">{conv.excerpt}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
+            {(!results.documents?.length && !results.conversations?.length) && (
+              <p className="text-center text-muted text-sm py-8">Không tìm thấy kết quả cho "{query}"</p>
+            )}
+          </div>
+        )}
+
+        {/* AI Chat Results */}
+        {activeTab === 'ai' && aiResult && (
+          <div className="bg-bg border border-line rounded-xl p-5 shadow-sm">
+            <h4 className="text-sm font-medium text-purple-600 dark:text-purple-400 mb-4 flex items-center gap-2">
+              <Sparkles size={16} /> AI Trả lời
+            </h4>
+            <div className="prose prose-sm dark:prose-invert max-w-none text-txt">
+              <MarkdownRenderer content={aiResult.reply} />
             </div>
-          )}
-          {results.conversations?.length > 0 && (
-            <div>
-              <h4 className="text-sm font-medium text-muted mb-2 flex items-center gap-2">
-                <MessageSquare size={14} /> Hội thoại ({results.conversations.length})
-              </h4>
-              {results.conversations.map((conv, i) => (
-                <div key={i} className="bg-bg border border-line rounded-lg p-3 mb-2">
-                  <p className="text-sm font-medium">{conv.title || 'Hội thoại'}</p>
-                  {conv.excerpt && <p className="text-xs text-muted mt-1 line-clamp-2">{conv.excerpt}</p>}
+
+            {aiResult.sourceDocuments?.length > 0 && (
+              <div className="mt-6 pt-4 border-t border-line">
+                <p className="text-xs text-muted font-medium mb-2">Nguồn tham khảo:</p>
+                <div className="flex flex-wrap gap-2">
+                  {aiResult.sourceDocuments.map((doc, i) => (
+                    <span key={i} className="px-2.5 py-1 bg-surface border border-line rounded-md text-xs text-muted flex items-center gap-1.5">
+                      <FileText size={12} /> {doc.title || doc.filename || 'Tài liệu'}
+                    </span>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-          {(!results.documents?.length && !results.conversations?.length) && (
-            <p className="text-center text-muted text-sm py-8">Không tìm thấy kết quả cho "{query}"</p>
-          )}
-        </div>
-      )}
-      {!results && !loading && (
-        <p className="text-center text-muted text-sm py-8">Nhập từ khóa để tìm kiếm trong tài liệu và hội thoại</p>
-      )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Empty States */}
+        {!results && !aiResult && !loading && (
+          <div className="flex flex-col items-center justify-center py-12 text-center h-full">
+            {activeTab === 'basic' ? (
+              <>
+                <Search size={32} className="text-line mb-3" />
+                <p className="text-muted text-sm">Nhập từ khóa để tìm kiếm trong tài liệu và hội thoại</p>
+              </>
+            ) : (
+              <>
+                <Sparkles size={32} className="text-purple-500/40 mb-3" />
+                <p className="text-muted text-sm max-w-sm">Hỏi AI bất kỳ điều gì. AI sẽ tự động duyệt qua tất cả tài liệu của bạn để tìm ra câu trả lời chính xác nhất.</p>
+              </>
+            )}
+          </div>
+        )}
+      </div>
     </Modal>
   );
 }

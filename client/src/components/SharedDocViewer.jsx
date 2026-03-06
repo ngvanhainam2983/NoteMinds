@@ -2,15 +2,16 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   FileText, Loader2, AlertCircle, Eye, MessageSquare, Pencil,
   BrainCircuit, Clock, ArrowLeft, Map, CreditCard, MessageCircle,
-  Lock, Link2
+  Lock, Link2, BookOpen
 } from 'lucide-react';
 import {
   validateShareToken, getSharedDocumentContent,
-  shareGenerateMindmap, shareGenerateFlashcards, shareChatWithDocument
+  shareGenerateMindmap, shareGenerateFlashcards, shareChatWithDocument, shareGenerateSummary
 } from '../api';
 import MindmapView from './MindmapView';
 import FlashcardView from './FlashcardView';
 import ChatView from './ChatView';
+import SummaryView from './SummaryView';
 
 const PERMISSION_INFO = {
   view: { label: 'Chỉ xem', icon: Eye, color: 'text-blue-400 bg-blue-500/10 border-blue-500/30' },
@@ -19,6 +20,7 @@ const PERMISSION_INFO = {
 };
 
 const TABS = [
+  { id: 'summary', label: 'Tóm tắt', icon: BookOpen },
   { id: 'mindmap', label: 'Sơ đồ tư duy', icon: Map },
   { id: 'flashcard', label: 'Flashcard', icon: CreditCard },
   { id: 'chat', label: 'Hỏi đáp AI', icon: MessageCircle },
@@ -36,11 +38,12 @@ export default function SharedDocViewer({ shareToken, onBack }) {
   const [content, setContent] = useState(null);
 
   // Dashboard-like state
-  const [activeTab, setActiveTab] = useState('mindmap');
+  const [activeTab, setActiveTab] = useState('summary');
+  const [summaryData, setSummaryData] = useState(null);
   const [mindmapData, setMindmapData] = useState(null);
   const [flashcardData, setFlashcardData] = useState(null);
   const [chatMessages, setChatMessages] = useState([WELCOME_MESSAGE]);
-  const [tabLoading, setTabLoading] = useState({ mindmap: false, flashcard: false });
+  const [tabLoading, setTabLoading] = useState({ summary: false, mindmap: false, flashcard: false });
   const [tabErrors, setTabErrors] = useState({});
 
   const isViewOnly = (shareInfo?.shareType || 'view') === 'view';
@@ -51,18 +54,25 @@ export default function SharedDocViewer({ shareToken, onBack }) {
 
     const evtSource = new EventSource(`/api/shared/${shareToken}/events`);
 
+    evtSource.addEventListener('summary', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        setSummaryData(data);
+      } catch { }
+    });
+
     evtSource.addEventListener('mindmap', (e) => {
       try {
         const data = JSON.parse(e.data);
         setMindmapData(data);
-      } catch {}
+      } catch { }
     });
 
     evtSource.addEventListener('flashcards', (e) => {
       try {
         const data = JSON.parse(e.data);
         setFlashcardData(data);
-      } catch {}
+      } catch { }
     });
 
     evtSource.addEventListener('chat', (e) => {
@@ -71,7 +81,7 @@ export default function SharedDocViewer({ shareToken, onBack }) {
         if (Array.isArray(msgs) && msgs.length > 0) {
           setChatMessages([WELCOME_MESSAGE, ...msgs.map(m => ({ role: m.role, content: m.content }))]);
         }
-      } catch {}
+      } catch { }
     });
 
     evtSource.onerror = () => {
@@ -100,6 +110,7 @@ export default function SharedDocViewer({ shareToken, onBack }) {
           setContent(data);
           // Load pre-existing session data from the owner
           if (data.sessions) {
+            if (data.sessions.summary) setSummaryData(data.sessions.summary);
             if (data.sessions.mindmap) setMindmapData(data.sessions.mindmap);
             if (data.sessions.flashcards) setFlashcardData(data.sessions.flashcards);
             if (data.sessions.chat && data.sessions.chat.length > 0) {
@@ -115,6 +126,20 @@ export default function SharedDocViewer({ shareToken, onBack }) {
         setLoading(false);
       });
   }, [shareToken]);
+
+  const handleGenerateSummary = useCallback(async () => {
+    if (summaryData || isViewOnly) return;
+    setTabLoading(prev => ({ ...prev, summary: true }));
+    setTabErrors(prev => ({ ...prev, summary: null }));
+    try {
+      const data = await shareGenerateSummary(shareToken);
+      setSummaryData(data);
+    } catch (err) {
+      setTabErrors(prev => ({ ...prev, summary: err.response?.data?.error || err.message }));
+    } finally {
+      setTabLoading(prev => ({ ...prev, summary: false }));
+    }
+  }, [shareToken, summaryData, isViewOnly]);
 
   const handleGenerateMindmap = useCallback(async () => {
     if (mindmapData || isViewOnly) return;
@@ -272,9 +297,10 @@ export default function SharedDocViewer({ shareToken, onBack }) {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             // Show indicator if data exists for this tab
-            const hasData = (tab.id === 'mindmap' && mindmapData) ||
-                           (tab.id === 'flashcard' && flashcardData) ||
-                           (tab.id === 'chat' && chatMessages.length > 1);
+            const hasData = (tab.id === 'summary' && summaryData) ||
+              (tab.id === 'mindmap' && mindmapData) ||
+              (tab.id === 'flashcard' && flashcardData) ||
+              (tab.id === 'chat' && chatMessages.length > 1);
             return (
               <button
                 key={tab.id}
@@ -299,6 +325,18 @@ export default function SharedDocViewer({ shareToken, onBack }) {
 
         {/* Tab content */}
         <div className="bg-surface border border-line rounded-2xl min-h-[500px] overflow-hidden">
+          {activeTab === 'summary' && (
+            isViewOnly && !summaryData ? (
+              <ViewOnlyEmpty icon={BookOpen} label="Chưa có bản tóm tắt" />
+            ) : (
+              <SummaryView
+                data={summaryData}
+                loading={tabLoading.summary}
+                error={tabErrors.summary}
+                onGenerate={isViewOnly ? undefined : handleGenerateSummary}
+              />
+            )
+          )}
           {activeTab === 'mindmap' && (
             isViewOnly && !mindmapData ? (
               <ViewOnlyEmpty icon={Map} label="Chưa có sơ đồ tư duy" />

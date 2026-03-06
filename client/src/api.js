@@ -311,6 +311,11 @@ export async function generateMindmap(docId) {
   return response.data;
 }
 
+export async function generateSummary(docId) {
+  const response = await api.post(`/documents/${docId}/summary`);
+  return response.data;
+}
+
 export async function generateFlashcards(docId) {
   const response = await api.post(`/documents/${docId}/flashcards`);
   return response.data;
@@ -560,6 +565,11 @@ export async function searchDocuments(query, limit = 20) {
   return response.data;
 }
 
+export async function searchChat(query) {
+  const response = await api.post('/search/chat', { query });
+  return response.data;
+}
+
 // ── Community ─────────────────────────────────────────
 
 export async function getCommunityDocuments(page = 1, limit = 20) {
@@ -630,6 +640,11 @@ export async function getSharedDocumentContent(token) {
 
 export async function shareGenerateMindmap(token) {
   const response = await api.post(`/shared/${token}/mindmap`);
+  return response.data;
+}
+
+export async function shareGenerateSummary(token) {
+  const response = await api.post(`/shared/${token}/summary`);
   return response.data;
 }
 

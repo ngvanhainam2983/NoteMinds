@@ -12,6 +12,7 @@ import { processDocument } from './services/documentProcessor.js';
 import { generateMindmap } from './services/mindmapGenerator.js';
 import { generateFlashcards } from './services/flashcardGenerator.js';
 import { generateQuiz } from './services/quizGenerator.js';
+import { generateSummary } from './services/summaryGenerator.js';
 import { reviewFlashcard, getDueFlashcards } from './services/srsService.js';
 import { chatWithDocument, chatWithMultipleDocuments } from './services/chatService.js';
 import { callQwen } from './services/qwenClient.js';
@@ -1295,6 +1296,27 @@ app.post('/api/documents/:docId/mindmap', async (req, res) => {
   }
 });
 
+// Generate summary
+app.post('/api/documents/:docId/summary', async (req, res) => {
+  try {
+    const doc = documents.get(req.params.docId);
+    if (!doc) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+    if (doc.status !== 'ready') {
+      return res.status(400).json({ error: 'Document is still processing' });
+    }
+
+    const summary = await generateSummary(doc.text, doc.fileName);
+    saveDocumentSession(req.params.docId, 'summary', summary);
+    broadcastDocEvent(req.params.docId, 'summary', summary);
+    res.json({ summary });
+  } catch (error) {
+    console.error('Summary generation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Generate flashcards
 app.post('/api/documents/:docId/flashcards', async (req, res) => {
   try {
@@ -1683,6 +1705,26 @@ app.post('/api/shared/:shareToken/mindmap', async (req, res) => {
     res.json(mindmap);
   } catch (error) {
     console.error('[Share] Mindmap generation error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Shared document — generate summary (public — token validated, not for view-only)
+app.post('/api/shared/:shareToken/summary', async (req, res) => {
+  try {
+    const result = await resolveSharedDocument(req.params.shareToken);
+    if (result.error) return res.status(result.status).json({ error: result.error });
+    if (result.share.share_type === 'view') {
+      return res.status(403).json({ error: 'Quyền chỉ xem không cho phép tạo nội dung mới' });
+    }
+
+    const { share, doc } = result;
+    const summary = await generateSummary(doc.text, doc.fileName);
+    saveDocumentSession(share.document_id, 'summary', summary);
+    broadcastDocEvent(share.document_id, 'summary', summary);
+    res.json({ summary });
+  } catch (error) {
+    console.error('[Share] Summary generation error:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
