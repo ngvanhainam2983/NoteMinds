@@ -4,7 +4,7 @@ import UserDropdown from './UserDropdown';
 import { NotificationBell } from './NotificationBell';
 import { useLanguage } from '../LanguageContext';
 
-export default function Header({ onBackHome, showBack, user, onLoginClick, onLogout, onOpenAdmin, onOpenPricing, onUserUpdate, onOpenDocument, onOpenHistory, onOpenProfile, onOpenLeaderboard, onOpenStats, onOpenLearningPaths, onOpenCommunity, currentView }) {
+export default function Header({ onBackHome, showBack, user, onLoginClick, onLogout, onOpenAdmin, onOpenPricing, onUserUpdate, onOpenDocument, onOpenHistory, onOpenProfile, onOpenLeaderboard, onOpenStats, onOpenLearningPaths, onOpenCommunity, onOpenNotifications, currentView }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { t } = useLanguage();
 
@@ -128,7 +128,7 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
         <div className="flex items-center gap-2 ml-auto">
           {user ? (
             <>
-              <NotificationBell userId={user.id} />
+              <NotificationBell userId={user.id} onOpenManager={onOpenNotifications} />
               <UserDropdown
                 user={user}
                 onLogout={onLogout}

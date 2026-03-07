@@ -1297,5 +1297,24 @@
     "announcement": {
         "readMore": "Xem thêm",
         "hide": "Ẩn thông báo"
+    },
+    "notifications": {
+        "title": "Thông báo",
+        "manager": "Trung tâm thông báo",
+        "all": "Tất cả",
+        "unread": "chưa đọc",
+        "read": "Đã đọc",
+        "markAllRead": "Đánh dấu tất cả đã đọc",
+        "deleteAll": "Xóa tất cả",
+        "empty": "Chưa có thông báo nào",
+        "emptyDesc": "Chúng tôi sẽ thông báo khi có điều gì xảy ra",
+        "noResults": "Không tìm thấy thông báo phù hợp",
+        "tryDifferent": "Thử từ khóa tìm kiếm khác",
+        "loadMore": "Tải thêm thông báo",
+        "viewAll": "Xem tất cả",
+        "search": "Tìm kiếm...",
+        "details": "Chi tiết",
+        "open": "Mở",
+        "new": "Mới"
     }
 }

@@ -1297,5 +1297,24 @@
     "announcement": {
         "readMore": "Read more",
         "hide": "Hide announcement"
+    },
+    "notifications": {
+        "title": "Notifications",
+        "manager": "Notification Center",
+        "all": "All",
+        "unread": "unread",
+        "read": "Read",
+        "markAllRead": "Mark all read",
+        "deleteAll": "Delete all",
+        "empty": "No notifications yet",
+        "emptyDesc": "We'll notify you when something happens",
+        "noResults": "No matching notifications",
+        "tryDifferent": "Try a different search term",
+        "loadMore": "Load more notifications",
+        "viewAll": "View all",
+        "search": "Search...",
+        "details": "Details",
+        "open": "Open",
+        "new": "New"
     }
 }

@@ -15,6 +15,7 @@ import PublicProfilePage from './components/PublicProfilePage';
 import LeaderboardPage from './components/LeaderboardPage';
 import StatsPage from './components/StatsPage';
 import LearningPathsPage from './components/LearningPathsPage';
+import NotificationManager from './components/NotificationManager';
 import AnnouncementBanner from './components/AnnouncementBanner';
 import OfflinePage from './components/OfflinePage';
 import { getStoredUser, logout as apiLogout, getMe, verifyEmailToken, resetPassword, getSystemSettings, getDocumentHistory, getFolders, sendPresenceHeartbeat } from './api';
@@ -156,6 +157,11 @@ export default function App() {
       setCurrentDoc(null);
       setPublicUsername(null);
       setView('learning-paths');
+    } else if (path === '/notifications') {
+      setShareToken(null);
+      setCurrentDoc(null);
+      setPublicUsername(null);
+      setView('notifications');
     } else {
       setShareToken(null);
       setCurrentDoc(null);
@@ -398,7 +404,7 @@ export default function App() {
         <SharedDocViewer shareToken={shareToken} onBack={handleBackHome} />
       ) : (
         <>
-          {view !== 'admin' && view !== 'profile' && view !== 'public-profile' && (
+          {view !== 'admin' && view !== 'profile' && view !== 'public-profile' && view !== 'notifications' && (
             <Header
               onBackHome={handleBackHome}
               showBack={view === 'dashboard' || view === 'history-list'}
@@ -418,6 +424,7 @@ export default function App() {
               onOpenLeaderboard={() => navigateTo('/leaderboard')}
               onOpenStats={() => navigateTo('/stats')}
               onOpenLearningPaths={() => navigateTo('/learning-paths')}
+              onOpenNotifications={() => navigateTo('/notifications')}
               currentView={view}
             />
           )}
@@ -496,6 +503,10 @@ export default function App() {
               onOpenDocument={handleOpenDocument}
               currentDocId={currentDoc?.docId}
             />
+          )}
+
+          {view === 'notifications' && (
+            <NotificationManager onBack={handleBackHome} />
           )}
 
           {view === 'public' && currentDoc && (
