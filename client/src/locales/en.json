@@ -23,7 +23,10 @@
         "cta": "Get Started — Free",
         "pill1": "AI Mind Maps",
         "pill2": "Smart Flashcards",
-        "pill3": "Chat with Documents"
+        "pill3": "Chat with Documents",
+        "privacyFirst": "Privacy First",
+        "instantResults": "Instant Results",
+        "freePlan": "Free Forever"
     },
     "upload": {
         "dragDrop": "Drag & drop your file here or",

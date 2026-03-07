@@ -20,12 +20,13 @@
         "subtitleFlashcard": "Flashcard",
         "subtitleChat": "hỏi đáp trực tiếp",
         "subtitleEnd": "với tài liệu một cách chuẩn xác.",
-        "flashcards": "Flashcards",
-        "quiz": "Quiz",
         "cta": "Bắt đầu ngay — Miễn phí",
         "pill1": "Sơ đồ tư duy AI",
         "pill2": "Flashcard thông minh",
-        "pill3": "Chat với tài liệu"
+        "pill3": "Chat với tài liệu",
+        "privacyFirst": "Bảo mật tối đa",
+        "instantResults": "Kết quả tức thì",
+        "freePlan": "Miễn phí mãi mãi"
     },
     "upload": {
         "dragDrop": "Kéo thả file vào đây hoặc",

@@ -52,7 +52,7 @@ export default function Hero({ onUploadComplete, user, onAuthRequired }) {
             <div className="flex flex-wrap items-center gap-4 text-sm">
               <div className="flex items-center gap-2 text-muted">
                 <Sparkles size={16} className="text-primary-400" />
-                <span className="font-medium text-txt">{t('hero.pill2')}</span>
+                <span className="font-medium text-txt">{t('hero.freePlan', 'Free Forever')}</span>
               </div>
               <div className="w-1 h-1 rounded-full bg-line"></div>
               <div className="flex items-center gap-2 text-muted">
