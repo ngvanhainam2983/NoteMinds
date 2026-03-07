@@ -39,22 +39,22 @@ function getIconInfo(icon) {
 }
 
 /* ─── Time formatting ─── */
-function timeAgo(dateStr) {
+function timeAgo(dateStr, t) {
   const now = Date.now();
   const then = new Date(dateStr).getTime();
   const diffSec = Math.max(0, Math.floor((now - then) / 1000));
-  if (diffSec < 60) return 'just now';
+  if (diffSec < 60) return t('notifications.justNow', 'just now');
   const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffMin < 60) return `${diffMin}${t('notifications.minutesAgo', 'm ago')}`;
   const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
+  if (diffHr < 24) return `${diffHr}${t('notifications.hoursAgo', 'h ago')}`;
   const diffDay = Math.floor(diffHr / 24);
-  if (diffDay < 7) return `${diffDay}d ago`;
+  if (diffDay < 7) return `${diffDay}${t('notifications.daysAgo', 'd ago')}`;
   return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 /* ─── Single notification item ─── */
-export function NotificationItem({ notification, onRead, onDelete, compact = false }) {
+export function NotificationItem({ notification, onRead, onDelete, compact = false, t }) {
   const iconInfo = getIconInfo(notification.icon);
   const IconComp = iconInfo.Icon;
   const isUnread = !notification.is_read;
@@ -98,7 +98,7 @@ export function NotificationItem({ notification, onRead, onDelete, compact = fal
             {notification.message}
           </p>
         )}
-        <p className="text-[11px] text-muted/60 mt-1">{timeAgo(notification.created_at)}</p>
+        <p className="text-[11px] text-muted/60 mt-1">{timeAgo(notification.created_at, t)}</p>
       </div>
 
       {/* Actions */}
@@ -107,7 +107,7 @@ export function NotificationItem({ notification, onRead, onDelete, compact = fal
           <button
             onClick={(e) => { e.stopPropagation(); onRead(notification.id); }}
             className="p-1 rounded-md hover:bg-surface-2 text-muted hover:text-emerald-400 transition-colors"
-            title="Mark as read"
+            title={t('notifications.markAsReadTooltip', 'Mark as read')}
           >
             <Check size={14} />
           </button>
@@ -115,7 +115,7 @@ export function NotificationItem({ notification, onRead, onDelete, compact = fal
         <button
           onClick={(e) => { e.stopPropagation(); onDelete(notification.id); }}
           className="p-1 rounded-md hover:bg-red-500/10 text-muted hover:text-red-400 transition-colors"
-          title="Delete"
+          title={t('notifications.deleteTooltip', 'Delete')}
         >
           <X size={14} />
         </button>
@@ -305,7 +305,7 @@ export function NotificationBell({ userId, className = '', onOpenManager }) {
                     : 'text-muted hover:text-txt hover:bg-surface-2'
                 }`}
               >
-                {filter === 'all' ? t('notifications.all', 'All') : t('notifications.unread', 'Unread')}
+                {filter === 'all' ? t('notifications.categoryAll', 'All') : t('notifications.unread', 'Unread')}
               </button>
             ))}
           </div>
@@ -332,6 +332,7 @@ export function NotificationBell({ userId, className = '', onOpenManager }) {
                     notification={notification}
                     onRead={handleMarkAsRead}
                     onDelete={handleDelete}
+                    t={t}
                   />
                 ))}
               </div>

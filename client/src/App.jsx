@@ -438,14 +438,11 @@ export default function App() {
 
           {view === 'home' && (
             <main>
-              <Hero />
-              <section id="upload" className="relative z-20 -mt-8">
-                <FileUpload
-                  onUploadComplete={handleUploadComplete}
-                  user={user}
-                  onAuthRequired={() => openAuthModal('register')}
-                />
-              </section>
+              <Hero 
+                onUploadComplete={handleUploadComplete}
+                user={user}
+                onAuthRequired={() => openAuthModal('register')}
+              />
               <section id="why">
                 <WhySection />
               </section>

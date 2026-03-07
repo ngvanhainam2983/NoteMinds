@@ -40,27 +40,29 @@ function getIconInfo(icon) {
 }
 
 /* ─── Category config for sidebar ─── */
-const CATEGORIES = [
-  { id: 'all',       label: 'All',          icon: Inbox,          matchTypes: null },
-  { id: 'documents', label: 'Documents',    icon: FileText,       matchTypes: ['mindmap_ready', 'flashcards_ready', 'quiz_ready', 'summary_ready', 'document_processed', 'document_generated'] },
-  { id: 'sharing',   label: 'Sharing',      icon: Share2,         matchTypes: ['document_shared', 'document_published', 'shared_document_viewed'] },
-  { id: 'security',  label: 'Security',     icon: Lock,           matchTypes: ['email_verification_needed', 'password_reset_requested', 'password_reset_success', 'new_device_login', 'security_alert', 'email_verified'] },
-  { id: 'community', label: 'Community',    icon: Users,          matchTypes: ['profile_viewed', 'leaderboard_achievement', 'learning_goal_achieved', 'streak_milestone', 'community_activity'] },
-  { id: 'admin',     label: 'Admin',        icon: ShieldAlert,    matchTypes: ['admin_message', 'plan_changed', 'plan_expiring', 'account_banned'] },
-];
+function getCategories(t) {
+  return [
+    { id: 'all',       label: t('notifications.categoryAll', 'All'),          icon: Inbox,          matchTypes: null },
+    { id: 'documents', label: t('notifications.categoryDocuments', 'Documents'),    icon: FileText,       matchTypes: ['mindmap_ready', 'flashcards_ready', 'quiz_ready', 'summary_ready', 'document_processed', 'document_generated'] },
+    { id: 'sharing',   label: t('notifications.categorySharing', 'Sharing'),      icon: Share2,         matchTypes: ['document_shared', 'document_published', 'shared_document_viewed'] },
+    { id: 'security',  label: t('notifications.categorySecurity', 'Security'),     icon: Lock,           matchTypes: ['email_verification_needed', 'password_reset_requested', 'password_reset_success', 'new_device_login', 'security_alert', 'email_verified'] },
+    { id: 'community', label: t('notifications.categoryCommunity', 'Community'),    icon: Users,          matchTypes: ['profile_viewed', 'leaderboard_achievement', 'learning_goal_achieved', 'streak_milestone', 'community_activity'] },
+    { id: 'admin',     label: t('notifications.categoryAdmin', 'Admin'),        icon: ShieldAlert,    matchTypes: ['admin_message', 'plan_changed', 'plan_expiring', 'account_banned'] },
+  ];
+}
 
 /* ─── Time formatting ─── */
-function formatTime(dateStr) {
+function formatTime(dateStr, t) {
   const now = Date.now();
   const then = new Date(dateStr).getTime();
   const diffSec = Math.max(0, Math.floor((now - then) / 1000));
-  if (diffSec < 60) return 'just now';
+  if (diffSec < 60) return t('notifications.justNow', 'just now');
   const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffMin < 60) return `${diffMin}${t('notifications.minutesAgo', 'm ago')}`;
   const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
+  if (diffHr < 24) return `${diffHr}${t('notifications.hoursAgo', 'h ago')}`;
   const diffDay = Math.floor(diffHr / 24);
-  if (diffDay < 7) return `${diffDay}d ago`;
+  if (diffDay < 7) return `${diffDay}${t('notifications.daysAgo', 'd ago')}`;
   return new Date(dateStr).toLocaleDateString(undefined, {
     month: 'short', day: 'numeric', year: 'numeric'
   });
@@ -74,7 +76,7 @@ function formatFullDate(dateStr) {
 }
 
 /* ─── Group notifications by date ─── */
-function groupByDate(notifications) {
+function groupByDate(notifications, t) {
   const groups = {};
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
@@ -83,10 +85,10 @@ function groupByDate(notifications) {
   for (const n of notifications) {
     const d = new Date(n.created_at); d.setHours(0, 0, 0, 0);
     let label;
-    if (d.getTime() === today.getTime()) label = 'Today';
-    else if (d.getTime() === yesterday.getTime()) label = 'Yesterday';
-    else if (d >= weekAgo) label = 'This Week';
-    else label = 'Older';
+    if (d.getTime() === today.getTime()) label = t('notifications.dateToday', 'Today');
+    else if (d.getTime() === yesterday.getTime()) label = t('notifications.dateYesterday', 'Yesterday');
+    else if (d >= weekAgo) label = t('notifications.dateThisWeek', 'This Week');
+    else label = t('notifications.dateOlder', 'Older');
 
     if (!groups[label]) groups[label] = [];
     groups[label].push(n);
@@ -212,6 +214,7 @@ export default function NotificationManager({ onBack }) {
   };
 
   /* ─── Filtering ─── */
+  const CATEGORIES = getCategories(t);
   const categoryFilter = CATEGORIES.find(c => c.id === activeCategory);
   const filtered = notifications.filter(n => {
     // Category filter
@@ -226,7 +229,7 @@ export default function NotificationManager({ onBack }) {
     return true;
   });
 
-  const grouped = groupByDate(filtered);
+  const grouped = groupByDate(filtered, t);
 
   const toggleSelect = (id) => {
     setSelectedIds(prev => {
@@ -264,11 +267,11 @@ export default function NotificationManager({ onBack }) {
           <div className="flex items-center gap-1">
             {selectionMode && selectedIds.size > 0 && (
               <>
-                <span className="text-xs text-muted mr-1">{selectedIds.size} selected</span>
-                <button onClick={bulkMarkRead} className="p-1.5 rounded-lg hover:bg-emerald-500/10 text-muted hover:text-emerald-400 transition-colors" title="Mark selected as read">
+                <span className="text-xs text-muted mr-1">{selectedIds.size} {t('notifications.selected', 'selected')}</span>
+                <button onClick={bulkMarkRead} className="p-1.5 rounded-lg hover:bg-emerald-500/10 text-muted hover:text-emerald-400 transition-colors" title={t('notifications.markSelectedRead', 'Mark selected as read')}>
                   <CheckCheck size={16} />
                 </button>
-                <button onClick={bulkDelete} className="p-1.5 rounded-lg hover:bg-red-500/10 text-muted hover:text-red-400 transition-colors" title="Delete selected">
+                <button onClick={bulkDelete} className="p-1.5 rounded-lg hover:bg-red-500/10 text-muted hover:text-red-400 transition-colors" title={t('notifications.deleteSelected', 'Delete selected')}>
                   <Trash2 size={16} />
                 </button>
                 <div className="w-px h-4 bg-line mx-1" />
@@ -277,16 +280,16 @@ export default function NotificationManager({ onBack }) {
             {selectionMode ? (
               <>
                 <button onClick={selectAll} className="px-2 py-1 rounded-lg text-xs font-medium text-muted hover:text-txt hover:bg-surface-2 transition-colors">
-                  Select all
+                  {t('notifications.selectAll', 'Select all')}
                 </button>
                 <button onClick={() => { setSelectionMode(false); setSelectedIds(new Set()); }} className="px-2 py-1 rounded-lg text-xs font-medium text-primary-400 hover:bg-primary-600/10 transition-colors">
-                  Cancel
+                  {t('notifications.cancel', 'Cancel')}
                 </button>
               </>
             ) : (
               <>
                 <button onClick={() => setSelectionMode(true)} className="px-2 py-1 rounded-lg text-xs font-medium text-muted hover:text-txt hover:bg-surface-2 transition-colors">
-                  Select
+                  {t('notifications.select', 'Select')}
                 </button>
                 {unreadCount > 0 && (
                   <button onClick={markAllRead} className="px-2 py-1 rounded-lg text-xs font-medium text-muted hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors flex items-center gap-1">
@@ -328,7 +331,7 @@ export default function NotificationManager({ onBack }) {
 
           {/* Categories */}
           <div>
-            <h3 className="text-xs font-bold text-muted uppercase tracking-widest mb-2">Categories</h3>
+            <h3 className="text-xs font-bold text-muted uppercase tracking-widest mb-2">{t('notifications.categories', 'Categories')}</h3>
             <div className="space-y-0.5">
               {CATEGORIES.map((cat) => {
                 const CatIcon = cat.icon;
@@ -366,12 +369,12 @@ export default function NotificationManager({ onBack }) {
 
           {/* Read status filter */}
           <div>
-            <h3 className="text-xs font-bold text-muted uppercase tracking-widest mb-2">Status</h3>
+            <h3 className="text-xs font-bold text-muted uppercase tracking-widest mb-2">{t('notifications.status', 'Status')}</h3>
             <div className="space-y-0.5">
               {[
-                { id: 'all', label: 'All' },
-                { id: 'unread', label: 'Unread' },
-                { id: 'read', label: 'Read' },
+                { id: 'all', label: t('notifications.categoryAll', 'All') },
+                { id: 'unread', label: t('notifications.unread', 'Unread') },
+                { id: 'read', label: t('notifications.read', 'Read') },
               ].map((option) => (
                 <button
                   key={option.id}
@@ -391,11 +394,11 @@ export default function NotificationManager({ onBack }) {
           {/* Stats */}
           <div className="mt-auto pt-4 border-t border-line space-y-2">
             <div className="flex justify-between text-xs text-muted">
-              <span>Total</span>
+              <span>{t('notifications.total', 'Total')}</span>
               <span className="font-medium text-txt">{totalCount}</span>
             </div>
             <div className="flex justify-between text-xs text-muted">
-              <span>Unread</span>
+              <span>{t('notifications.unread', 'Unread')}</span>
               <span className="font-medium text-primary-400">{unreadCount}</span>
             </div>
           </div>
@@ -521,7 +524,7 @@ export default function NotificationManager({ onBack }) {
                             {n.message && (
                               <p className="text-xs text-muted mt-0.5 line-clamp-1 leading-relaxed">{n.message}</p>
                             )}
-                            <p className="text-[11px] text-muted/50 mt-1">{formatTime(n.created_at)}</p>
+                            <p className="text-[11px] text-muted/50 mt-1">{formatTime(n.created_at, t)}</p>
                           </div>
 
                           {/* Hover actions */}
@@ -531,7 +534,7 @@ export default function NotificationManager({ onBack }) {
                                 <button
                                   onClick={(e) => { e.stopPropagation(); markAsRead(n.id); }}
                                   className="p-1.5 rounded-md hover:bg-surface-2 text-muted hover:text-emerald-400 transition-colors"
-                                  title="Mark as read"
+                                  title={t('notifications.markAsReadTooltip', 'Mark as read')}
                                 >
                                   <Check size={14} />
                                 </button>
@@ -539,7 +542,7 @@ export default function NotificationManager({ onBack }) {
                               <button
                                 onClick={(e) => { e.stopPropagation(); deleteNotification(n.id); }}
                                 className="p-1.5 rounded-md hover:bg-red-500/10 text-muted hover:text-red-400 transition-colors"
-                                title="Delete"
+                                title={t('notifications.deleteTooltip', 'Delete')}
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -599,7 +602,7 @@ export default function NotificationManager({ onBack }) {
                               ? 'bg-surface-2 text-muted'
                               : 'bg-primary-500/15 text-primary-400'
                           }`}>
-                            {selectedNotification.is_read ? 'Read' : 'Unread'}
+                          {selectedNotification.is_read ? t('notifications.statusRead', 'Read') : t('notifications.statusUnread', 'Unread')}
                           </span>
                         </div>
                       </div>
@@ -613,16 +616,16 @@ export default function NotificationManager({ onBack }) {
 
                     <div className="space-y-3 text-xs">
                       <div className="flex justify-between text-muted">
-                        <span>Type</span>
+                        <span>{t('notifications.type', 'Type')}</span>
                         <span className="font-medium text-txt/70 capitalize">{(selectedNotification.type || '').replace(/_/g, ' ')}</span>
                       </div>
                       <div className="flex justify-between text-muted">
-                        <span>Created</span>
+                        <span>{t('notifications.created', 'Created')}</span>
                         <span className="font-medium text-txt/70">{formatFullDate(selectedNotification.created_at)}</span>
                       </div>
                       {selectedNotification.read_at && (
                         <div className="flex justify-between text-muted">
-                          <span>Read at</span>
+                          <span>{t('notifications.readAt', 'Read at')}</span>
                           <span className="font-medium text-txt/70">{formatFullDate(selectedNotification.read_at)}</span>
                         </div>
                       )}
@@ -630,7 +633,7 @@ export default function NotificationManager({ onBack }) {
 
                     {selectedNotification.data && (
                       <div>
-                        <h4 className="text-xs font-bold text-muted uppercase tracking-widest mb-2">Metadata</h4>
+                        <h4 className="text-xs font-bold text-muted uppercase tracking-widest mb-2">{t('notifications.metadata', 'Metadata')}</h4>
                         <div className="bg-surface-2/50 rounded-lg p-3 space-y-1">
                           {Object.entries(selectedNotification.data).map(([key, val]) => (
                             <div key={key} className="flex justify-between text-xs">
