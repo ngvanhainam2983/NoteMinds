@@ -1776,7 +1776,7 @@ app.use('/api', (req, res, next) => {
           const authHeader = req.headers.authorization;
           if (authHeader) {
             const token = authHeader.split(' ')[1];
-            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'notemind-secret-key-2024');
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
             if (decoded.role === 'admin') return next();
           }
         } catch { }
@@ -1800,7 +1800,7 @@ app.get('/api/notifications/stream', (req, res) => {
   
   let decoded;
   try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET || 'notemind-secret-key-2024');
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
   } catch {
     return res.status(401).json({ error: 'Invalid token' });
   }

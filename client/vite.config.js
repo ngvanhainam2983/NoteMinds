@@ -8,15 +8,10 @@ const __dirname = path.dirname(__filename)
 
 export default defineConfig(({ mode }) => {
   const serverEnvDir = path.resolve(__dirname, '../server')
-  const serverEnv = loadEnv(mode, serverEnvDir, '')
-
-  const viteEncryptionKey = process.env.VITE_ENCRYPTION_KEY || serverEnv.ENCRYPTION_KEY || ''
+  loadEnv(mode, serverEnvDir, '')
 
   return {
     plugins: [react()],
-    define: {
-      'import.meta.env.VITE_ENCRYPTION_KEY': JSON.stringify(viteEncryptionKey)
-    },
     server: {
       port: 5173,
       proxy: {

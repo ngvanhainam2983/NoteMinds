@@ -1,22 +1,22 @@
 # Multi-stage Dockerfile for NoteMind
 
 # Stage 1: Build Frontend
-FROM node:18-alpine AS frontend-builder
+FROM node:20-alpine AS frontend-builder
 
 WORKDIR /app/client
 COPY client/package*.json ./
-RUN npm ci --only=production
+RUN npm install --omit=dev
 COPY client/ ./
 RUN npm run build
 
 # Stage 2: Backend Runtime
-FROM node:18-alpine AS backend
+FROM node:20-alpine AS backend
 
 WORKDIR /app
 
 # Install production dependencies
 COPY server/package*.json ./
-RUN npm ci --only=production
+RUN npm install --omit=dev
 
 # Copy server code
 COPY server/ ./

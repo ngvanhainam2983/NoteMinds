@@ -99,7 +99,7 @@ Bạn có thể dùng Docker để chuẩn hóa môi trường chạy và stagin
 ## 🔐 Lưu ý bảo mật
 
 - Không commit file `.env`
-- Luôn thay `JWT_SECRET`, `ENCRYPTION_KEY`, `QWEN_API_KEY` bằng giá trị thực
+- Luôn thay `JWT_SECRET`, `QWEN_API_KEY` bằng giá trị thực
 - Không đặt thông tin bí mật trong biến `VITE_*` phía client
 - Dùng biến môi trường riêng cho dev/staging/production
 
