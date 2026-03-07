@@ -193,6 +193,12 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
+// Ensure documents directory exists
+const documentsDir = path.join(uploadsDir, 'documents');
+if (!fs.existsSync(documentsDir)) {
+  fs.mkdirSync(documentsDir, { recursive: true });
+}
+
 // Ensure avatars directory exists
 const avatarsDir = path.join(uploadsDir, 'avatars');
 if (!fs.existsSync(avatarsDir)) {
@@ -203,11 +209,11 @@ if (!fs.existsSync(avatarsDir)) {
 app.use('/uploads/avatars', express.static(avatarsDir));
 
 // Initialize cleanup cron job
-initDocumentCleanup(uploadsDir);
+initDocumentCleanup(documentsDir);
 
 // Multer config
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadsDir),
+  destination: (req, file, cb) => cb(null, documentsDir),
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
     cb(null, `${uuidv4()}${ext}`);
@@ -825,7 +831,8 @@ app.post('/api/users/profile/avatar', requireAuth, avatarUpload.single('avatar')
 
     // Remove old avatar file if exists
     if (req.user.avatar_url) {
-      const oldPath = path.join(__dirname, req.user.avatar_url);
+      const oldRelativePath = req.user.avatar_url.replace(/^\//, '');
+      const oldPath = path.join(__dirname, oldRelativePath);
       if (fs.existsSync(oldPath)) {
         try { fs.unlinkSync(oldPath); } catch (e) { /* ignore */ }
       }
