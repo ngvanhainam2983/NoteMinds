@@ -7,10 +7,11 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 export default defineConfig(({ mode }) => {
-  const serverEnvDir = path.resolve(__dirname, '../server')
-  loadEnv(mode, serverEnvDir, '')
+  const rootEnvDir = path.resolve(__dirname, '..')
+  loadEnv(mode, rootEnvDir, '')
 
   return {
+    envDir: '..',
     plugins: [react()],
     server: {
       port: 5173,

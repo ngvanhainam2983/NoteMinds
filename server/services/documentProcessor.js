@@ -103,9 +103,6 @@ async function extractPdfText(filePath) {
  */
 async function transcribeAudio(filePath) {
   try {
-    const dotenv = await import('dotenv');
-    dotenv.config();
-
     const apiKey = process.env.QWEN_API_KEY || 'ollama';
     const baseURL = 'https://dashscope-intl.aliyuncs.com/api/v1';
 

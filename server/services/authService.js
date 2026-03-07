@@ -4,9 +4,7 @@ import crypto from 'crypto';
 import { TOTP, Secret } from 'otpauth';
 import QRCode from 'qrcode';
 import db from './database.js';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import './envLoader.js';
 
 // ==== SECURITY: Enforce JWT_SECRET from environment ====
 const JWT_SECRET = process.env.JWT_SECRET;

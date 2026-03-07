@@ -2,6 +2,11 @@ import axios from 'axios';
 
 // Determine API base URL based on environment
 export const getApiBaseUrl = () => {
+  const envApiUrl = import.meta.env.VITE_API_URL;
+  if (typeof envApiUrl === 'string' && envApiUrl.trim()) {
+    return envApiUrl.trim();
+  }
+
   // Local development - use /api prefix
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     return '/api';

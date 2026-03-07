@@ -1,8 +1,6 @@
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import './envLoader.js';
 
 // ── SMTP Configuration ──────────────────────────────────
 const smtpPort = parseInt(process.env.SMTP_PORT || '587');

@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
@@ -54,10 +53,9 @@ import {
   NOTIFICATION_TYPES, getNotificationTemplate,
   getAllNotifications, getNotificationStats, cleanupOldNotifications,
 } from './services/notificationService.js';
+import './services/envLoader.js';
 import Database from 'better-sqlite3';
 import jwt from 'jsonwebtoken';
-
-dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
