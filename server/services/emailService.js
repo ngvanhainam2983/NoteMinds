@@ -85,85 +85,119 @@ function t(lang, key) {
 // ── Enhanced Email Templates ─────────────────────────────────────
 
 function baseTemplate(content, trackingId, lang = 'vi') {
-    const trackingPixel = trackingId ? `<img src="${BACKEND_URL}/api/email/track/${trackingId}" width="1" height="1" style="display:block;" alt="" />` : '';
+    const trackingPixel = trackingId ? `<img src="${BACKEND_URL}/api/email/track/${trackingId}" width="1" height="1" style="display:none;width:1px;height:1px;" alt="" />` : '';
     
     return `
 <!DOCTYPE html>
-<html lang="${lang}">
+<html lang="${lang}" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="x-apple-disable-message-reformatting">
+  <meta name="format-detection" content="telephone=no,address=no,email=no,date=no,url=no">
+  <title>NoteMinds</title>
   <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:AllowPNG/>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
   <style type="text/css">
-    body, table, td {font-family: Arial, Helvetica, sans-serif !important;}
+    body, table, td, a { font-family: Arial, Helvetica, sans-serif !important; }
   </style>
   <![endif]-->
+  <style>
+    @media only screen and (max-width: 600px) {
+      .email-container { width: 100% !important; max-width: 100% !important; }
+      .email-content { padding: 24px 20px !important; }
+      .hero-title { font-size: 20px !important; }
+      .cta-button { padding: 14px 32px !important; }
+    }
+  </style>
 </head>
-<body style="margin:0; padding:0; background: linear-gradient(135deg, #0f1117 0%, #1a1d27 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; -webkit-font-smoothing: antialiased;">
-  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background: linear-gradient(135deg, #0f1117 0%, #1a1d27 100%); padding:40px 20px;">
+<body style="margin:0; padding:0; word-spacing:normal; background-color:#09090b; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
+  <!-- Visually Hidden Preheader Text -->
+  <div style="display:none; font-size:1px; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden; mso-hide:all;">
+    NoteMinds &mdash; ${t(lang, 'poweredBy')}
+  </div>
+
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#09090b;">
     <tr>
-      <td align="center">
-        <!-- Main Container -->
-        <table width="100%" style="max-width:600px; background-color:#1a1d27; border-radius:20px; border:1px solid #2e3144; overflow:hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.4);" cellpadding="0" cellspacing="0" role="presentation">
-          
-          <!-- Decorative Header Bar -->
+      <td align="center" style="padding:32px 16px;">
+
+        <!-- ─── Email Container ─── -->
+        <table role="presentation" class="email-container" width="560" cellspacing="0" cellpadding="0" border="0" style="max-width:560px; width:100%;">
+
+          <!-- Logo -->
           <tr>
-            <td style="background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 50%, #7c3aed 100%); height:4px;"></td>
-          </tr>
-          
-          <!-- Logo & Header -->
-          <tr>
-            <td style="padding:40px 40px 24px; text-align:center; background: linear-gradient(180deg, #1a1d27 0%, #16181f 100%);">
-              <div style="display:inline-block; background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%); padding:16px 24px; border-radius:16px; box-shadow: 0 8px 24px rgba(124, 58, 237, 0.3);">
-                <h1 style="margin:0; font-size:28px; font-weight:800; color:#ffffff; letter-spacing:-0.5px;">
-                  📚 NoteMinds
-                </h1>
-              </div>
-              <p style="margin:12px 0 0; font-size:13px; color:#9496a1; font-weight:500; letter-spacing:1px; text-transform:uppercase;">
-                ${t(lang, 'poweredBy')}
-              </p>
+            <td align="center" style="padding:0 0 32px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td style="padding:10px 20px; background-color:#18181b; border:1px solid #27272a; border-radius:10px;">
+                    <span style="font-size:18px; font-weight:700; color:#fafafa; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; letter-spacing:-0.3px;">
+                      NoteMinds
+                    </span>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
-          
-          <!-- Content -->
+
+          <!-- Main Card -->
           <tr>
-            <td style="padding:32px 40px 40px; background-color:#1a1d27;">
-              ${content}
+            <td style="background-color:#18181b; border:1px solid #27272a; border-radius:16px; overflow:hidden;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+
+                <!-- Accent bar -->
+                <tr>
+                  <td style="height:3px; background:linear-gradient(90deg, var(--accent, #f43f5e), #fb7185, #fbbf24); font-size:0; line-height:0;">&nbsp;</td>
+                </tr>
+
+                <!-- Content -->
+                <tr>
+                  <td class="email-content" style="padding:40px 36px;">
+                    ${content}
+                  </td>
+                </tr>
+
+              </table>
             </td>
           </tr>
-          
+
           <!-- Footer -->
           <tr>
-            <td style="padding:24px 40px; background: linear-gradient(180deg, #16181f 0%, #0f1117 100%); border-top:1px solid #2e3144;">
-              <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+            <td style="padding:28px 0 0;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                 <tr>
-                  <td style="text-align:center; padding-bottom:16px;">
-                    <span style="display:inline-block; margin:0 8px; padding:6px 12px; background-color:#1a1d27; border:1px solid #2e3144; border-radius:6px; font-size:11px; color:#7c7d85; font-weight:600;">
-                      🔒 ${t(lang, 'secureEmail')}
+                  <td align="center" style="padding:0 0 12px;">
+                    <span style="display:inline-block; padding:4px 10px; background-color:#18181b; border:1px solid #27272a; border-radius:6px; font-size:10px; color:#71717a; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; font-weight:600; letter-spacing:0.3px;">
+                      &#128274; ${t(lang, 'secureEmail')}
                     </span>
                   </td>
                 </tr>
                 <tr>
-                  <td style="text-align:center; padding-bottom:12px;">
-                    <p style="margin:0; font-size:12px; color:#9496a1; line-height:1.6;">
-                      ${t(lang, 'footer')}
-                    </p>
+                  <td align="center" style="font-size:11px; color:#52525b; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; line-height:1.6;">
+                    ${t(lang, 'footer')}
                   </td>
                 </tr>
                 <tr>
-                  <td style="text-align:center;">
-                    <a href="${FRONTEND_URL}" style="color:#7c3aed; text-decoration:none; font-size:11px; font-weight:600;">
-                      ${t(lang, 'needHelp')}
+                  <td align="center" style="padding:8px 0 0;">
+                    <a href="${FRONTEND_URL}" style="color:#a1a1aa; font-size:11px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; text-decoration:none; font-weight:500;">
+                      ${t(lang, 'needHelp')} &rarr;
                     </a>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
-          
+
         </table>
-        <!-- End Main Container -->
+        <!-- End Container -->
+
       </td>
     </tr>
   </table>
@@ -174,87 +208,139 @@ function baseTemplate(content, trackingId, lang = 'vi') {
 
 function verificationEmailTemplate(username, verifyUrl, trackingId, lang = 'vi') {
     return baseTemplate(`
-    <!-- Card with gradient background -->
-    <div style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(167, 139, 250, 0.05) 100%); border:1px solid rgba(124, 58, 237, 0.3); border-radius:12px; padding:28px; margin-bottom:24px;">
-      <h2 style="margin:0 0 12px; font-size:22px; color:#ffffff; font-weight:700; letter-spacing:-0.3px;">
-        ${t(lang, 'verifyEmailTitle')}
-      </h2>
-      <p style="margin:0; font-size:15px; color:#c4c6d0; line-height:1.7;">
-        ${t(lang, 'verifyEmailGreeting')} <strong style="color:#a78bfa; font-weight:700;">${username}</strong>,<br>
-        ${t(lang, 'verifyEmailBody')}
-      </p>
-    </div>
-    
-    <!-- CTA Button -->
-    <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+    <!-- Icon -->
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0">
       <tr>
-        <td align="center" style="padding:0 0 28px;">
-          <a href="${verifyUrl}" style="display:inline-block; padding:16px 48px; background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); color:#ffffff; text-decoration:none; border-radius:12px; font-size:15px; font-weight:700; letter-spacing:0.3px; box-shadow: 0 8px 24px rgba(124, 58, 237, 0.4); transition: all 0.3s;">
-            ✓ ${t(lang, 'verifyEmailButton')}
-          </a>
+        <td style="width:44px; height:44px; background-color:#09090b; border:1px solid #27272a; border-radius:12px; text-align:center; vertical-align:middle; font-size:20px; line-height:44px;">
+          &#9993;
         </td>
       </tr>
     </table>
-    
-    <!-- Alternative Link -->
-    <div style="background-color:#16181f; border:1px solid #2e3144; border-radius:10px; padding:20px; margin-bottom:20px;">
-      <p style="margin:0 0 10px; font-size:12px; color:#9496a1; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">
-        ${t(lang, 'verifyEmailOr')}
-      </p>
-      <p style="margin:0; font-size:12px; color:#7c3aed; word-break:break-all; line-height:1.6; font-family: 'Courier New', monospace;">
-        ${verifyUrl}
-      </p>
-    </div>
-    
-    <!-- Warning Box -->
-    <div style="border-left:3px solid #7c3aed; background-color:rgba(124, 58, 237, 0.05); padding:14px 16px; border-radius:0 8px 8px 0;">
-      <p style="margin:0; font-size:13px; color:#9496a1; line-height:1.6;">
-        ⏱️ ${t(lang, 'verifyEmailExpiry')}
-      </p>
-    </div>
+
+    <!-- Title -->
+    <h1 class="hero-title" style="margin:20px 0 8px; font-size:22px; font-weight:700; color:#fafafa; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; letter-spacing:-0.4px; line-height:1.3;">
+      ${t(lang, 'verifyEmailTitle')}
+    </h1>
+
+    <!-- Body text -->
+    <p style="margin:0 0 28px; font-size:14px; color:#a1a1aa; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; line-height:1.7;">
+      ${t(lang, 'verifyEmailGreeting')} <strong style="color:#fafafa;">${username}</strong>,<br>
+      ${t(lang, 'verifyEmailBody')}
+    </p>
+
+    <!-- CTA Button -->
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+      <tr>
+        <td>
+          <!--[if mso]>
+          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${verifyUrl}" style="height:46px;v-text-anchor:middle;width:200px;" arcsize="26%" fillcolor="#f43f5e" stroke="f">
+            <w:anchorlock/>
+            <center style="color:#ffffff;font-family:sans-serif;font-size:14px;font-weight:bold;">&#10003; ${t(lang, 'verifyEmailButton')}</center>
+          </v:roundrect>
+          <![endif]-->
+          <!--[if !mso]><!-->
+          <a href="${verifyUrl}" class="cta-button" style="display:inline-block; padding:14px 36px; background-color:#f43f5e; color:#ffffff; text-decoration:none; border-radius:10px; font-size:14px; font-weight:600; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; letter-spacing:0.2px; mso-hide:all;">
+            &#10003; ${t(lang, 'verifyEmailButton')}
+          </a>
+          <!--<![endif]-->
+        </td>
+      </tr>
+    </table>
+
+    <!-- Divider -->
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:28px 0 20px;">
+      <tr>
+        <td style="border-top:1px solid #27272a; font-size:0; line-height:0;">&nbsp;</td>
+      </tr>
+    </table>
+
+    <!-- Alternative link -->
+    <p style="margin:0 0 8px; font-size:11px; color:#71717a; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">
+      ${t(lang, 'verifyEmailOr')}
+    </p>
+    <p style="margin:0 0 24px; font-size:12px; word-break:break-all; line-height:1.6; font-family:'Courier New',monospace;">
+      <a href="${verifyUrl}" style="color:#71717a; text-decoration:none;">${verifyUrl}</a>
+    </p>
+
+    <!-- Expiry notice -->
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+      <tr>
+        <td style="padding:12px 16px; background-color:#09090b; border:1px solid #27272a; border-radius:10px; border-left:3px solid #f43f5e;">
+          <p style="margin:0; font-size:12px; color:#a1a1aa; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; line-height:1.6;">
+            &#9203; ${t(lang, 'verifyEmailExpiry')}
+          </p>
+        </td>
+      </tr>
+    </table>
   `, trackingId, lang);
 }
 
 function resetPasswordEmailTemplate(username, resetUrl, trackingId, lang = 'vi') {
     return baseTemplate(`
-    <!-- Card with gradient background -->
-    <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%); border:1px solid rgba(239, 68, 68, 0.3); border-radius:12px; padding:28px; margin-bottom:24px;">
-      <h2 style="margin:0 0 12px; font-size:22px; color:#ffffff; font-weight:700; letter-spacing:-0.3px;">
-        ${t(lang, 'resetPasswordTitle')}
-      </h2>
-      <p style="margin:0; font-size:15px; color:#c4c6d0; line-height:1.7;">
-        ${t(lang, 'resetPasswordGreeting')} <strong style="color:#fca5a5; font-weight:700;">${username}</strong>,<br>
-        ${t(lang, 'resetPasswordBody')}
-      </p>
-    </div>
-    
-    <!-- CTA Button -->
-    <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+    <!-- Icon -->
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0">
       <tr>
-        <td align="center" style="padding:0 0 28px;">
-          <a href="${resetUrl}" style="display:inline-block; padding:16px 48px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color:#ffffff; text-decoration:none; border-radius:12px; font-size:15px; font-weight:700; letter-spacing:0.3px; box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4); transition: all 0.3s;">
-            🔑 ${t(lang, 'resetPasswordButton')}
-          </a>
+        <td style="width:44px; height:44px; background-color:#09090b; border:1px solid #27272a; border-radius:12px; text-align:center; vertical-align:middle; font-size:20px; line-height:44px;">
+          &#128272;
         </td>
       </tr>
     </table>
-    
-    <!-- Alternative Link -->
-    <div style="background-color:#16181f; border:1px solid #2e3144; border-radius:10px; padding:20px; margin-bottom:20px;">
-      <p style="margin:0 0 10px; font-size:12px; color:#9496a1; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">
-        ${t(lang, 'resetPasswordOr')}
-      </p>
-      <p style="margin:0; font-size:12px; color:#ef4444; word-break:break-all; line-height:1.6; font-family: 'Courier New', monospace;">
-        ${resetUrl}
-      </p>
-    </div>
-    
-    <!-- Warning Box -->
-    <div style="border-left:3px solid #ef4444; background-color:rgba(239, 68, 68, 0.05); padding:14px 16px; border-radius:0 8px 8px 0;">
-      <p style="margin:0; font-size:13px; color:#9496a1; line-height:1.6;">
-        ⏱️ ${t(lang, 'resetPasswordExpiry')}
-      </p>
-    </div>
+
+    <!-- Title -->
+    <h1 class="hero-title" style="margin:20px 0 8px; font-size:22px; font-weight:700; color:#fafafa; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; letter-spacing:-0.4px; line-height:1.3;">
+      ${t(lang, 'resetPasswordTitle')}
+    </h1>
+
+    <!-- Body text -->
+    <p style="margin:0 0 28px; font-size:14px; color:#a1a1aa; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; line-height:1.7;">
+      ${t(lang, 'resetPasswordGreeting')} <strong style="color:#fafafa;">${username}</strong>,<br>
+      ${t(lang, 'resetPasswordBody')}
+    </p>
+
+    <!-- CTA Button -->
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+      <tr>
+        <td>
+          <!--[if mso]>
+          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${resetUrl}" style="height:46px;v-text-anchor:middle;width:220px;" arcsize="26%" fillcolor="#f43f5e" stroke="f">
+            <w:anchorlock/>
+            <center style="color:#ffffff;font-family:sans-serif;font-size:14px;font-weight:bold;">&#128272; ${t(lang, 'resetPasswordButton')}</center>
+          </v:roundrect>
+          <![endif]-->
+          <!--[if !mso]><!-->
+          <a href="${resetUrl}" class="cta-button" style="display:inline-block; padding:14px 36px; background-color:#f43f5e; color:#ffffff; text-decoration:none; border-radius:10px; font-size:14px; font-weight:600; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; letter-spacing:0.2px; mso-hide:all;">
+            &#128272; ${t(lang, 'resetPasswordButton')}
+          </a>
+          <!--<![endif]-->
+        </td>
+      </tr>
+    </table>
+
+    <!-- Divider -->
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:28px 0 20px;">
+      <tr>
+        <td style="border-top:1px solid #27272a; font-size:0; line-height:0;">&nbsp;</td>
+      </tr>
+    </table>
+
+    <!-- Alternative link -->
+    <p style="margin:0 0 8px; font-size:11px; color:#71717a; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">
+      ${t(lang, 'resetPasswordOr')}
+    </p>
+    <p style="margin:0 0 24px; font-size:12px; word-break:break-all; line-height:1.6; font-family:'Courier New',monospace;">
+      <a href="${resetUrl}" style="color:#71717a; text-decoration:none;">${resetUrl}</a>
+    </p>
+
+    <!-- Expiry notice -->
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+      <tr>
+        <td style="padding:12px 16px; background-color:#09090b; border:1px solid #27272a; border-radius:10px; border-left:3px solid #f43f5e;">
+          <p style="margin:0; font-size:12px; color:#a1a1aa; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; line-height:1.6;">
+            &#9203; ${t(lang, 'resetPasswordExpiry')}
+          </p>
+        </td>
+      </tr>
+    </table>
   `, trackingId, lang);
 }
 
@@ -462,15 +548,27 @@ export function getEmailStatsDateRange(startDate, endDate) {
 export async function sendBlastEmail(email, subject, content, displayName, lang = 'vi', saveTracking = null) {
     const trackingId = generateTrackingId();
     const html = baseTemplate(`
-    <div style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(167, 139, 250, 0.05) 100%); border:1px solid rgba(124, 58, 237, 0.3); border-radius:12px; padding:28px; margin-bottom:24px;">
-      <h2 style="margin:0 0 12px; font-size:22px; color:#ffffff; font-weight:700; letter-spacing:-0.3px;">
-        ${subject}
-      </h2>
-      <p style="margin:0; font-size:15px; color:#c4c6d0; line-height:1.7;">
-        ${t(lang, 'verifyEmailGreeting')} <strong style="color:#a78bfa; font-weight:700;">${displayName || (lang === 'vi' ? 'bạn' : 'there')}</strong>,
-      </p>
-    </div>
-    <div style="font-size:15px; color:#d1d5db; line-height:1.8; padding:0 0 20px;">
+    <!-- Icon -->
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+      <tr>
+        <td style="width:44px; height:44px; background-color:#09090b; border:1px solid #27272a; border-radius:12px; text-align:center; vertical-align:middle; font-size:20px; line-height:44px;">
+          &#128227;
+        </td>
+      </tr>
+    </table>
+
+    <!-- Title -->
+    <h1 class="hero-title" style="margin:20px 0 8px; font-size:22px; font-weight:700; color:#fafafa; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; letter-spacing:-0.4px; line-height:1.3;">
+      ${subject}
+    </h1>
+
+    <!-- Greeting -->
+    <p style="margin:0 0 20px; font-size:14px; color:#a1a1aa; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; line-height:1.7;">
+      ${t(lang, 'verifyEmailGreeting')} <strong style="color:#fafafa;">${displayName || (lang === 'vi' ? 'bạn' : 'there')}</strong>,
+    </p>
+
+    <!-- Content -->
+    <div style="font-size:14px; color:#d4d4d8; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; line-height:1.8; padding:0 0 8px;">
       ${content.replace(/\n/g, '<br>')}
     </div>
   `, trackingId, lang);
@@ -484,7 +582,7 @@ export async function sendBlastEmail(email, subject, content, displayName, lang 
         await transporter.sendMail({
             from: `"${FROM_NAME}" <${FROM_EMAIL}>`,
             to: email,
-            subject: `📢 ${subject} - NoteMinds`,
+            subject: `${subject} - NoteMinds`,
             html,
         });
         console.log(`[Email] Blast email sent to ${email} (tracking: ${trackingId})`);
