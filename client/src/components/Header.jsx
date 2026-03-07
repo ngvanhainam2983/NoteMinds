@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { BrainCircuit, ArrowLeft, LogIn, Menu, X, History, Globe, Trophy, BarChart3, Sparkles, Map } from 'lucide-react';
 import UserDropdown from './UserDropdown';
+import { NotificationBell } from './NotificationBell';
 import { useLanguage } from '../LanguageContext';
 
 export default function Header({ onBackHome, showBack, user, onLoginClick, onLogout, onOpenAdmin, onOpenPricing, onUserUpdate, onOpenDocument, onOpenHistory, onOpenProfile, onOpenLeaderboard, onOpenStats, onOpenLearningPaths, onOpenCommunity, currentView }) {
@@ -126,18 +127,21 @@ export default function Header({ onBackHome, showBack, user, onLoginClick, onLog
         {/* Right side */}
         <div className="flex items-center gap-2 ml-auto">
           {user ? (
-            <UserDropdown
-              user={user}
-              onLogout={onLogout}
-              onOpenAdmin={onOpenAdmin}
-              onOpenPricing={() => handleNav('pricing')}
-              onUserUpdate={onUserUpdate}
-              onOpenDocument={onOpenDocument}
-              onOpenProfile={onOpenProfile}
-              onOpenLeaderboard={onOpenLeaderboard}
-              onOpenStats={onOpenStats}
-              onOpenLearningPaths={() => handleNav('learning-paths')}
-            />
+            <>
+              <NotificationBell userId={user.id} />
+              <UserDropdown
+                user={user}
+                onLogout={onLogout}
+                onOpenAdmin={onOpenAdmin}
+                onOpenPricing={() => handleNav('pricing')}
+                onUserUpdate={onUserUpdate}
+                onOpenDocument={onOpenDocument}
+                onOpenProfile={onOpenProfile}
+                onOpenLeaderboard={onOpenLeaderboard}
+                onOpenStats={onOpenStats}
+                onOpenLearningPaths={() => handleNav('learning-paths')}
+              />
+            </>
           ) : (
             <button
               onClick={onLoginClick}

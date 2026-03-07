@@ -45,9 +45,14 @@ import { initDocumentCleanup } from './services/documentCleanup.js';
 import { logger, requestLoggerMiddleware } from './services/logger.js';
 import featureRoutes from './routes/featuresRoutes.js';
 import statsRoutes from './routes/statsRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 import { logActivity } from './services/statsService.js';
 import { validateShareToken } from './services/advancedFeatureService.js';
 import { sendVerificationEmail, sendPasswordResetEmail, generateVerificationToken, testEmailConnection } from './services/emailService.js';
+import {
+  initNotificationsTable, createNotification, createBulkNotifications,
+  NOTIFICATION_TYPES, getNotificationTemplate,
+} from './services/notificationService.js';
 import Database from 'better-sqlite3';
 import jwt from 'jsonwebtoken';
 
@@ -376,6 +381,17 @@ app.post('/api/auth/verify-email', async (req, res) => {
     const { token } = req.body;
     if (!token) return res.status(400).json({ error: 'Token không hợp lệ' });
     const user = verifyEmail(token);
+    
+    // Create notification for successful email verification
+    createNotification(user.id, 'email_verified',
+      'Email Verified',
+      'Your email has been successfully verified!',
+      {
+        icon: 'check',
+        data: { email: user.email },
+      }
+    );
+    
     res.json({ user, message: 'Email đã được xác minh thành công!' });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -415,6 +431,17 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 
     const resetToken = generateVerificationToken();
     setResetToken(user.id, resetToken);
+    
+    // Create notification for password reset request
+    createNotification(user.id, NOTIFICATION_TYPES.PASSWORD_RESET_REQUESTED,
+      'Password Reset Request',
+      'A password reset link has been sent to your email.',
+      {
+        icon: 'lock',
+        data: { email: user.email },
+      }
+    );
+    
     await sendPasswordResetEmail(email, resetToken, user.username);
     res.json({ message: 'Nếu email tồn tại, bạn sẽ nhận được link đặt lại mật khẩu.' });
   } catch (err) {
@@ -433,6 +460,17 @@ app.post('/api/auth/reset-password', async (req, res) => {
       return res.status(400).json({ error: 'Mật khẩu mới phải có ít nhất 6 ký tự' });
     }
     const user = resetPasswordWithToken(token, newPassword);
+    
+    // Create notification for successful password reset
+    createNotification(user.id, 'password_reset_success',
+      'Password Changed',
+      'Your password has been successfully reset.',
+      {
+        icon: 'lock',
+        data: { email: user.email },
+      }
+    );
+    
     res.json({ user, message: 'Mật khẩu đã được đặt lại thành công!' });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -806,7 +844,18 @@ app.get('/api/admin/users', requireAuth, requireAdmin, (req, res) => {
 app.put('/api/admin/users/:userId/plan', requireAuth, requireAdmin, (req, res) => {
   try {
     const { plan, expiresAt } = req.body;
-    const updated = setUserPlan(Number(req.params.userId), plan, expiresAt);
+    const userId = Number(req.params.userId);
+    const updated = setUserPlan(userId, plan, expiresAt);
+    
+    // Create notification for plan change
+    const template = getNotificationTemplate(NOTIFICATION_TYPES.PLAN_CHANGED, plan);
+    if (template) {
+      createNotification(userId, NOTIFICATION_TYPES.PLAN_CHANGED, template.title, template.message, {
+        icon: template.icon || 'upgrade',
+        data: { plan, expiresAt },
+      });
+    }
+    
     res.json({ user: updated });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -831,7 +880,19 @@ app.get('/api/admin/plans', requireAuth, requireAdmin, (req, res) => {
 app.put('/api/admin/users/:userId/ban', requireAuth, requireAdmin, (req, res) => {
   try {
     const { reason } = req.body;
-    const updated = banUser(Number(req.params.userId), reason);
+    const userId = Number(req.params.userId);
+    const updated = banUser(userId, reason);
+    
+    // Create notification for account ban
+    createNotification(userId, NOTIFICATION_TYPES.ACCOUNT_BANNED, 
+      'Account Suspended',
+      `Your account has been suspended. Reason: ${reason || 'No reason provided'}`,
+      {
+        icon: 'alert',
+        data: { reason },
+      }
+    );
+    
     res.json({ user: updated });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -1326,6 +1387,19 @@ app.post('/api/documents/:docId/mindmap', async (req, res) => {
     });
     saveDocumentSession(req.params.docId, 'mindmap', mindmap);
     broadcastDocEvent(req.params.docId, 'mindmap', mindmap);
+    
+    // Create notification for the document owner
+    if (doc.owner_id) {
+      const template = getNotificationTemplate(NOTIFICATION_TYPES.MINDMAP_READY, doc.fileName);
+      if (template) {
+        createNotification(doc.owner_id, NOTIFICATION_TYPES.MINDMAP_READY, template.title, template.message, {
+          actionUrl: `/documents/${req.params.docId}`,
+          icon: template.icon || 'mindmap',
+          data: { docId: req.params.docId, fileName: doc.fileName },
+        });
+      }
+    }
+    
     res.json(mindmap);
   } catch (error) {
     console.error('Mindmap generation error:', error);
@@ -1352,6 +1426,19 @@ app.post('/api/documents/:docId/summary', async (req, res) => {
     });
     saveDocumentSession(req.params.docId, 'summary', summary);
     broadcastDocEvent(req.params.docId, 'summary', summary);
+    
+    // Create notification for the document owner
+    if (doc.owner_id) {
+      const template = getNotificationTemplate(NOTIFICATION_TYPES.SUMMARY_READY, doc.fileName);
+      if (template) {
+        createNotification(doc.owner_id, NOTIFICATION_TYPES.SUMMARY_READY, template.title, template.message, {
+          actionUrl: `/documents/${req.params.docId}`,
+          icon: template.icon || 'summary',
+          data: { docId: req.params.docId, fileName: doc.fileName },
+        });
+      }
+    }
+    
     res.json({ summary });
   } catch (error) {
     console.error('Summary generation error:', error);
@@ -1378,6 +1465,19 @@ app.post('/api/documents/:docId/flashcards', async (req, res) => {
     });
     saveDocumentSession(req.params.docId, 'flashcards', flashcards);
     broadcastDocEvent(req.params.docId, 'flashcards', flashcards);
+    
+    // Create notification for the document owner
+    if (doc.owner_id) {
+      const template = getNotificationTemplate(NOTIFICATION_TYPES.FLASHCARDS_READY, doc.fileName);
+      if (template) {
+        createNotification(doc.owner_id, NOTIFICATION_TYPES.FLASHCARDS_READY, template.title, template.message, {
+          actionUrl: `/documents/${req.params.docId}`,
+          icon: template.icon || 'flashcard',
+          data: { docId: req.params.docId, fileName: doc.fileName },
+        });
+      }
+    }
+    
     res.json(flashcards);
   } catch (error) {
     console.error('Flashcard generation error:', error);
@@ -1472,6 +1572,20 @@ app.post('/api/documents/:docId/quiz', async (req, res) => {
     if (req.user && req.user.id) {
       logActivity(req.user.id, 'quizzes_completed');
     }
+    
+    // Create notification for the document owner
+    const doc_data = documents.get(req.params.docId);
+    if (doc_data && doc_data.owner_id) {
+      const template = getNotificationTemplate(NOTIFICATION_TYPES.QUIZ_READY, doc_data.fileName);
+      if (template) {
+        createNotification(doc_data.owner_id, NOTIFICATION_TYPES.QUIZ_READY, template.title, template.message, {
+          actionUrl: `/documents/${req.params.docId}`,
+          icon: template.icon || 'quiz',
+          data: { docId: req.params.docId, fileName: doc_data.fileName },
+        });
+      }
+    }
+    
     res.json(quiz);
   } catch (error) {
     console.error('Quiz generation error:', error);
@@ -1642,6 +1756,9 @@ app.use('/api', (req, res, next) => {
 
 // Feature routes - all advanced features (chat history, favorites, tags, search, analytics, sharing, spaced repetition, exports, sync, preferences)
 app.use('/api', featureRoutes);
+
+// Notification routes
+app.use('/api/notifications', notificationRoutes);
 
 // Stats & Leaderboard routes
 app.use('/api', statsRoutes);
@@ -2052,7 +2169,7 @@ app.put('/api/documents/:id/public', requireAuth, async (req, res) => {
     const { is_public } = req.body;
 
     const db = new Database(DB_PATH);
-    const docInfo = db.prepare('SELECT user_id FROM documents WHERE id = ?').get(id);
+    const docInfo = db.prepare('SELECT user_id, file_name FROM documents WHERE id = ?').get(id);
 
     if (!docInfo) {
       db.close();
@@ -2066,6 +2183,18 @@ app.put('/api/documents/:id/public', requireAuth, async (req, res) => {
 
     db.prepare('UPDATE documents SET is_public = ? WHERE id = ?').run(is_public ? 1 : 0, id);
     db.close();
+
+    // Create notification when document is published
+    if (is_public) {
+      const template = getNotificationTemplate(NOTIFICATION_TYPES.DOCUMENT_PUBLISHED, docInfo.file_name);
+      if (template) {
+        createNotification(req.user.id, NOTIFICATION_TYPES.DOCUMENT_PUBLISHED, template.title, template.message, {
+          actionUrl: `/documents/${id}`,
+          icon: template.icon || 'globe',
+          data: { docId: id, fileName: docInfo.file_name },
+        });
+      }
+    }
 
     res.json({ success: true, is_public: !!is_public });
   } catch (error) {
@@ -2149,6 +2278,9 @@ app.get('/health', (req, res) => {
 
 // Seed default admin account
 ensureAdmin();
+
+// Initialize notifications table
+initNotificationsTable();
 
 // Initialize enhanced feature tables (chat history, favorites, tags, etc.)
 initializeEnhancedTables();
