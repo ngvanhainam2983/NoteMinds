@@ -182,4 +182,27 @@ if (!cols.includes('passkey_enabled')) {
   db.exec("ALTER TABLE users ADD COLUMN passkey_enabled INTEGER DEFAULT 0");
 }
 
+// ── Email Tracking ──
+db.exec(`
+  CREATE TABLE IF NOT EXISTS email_tracking (
+    tracking_id TEXT PRIMARY KEY,
+    email TEXT NOT NULL,
+    type TEXT NOT NULL,
+    recipient_name TEXT,
+    sent_at TEXT DEFAULT (datetime('now')),
+    opened_at TEXT,
+    open_count INTEGER DEFAULT 0,
+    user_agent TEXT,
+    ip_address TEXT,
+    last_opened_at TEXT
+  );
+`);
+
+// Create index for faster queries
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_email_tracking_email ON email_tracking(email);
+  CREATE INDEX IF NOT EXISTS idx_email_tracking_type ON email_tracking(type);
+  CREATE INDEX IF NOT EXISTS idx_email_tracking_sent_at ON email_tracking(sent_at);
+`);
+
 export default db;

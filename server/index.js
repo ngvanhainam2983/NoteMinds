@@ -47,7 +47,10 @@ import statsRoutes from './routes/statsRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import { logActivity } from './services/statsService.js';
 import { validateShareToken } from './services/advancedFeatureService.js';
-import { sendVerificationEmail, sendPasswordResetEmail, generateVerificationToken, testEmailConnection } from './services/emailService.js';
+import { 
+  sendVerificationEmail, sendPasswordResetEmail, generateVerificationToken, testEmailConnection,
+  saveEmailTracking, trackEmailOpen, getEmailStats, getEmailStatsDateRange
+} from './services/emailService.js';
 import {
   initNotificationsTable, createNotification, createBulkNotifications,
   NOTIFICATION_TYPES, getNotificationTemplate,
@@ -390,7 +393,8 @@ app.post('/api/auth/register', registerLimiter, async (req, res) => {
     try {
       const verifyToken = generateVerificationToken();
       setVerificationToken(user.id, verifyToken);
-      await sendVerificationEmail(email, verifyToken, username);
+      const lang = resolveRequestLanguage(req, user.id);
+      await sendVerificationEmail(email, verifyToken, username, lang, saveEmailTracking);
     } catch (emailErr) {
       console.error('[Register] Verification email failed:', emailErr.message);
       // Don't block registration if email fails
@@ -437,7 +441,8 @@ app.post('/api/auth/resend-verification', async (req, res) => {
 
     const verifyToken = generateVerificationToken();
     setVerificationToken(user.id, verifyToken);
-    await sendVerificationEmail(email, verifyToken, user.username);
+    const lang = resolveRequestLanguage(req, user.id);
+    await sendVerificationEmail(email, verifyToken, user.username, lang, saveEmailTracking);
     res.json({ message: 'Email xác minh đã được gửi lại!' });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -472,7 +477,8 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     );
     broadcastNotifEvent(user.id, 'new_notification', { type: 'password_reset_requested', title: 'Password Reset Request' });
     
-    await sendPasswordResetEmail(email, resetToken, user.username);
+    const lang = resolveRequestLanguage(req, user.id);
+    await sendPasswordResetEmail(email, resetToken, user.username, lang, saveEmailTracking);
     res.json({ message: 'Nếu email tồn tại, bạn sẽ nhận được link đặt lại mật khẩu.' });
   } catch (err) {
     console.error('[ForgotPassword] Error:', err.message);
@@ -795,7 +801,8 @@ app.put('/api/auth/profile', requireAuth, async (req, res) => {
       try {
         const verifyToken = generateVerificationToken();
         setVerificationToken(req.user.id, verifyToken);
-        await sendVerificationEmail(email, verifyToken, updated.username || updated.displayName);
+        const lang = resolveRequestLanguage(req, req.user.id);
+        await sendVerificationEmail(email, verifyToken, updated.username || updated.displayName, lang, saveEmailTracking);
       } catch (emailErr) {
         console.error('[Profile] Verification email failed:', emailErr.message);
       }
@@ -1914,6 +1921,67 @@ app.post('/api/admin/notifications/cleanup', requireAuth, requireAdmin, (req, re
   } catch (error) {
     console.error('Admin cleanup notifications error:', error);
     res.status(500).json({ error: 'Failed to cleanup notifications' });
+  }
+});
+
+// ============ EMAIL TRACKING ROUTES ============
+
+// Email open tracking pixel (public, no auth required)
+app.get('/api/email/track/:trackingId', (req, res) => {
+  const { trackingId } = req.params;
+  const userAgent = req.get('User-Agent');
+  const ip = getClientIp(req);
+
+  // Track the email open
+  trackEmailOpen(trackingId, userAgent, ip);
+
+  // Return 1x1 transparent GIF
+  const pixel = Buffer.from(
+    'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+    'base64'
+  );
+
+  res.set({
+    'Content-Type': 'image/gif',
+    'Content-Length': pixel.length,
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+  });
+
+  res.send(pixel);
+});
+
+// Get email tracking stats (admin only)
+app.get('/api/email/stats', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const stats = getEmailStats();
+    if (!stats) {
+      return res.status(500).json({ error: 'Failed to get email stats' });
+    }
+    res.json(stats);
+  } catch (error) {
+    console.error('Email stats error:', error);
+    res.status(500).json({ error: 'Failed to get email stats' });
+  }
+});
+
+// Get email tracking stats by date range (admin only)
+app.get('/api/email/stats/range', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: 'Start date and end date required' });
+    }
+
+    const stats = getEmailStatsDateRange(startDate, endDate);
+    if (!stats) {
+      return res.status(500).json({ error: 'Failed to get email stats' });
+    }
+    res.json(stats);
+  } catch (error) {
+    console.error('Email stats range error:', error);
+    res.status(500).json({ error: 'Failed to get email stats' });
   }
 });
 

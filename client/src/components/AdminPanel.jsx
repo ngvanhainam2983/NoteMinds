@@ -27,6 +27,7 @@ import {
 } from '../api';
 import ConfirmModal from './ConfirmModal';
 import { useLanguage } from '../LanguageContext';
+import EmailDashboard from './EmailDashboard';
 
 const PLAN_STYLES = {
   free:      { badge: '📦', label: 'Free',      color: '#9496a1' },
@@ -245,6 +246,7 @@ export default function AdminPanel({ onBack }) {
       items: [
         { id: 'notifications', icon: <Bell size={17} />, label: t('admin.notifications') },
         { id: 'email', icon: <Mail size={17} />, label: t('admin.emailBlast') },
+        { id: 'emaildashboard', icon: <BarChart3 size={17} />, label: 'Email Dashboard' },
         { id: 'announcements', icon: <Megaphone size={17} />, label: t('admin.announcements') },
       ]
     },
@@ -453,6 +455,7 @@ export default function AdminPanel({ onBack }) {
         {tab === 'moderation' && <ModerationPanel showToast={showToast} askConfirm={askConfirm} />}
         {tab === 'health' && <SystemHealthPanel />}
         {tab === 'email' && <EmailBlastPanel showToast={showToast} />}
+        {tab === 'emaildashboard' && <EmailDashboard />}
         {tab === 'notifications' && <AdminNotificationsPanel showToast={showToast} askConfirm={askConfirm} />}
         {tab === 'flags' && <FeatureFlagsPanel showToast={showToast} askConfirm={askConfirm} />}
         {tab === 'export' && <ExportDataPanel showToast={showToast} />}
