@@ -293,7 +293,7 @@ echo "[4/7] Requesting or reusing Let's Encrypt certificate"
 if [ -f "certbot/conf/live/${DOMAIN}/fullchain.pem" ]; then
   echo "Certificate already exists for ${DOMAIN}. Skipping issuance."
 else
-  $COMPOSE run --rm certbot certonly \
+  $COMPOSE run --rm --entrypoint "certbot" certbot certonly \
     --webroot -w /var/www/certbot \
     -d "${DOMAIN}" -d "${WWW_DOMAIN}" -d "${API_DOMAIN}" \
     --email "${EMAIL}" \
