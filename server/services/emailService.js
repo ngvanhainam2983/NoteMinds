@@ -23,7 +23,7 @@ const transporter = nodemailer.createTransport({
 const FROM_EMAIL = process.env.SMTP_FROM || 'donotreply@loveyuna.today';
 const FROM_NAME = process.env.SMTP_FROM_NAME || 'NoteMinds';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3000';
+const BACKEND_URL = process.env.API_DOMAIN || process.env.BACKEND_URL || 'http://localhost:3000';
 
 // ── Token generation ────────────────────────────────────
 export function generateVerificationToken() {
