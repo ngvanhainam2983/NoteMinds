@@ -8,7 +8,7 @@ RUN apk add --no-cache python3 make g++
 
 WORKDIR /app/client
 COPY client/package*.json ./
-RUN npm install --omit=dev
+RUN npm install
 COPY client/ ./
 RUN npm run build
 
