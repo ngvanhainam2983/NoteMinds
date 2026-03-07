@@ -260,6 +260,82 @@ export function cleanupOldNotifications(daysOld = 30) {
 }
 
 /**
+ * Admin: Get all notifications across all users with filtering
+ */
+export function getAllNotifications(options = {}) {
+  const { limit = 50, offset = 0, userId = null, type = null, search = null } = options;
+
+  let query = `
+    SELECT n.*, u.username, u.email 
+    FROM notifications n 
+    LEFT JOIN users u ON n.user_id = u.id 
+    WHERE 1=1
+  `;
+  const params = [];
+
+  if (userId) {
+    query += ' AND n.user_id = ?';
+    params.push(userId);
+  }
+  if (type) {
+    query += ' AND n.type = ?';
+    params.push(type);
+  }
+  if (search) {
+    query += ' AND (n.title LIKE ? OR n.message LIKE ? OR u.username LIKE ?)';
+    const like = `%${search}%`;
+    params.push(like, like, like);
+  }
+
+  // Count
+  const countQuery = query.replace(/SELECT n\.\*, u\.username, u\.email/, 'SELECT COUNT(*) as count');
+  const { count } = db.prepare(countQuery).get(...params);
+
+  query += ' ORDER BY n.created_at DESC LIMIT ? OFFSET ?';
+  params.push(limit, offset);
+
+  const notifications = db.prepare(query).all(...params);
+  const parsed = notifications.map(n => ({
+    ...n,
+    data: n.data ? JSON.parse(n.data) : null,
+  }));
+
+  return { notifications: parsed, total: count, limit, offset };
+}
+
+/**
+ * Admin: Get notification statistics
+ */
+export function getNotificationStats() {
+  const total = db.prepare('SELECT COUNT(*) as count FROM notifications').get().count;
+  const unread = db.prepare('SELECT COUNT(*) as count FROM notifications WHERE is_read = 0').get().count;
+  const today = db.prepare("SELECT COUNT(*) as count FROM notifications WHERE date(created_at) = date('now')").get().count;
+  const thisWeek = db.prepare("SELECT COUNT(*) as count FROM notifications WHERE created_at >= datetime('now', '-7 days')").get().count;
+
+  const byType = db.prepare(`
+    SELECT type, COUNT(*) as count FROM notifications GROUP BY type ORDER BY count DESC
+  `).all();
+
+  const byDay = db.prepare(`
+    SELECT date(created_at) as day, COUNT(*) as count 
+    FROM notifications 
+    WHERE created_at >= datetime('now', '-14 days')
+    GROUP BY date(created_at) 
+    ORDER BY day DESC
+  `).all();
+
+  const topUsers = db.prepare(`
+    SELECT n.user_id, u.username, COUNT(*) as count 
+    FROM notifications n 
+    LEFT JOIN users u ON n.user_id = u.id 
+    GROUP BY n.user_id 
+    ORDER BY count DESC LIMIT 10
+  `).all();
+
+  return { total, unread, today, thisWeek, byType, byDay, topUsers };
+}
+
+/**
  * Notification types and templates
  */
 export const NOTIFICATION_TYPES = {

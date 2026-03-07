@@ -7,7 +7,7 @@ import {
   ChevronLeft, ChevronRight, Activity, Cpu, HardDrive, Mail, ToggleLeft,
   ToggleRight, Download, MapPin, Wrench, AlertOctagon, Flag,
   Zap, Server, Database, Brain, Send, CheckSquare, Square,
-  Info, ArrowRight,
+  Info, ArrowRight, Bell, BellRing, Filter,
 } from 'lucide-react';
 import {
   adminGetUsers, adminSetPlan, adminSetRole, adminGetPlans,
@@ -22,6 +22,8 @@ import {
   adminGetFeatureFlags, adminCreateFeatureFlag, adminUpdateFeatureFlag, adminDeleteFeatureFlag,
   adminExportUsers, adminExportDocuments, adminExportActivity,
   adminGetLoginActivity, adminUpdateSystemSetting, getSystemSettings,
+  adminGetNotifications, adminGetNotificationStats, adminSendNotification,
+  adminDeleteNotification, adminCleanupNotifications,
 } from '../api';
 import ConfirmModal from './ConfirmModal';
 import { useLanguage } from '../LanguageContext';
@@ -241,6 +243,7 @@ export default function AdminPanel({ onBack }) {
     {
       title: t('admin.sidebarCommunication'),
       items: [
+        { id: 'notifications', icon: <Bell size={17} />, label: t('admin.notifications') },
         { id: 'email', icon: <Mail size={17} />, label: t('admin.emailBlast') },
         { id: 'announcements', icon: <Megaphone size={17} />, label: t('admin.announcements') },
       ]
@@ -450,6 +453,7 @@ export default function AdminPanel({ onBack }) {
         {tab === 'moderation' && <ModerationPanel showToast={showToast} askConfirm={askConfirm} />}
         {tab === 'health' && <SystemHealthPanel />}
         {tab === 'email' && <EmailBlastPanel showToast={showToast} />}
+        {tab === 'notifications' && <AdminNotificationsPanel showToast={showToast} askConfirm={askConfirm} />}
         {tab === 'flags' && <FeatureFlagsPanel showToast={showToast} askConfirm={askConfirm} />}
         {tab === 'export' && <ExportDataPanel showToast={showToast} />}
         {tab === 'announcements' && <AdminAnnouncementsPanel showToast={showToast} askConfirm={askConfirm} />}
@@ -2226,6 +2230,314 @@ function MaintenanceModePanel({ showToast }) {
               <p className="text-sm font-semibold">{t('app.maintenanceTitle')}</p>
               <p className="text-xs text-muted mt-1">{maintenanceMsg}</p>
             </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════
+// ADMIN NOTIFICATIONS PANEL
+// ═══════════════════════════════════════════════════════
+
+function AdminNotificationsPanel({ showToast, askConfirm }) {
+  const { t, language } = useLanguage();
+  const dateLocale = language === 'vi' ? 'vi-VN' : 'en-US';
+  const [notifications, setNotifications] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [showSendForm, setShowSendForm] = useState(false);
+  const [sendForm, setSendForm] = useState({ title: '', message: '', type: 'system', icon: '🔔', targetMode: 'all', userIds: '' });
+  const [sending, setSending] = useState(false);
+  const [cleaning, setCleaning] = useState(false);
+  const [cleanupDays, setCleanupDays] = useState(30);
+
+  const NOTIF_TYPES = [
+    { value: '', label: t('admin.notifAllTypes') },
+    { value: 'system', label: t('admin.notifSystem') },
+    { value: 'achievement', label: t('admin.notifAchievement') },
+    { value: 'feature', label: t('admin.notifFeature') },
+    { value: 'social', label: t('admin.notifSocial') },
+    { value: 'quiz_ready', label: t('admin.notifQuiz') },
+    { value: 'flashcards_ready', label: t('admin.notifFlashcards') },
+    { value: 'mindmap_ready', label: t('admin.notifMindmap') },
+    { value: 'summary_ready', label: t('admin.notifSummary') },
+    { value: 'plan_changed', label: t('admin.notifPlan') },
+  ];
+
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const params = { page, limit: 20 };
+      if (search.trim()) params.search = search.trim();
+      if (typeFilter) params.type = typeFilter;
+      const data = await adminGetNotifications(params);
+      setNotifications(data.notifications || []);
+      setTotalPages(data.totalPages || 1);
+    } catch {
+      showToast('error', t('admin.notifFetchError'));
+    }
+  }, [page, search, typeFilter, showToast, t]);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const data = await adminGetNotificationStats();
+      setStats(data);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([fetchNotifications(), fetchStats()]).finally(() => setLoading(false));
+  }, [fetchNotifications, fetchStats]);
+
+  const handleSend = async () => {
+    if (!sendForm.title.trim() || !sendForm.message.trim()) return;
+    setSending(true);
+    try {
+      const payload = {
+        title: sendForm.title,
+        message: sendForm.message,
+        type: sendForm.type,
+        icon: sendForm.icon,
+      };
+      if (sendForm.targetMode === 'specific' && sendForm.userIds.trim()) {
+        payload.userIds = sendForm.userIds.split(',').map(id => id.trim()).filter(Boolean);
+      }
+      const result = await adminSendNotification(payload);
+      showToast('success', t('admin.notifSentSuccess', { count: result.count || 0 }));
+      setShowSendForm(false);
+      setSendForm({ title: '', message: '', type: 'system', icon: '🔔', targetMode: 'all', userIds: '' });
+      fetchNotifications();
+      fetchStats();
+    } catch {
+      showToast('error', t('admin.notifSendError'));
+    }
+    setSending(false);
+  };
+
+  const handleDelete = (id) => {
+    askConfirm(t('admin.notifDeleteTitle'), t('admin.notifDeleteMsg'), 'danger', async () => {
+      try {
+        await adminDeleteNotification(id);
+        showToast('success', t('admin.notifDeleted'));
+        fetchNotifications();
+        fetchStats();
+      } catch {
+        showToast('error', t('admin.notifDeleteError'));
+      }
+    });
+  };
+
+  const handleCleanup = () => {
+    askConfirm(t('admin.notifCleanupTitle'), t('admin.notifCleanupMsg', { days: cleanupDays }), 'danger', async () => {
+      setCleaning(true);
+      try {
+        const result = await adminCleanupNotifications(cleanupDays);
+        showToast('success', t('admin.notifCleanupSuccess', { count: result.deleted || 0 }));
+        fetchNotifications();
+        fetchStats();
+      } catch {
+        showToast('error', t('admin.notifCleanupError'));
+      }
+      setCleaning(false);
+    });
+  };
+
+  const ICON_OPTIONS = ['🔔', '🎉', '⭐', '🚀', '📢', '💡', '⚠️', '🎯', '📝', '🏆'];
+
+  if (loading) {
+    return <div className="flex justify-center py-16"><Loader2 size={28} className="animate-spin text-primary-400" /></div>;
+  }
+
+  return (
+    <div className="space-y-4 animate-fade-in">
+      {/* Stats cards */}
+      {stats && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bg-surface border border-line rounded-xl p-3.5">
+            <div className="flex items-center gap-2 mb-1"><BellRing size={14} className="text-primary-400" /><span className="text-xs text-muted">{t('admin.notifTotal')}</span></div>
+            <p className="text-xl font-bold text-primary-400">{stats.total || 0}</p>
+          </div>
+          <div className="bg-surface border border-line rounded-xl p-3.5">
+            <div className="flex items-center gap-2 mb-1"><Eye size={14} className="text-amber-400" /><span className="text-xs text-muted">{t('admin.notifUnread')}</span></div>
+            <p className="text-xl font-bold text-amber-400">{stats.unread || 0}</p>
+          </div>
+          <div className="bg-surface border border-line rounded-xl p-3.5">
+            <div className="flex items-center gap-2 mb-1"><Clock size={14} className="text-emerald-400" /><span className="text-xs text-muted">{t('admin.notifToday')}</span></div>
+            <p className="text-xl font-bold text-emerald-400">{stats.today || 0}</p>
+          </div>
+          <div className="bg-surface border border-line rounded-xl p-3.5">
+            <div className="flex items-center gap-2 mb-1"><TrendingUp size={14} className="text-blue-400" /><span className="text-xs text-muted">{t('admin.notifThisWeek')}</span></div>
+            <p className="text-xl font-bold text-blue-400">{stats.thisWeek || 0}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Header with actions */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <h3 className="text-sm font-semibold flex items-center gap-2">
+          <Bell size={14} className="text-primary-400" /> {t('admin.notifications')}
+        </h3>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setShowSendForm(!showSendForm)} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 rounded-lg text-xs font-medium transition-colors">
+            <Send size={12} /> {t('admin.notifSend')}
+          </button>
+          <button onClick={() => { fetchNotifications(); fetchStats(); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-2 hover:bg-line rounded-lg text-xs transition-colors">
+            <RefreshCw size={12} /> {t('admin.refresh')}
+          </button>
+        </div>
+      </div>
+
+      {/* Send form */}
+      {showSendForm && (
+        <div className="bg-surface border border-primary-500/30 rounded-xl p-4 space-y-3">
+          <div className="flex items-center gap-2 mb-1">
+            <Send size={14} className="text-primary-400" />
+            <span className="text-sm font-medium">{t('admin.notifSendNew')}</span>
+          </div>
+          <input value={sendForm.title} onChange={e => setSendForm(p => ({ ...p, title: e.target.value }))}
+            placeholder={t('admin.notifTitlePlaceholder')} className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary-500/50" />
+          <textarea value={sendForm.message} onChange={e => setSendForm(p => ({ ...p, message: e.target.value }))}
+            placeholder={t('admin.notifMessagePlaceholder')} rows={3} className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-primary-500/50" />
+          <div className="flex flex-wrap items-center gap-3">
+            <select value={sendForm.type} onChange={e => setSendForm(p => ({ ...p, type: e.target.value }))}
+              className="bg-bg border border-line rounded-lg px-2 py-1.5 text-xs cursor-pointer">
+              {NOTIF_TYPES.filter(t => t.value).map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+            <div className="flex items-center gap-1">
+              {ICON_OPTIONS.map(ic => (
+                <button key={ic} onClick={() => setSendForm(p => ({ ...p, icon: ic }))}
+                  className={`w-7 h-7 flex items-center justify-center rounded-lg text-sm transition-colors ${sendForm.icon === ic ? 'bg-primary-600/30 border border-primary-500/50' : 'hover:bg-surface-2'}`}>
+                  {ic}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+              <input type="radio" checked={sendForm.targetMode === 'all'} onChange={() => setSendForm(p => ({ ...p, targetMode: 'all' }))} className="accent-primary-500" />
+              {t('admin.notifTargetAll')}
+            </label>
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+              <input type="radio" checked={sendForm.targetMode === 'specific'} onChange={() => setSendForm(p => ({ ...p, targetMode: 'specific' }))} className="accent-primary-500" />
+              {t('admin.notifTargetSpecific')}
+            </label>
+          </div>
+          {sendForm.targetMode === 'specific' && (
+            <input value={sendForm.userIds} onChange={e => setSendForm(p => ({ ...p, userIds: e.target.value }))}
+              placeholder={t('admin.notifUserIdsPlaceholder')} className="w-full bg-bg border border-line rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary-500/50" />
+          )}
+          <div className="flex items-center gap-2">
+            <button onClick={handleSend} disabled={sending} className="flex items-center gap-1 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 rounded-lg text-xs font-medium transition-colors disabled:opacity-50">
+              {sending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />} {t('admin.send')}
+            </button>
+            <button onClick={() => setShowSendForm(false)} className="px-3 py-1.5 bg-surface-2 rounded-lg text-xs hover:bg-line transition-colors">{t('common.cancel')}</button>
+          </div>
+        </div>
+      )}
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+        <div className="relative flex-1 w-full sm:w-auto">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+          <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
+            placeholder={t('admin.notifSearchPlaceholder')} className="w-full bg-surface border border-line rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:border-primary-500/50" />
+        </div>
+        <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(1); }}
+          className="bg-surface border border-line rounded-lg px-2 py-1.5 text-xs cursor-pointer">
+          {NOTIF_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+        </select>
+      </div>
+
+      {/* Notification list */}
+      {notifications.length === 0 ? (
+        <div className="bg-surface border border-line rounded-xl p-12 text-center text-muted">
+          <Bell size={32} className="mx-auto mb-2 opacity-40" />
+          <p className="text-sm">{t('admin.notifEmpty')}</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {notifications.map(n => (
+            <div key={n.id} className={`bg-surface border rounded-xl p-4 flex items-center gap-3 group ${n.is_read ? 'border-line' : 'border-primary-500/30'}`}>
+              <span className="text-lg shrink-0">{n.icon || '🔔'}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-sm truncate">{n.title}</p>
+                  {!n.is_read && <span className="w-1.5 h-1.5 bg-primary-400 rounded-full shrink-0" />}
+                </div>
+                <p className="text-xs text-muted truncate mt-0.5">{n.message}</p>
+                <div className="flex items-center gap-2 mt-1 text-[11px] text-muted">
+                  <span className="px-1.5 py-0.5 bg-surface-2 rounded text-[10px]">{n.type}</span>
+                  <span>·</span>
+                  <span>{n.username || n.user_id}</span>
+                  <span>·</span>
+                  <span>{new Date(n.created_at).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+              </div>
+              <button onClick={() => handleDelete(n.id)}
+                className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-500/10 rounded-lg text-red-400 transition-all" title={t('common.delete')}>
+                <Trash2 size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+            className="p-1.5 bg-surface border border-line rounded-lg hover:bg-surface-2 disabled:opacity-30 transition-colors">
+            <ChevronLeft size={14} />
+          </button>
+          <span className="text-xs text-muted">{page} / {totalPages}</span>
+          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+            className="p-1.5 bg-surface border border-line rounded-lg hover:bg-surface-2 disabled:opacity-30 transition-colors">
+            <ChevronRight size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* Cleanup section */}
+      <div className="bg-surface border border-line rounded-xl p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="text-sm font-medium flex items-center gap-2"><Trash2 size={14} className="text-red-400" /> {t('admin.notifCleanup')}</h4>
+            <p className="text-xs text-muted mt-1">{t('admin.notifCleanupDesc')}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <select value={cleanupDays} onChange={e => setCleanupDays(Number(e.target.value))}
+              className="bg-bg border border-line rounded-lg px-2 py-1.5 text-xs cursor-pointer">
+              <option value={7}>7 {t('admin.notifDays')}</option>
+              <option value={14}>14 {t('admin.notifDays')}</option>
+              <option value={30}>30 {t('admin.notifDays')}</option>
+              <option value={60}>60 {t('admin.notifDays')}</option>
+              <option value={90}>90 {t('admin.notifDays')}</option>
+            </select>
+            <button onClick={handleCleanup} disabled={cleaning}
+              className="flex items-center gap-1 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs font-medium transition-colors disabled:opacity-50">
+              {cleaning ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />} {t('admin.notifCleanupBtn')}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Type breakdown */}
+      {stats?.byType && stats.byType.length > 0 && (
+        <div className="bg-surface border border-line rounded-xl p-4">
+          <h4 className="text-sm font-medium mb-3 flex items-center gap-2"><BarChart3 size={14} className="text-primary-400" /> {t('admin.notifByType')}</h4>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+            {stats.byType.map(item => (
+              <div key={item.type} className="bg-bg rounded-lg p-2.5 text-center">
+                <p className="text-xs text-muted truncate">{item.type}</p>
+                <p className="text-sm font-bold text-primary-400 mt-0.5">{item.count}</p>
+              </div>
+            ))}
           </div>
         </div>
       )}

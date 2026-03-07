@@ -180,11 +180,46 @@ export function NotificationBell({ userId, className = '', onOpenManager }) {
   }, [userId]);
 
   useEffect(() => { if (isOpen) fetchNotifications(0); }, [isOpen, selectedFilter]);
+  
+  // SSE real-time updates + fallback polling
   useEffect(() => {
     fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 30000);
-    return () => clearInterval(interval);
-  }, [fetchUnreadCount]);
+    const token = getStoredToken();
+    let es = null;
+    let fallbackInterval = null;
+    
+    if (token && userId) {
+      try {
+        es = new EventSource(`${API}/notifications/stream?token=${encodeURIComponent(token)}`);
+        
+        es.addEventListener('new_notification', () => {
+          fetchUnreadCount();
+          if (isOpen) fetchNotifications(0);
+        });
+        
+        es.onerror = () => {
+          // On SSE failure, fall back to polling
+          if (es) { es.close(); es = null; }
+          if (!fallbackInterval) {
+            fallbackInterval = setInterval(fetchUnreadCount, 15000);
+          }
+        };
+      } catch {
+        // SSE not available, use polling
+        fallbackInterval = setInterval(fetchUnreadCount, 15000);
+      }
+    }
+    
+    // Always have a slow fallback poll
+    if (!es) {
+      fallbackInterval = setInterval(fetchUnreadCount, 15000);
+    }
+    
+    return () => {
+      if (es) es.close();
+      if (fallbackInterval) clearInterval(fallbackInterval);
+    };
+  }, [fetchUnreadCount, userId]);
 
   const handleMarkAsRead = async (notificationId) => {
     try {

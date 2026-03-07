@@ -1020,4 +1020,31 @@ export async function deleteLearningPath(id) {
   return response.data;
 }
 
+// ── Admin Notifications ──────────────────────────────
+
+export async function adminGetNotifications(params = {}) {
+  const response = await api.get('/admin/notifications', { params });
+  return response.data;
+}
+
+export async function adminGetNotificationStats() {
+  const response = await api.get('/admin/notifications/stats');
+  return response.data;
+}
+
+export async function adminSendNotification({ userIds, title, message, type, icon, actionUrl }) {
+  const response = await api.post('/admin/notifications/send', { userIds, title, message, type, icon, actionUrl });
+  return response.data;
+}
+
+export async function adminDeleteNotification(id) {
+  const response = await api.delete(`/admin/notifications/${id}`);
+  return response.data;
+}
+
+export async function adminCleanupNotifications(daysOld = 30) {
+  const response = await api.post('/admin/notifications/cleanup', { daysOld });
+  return response.data;
+}
+
 export default api;

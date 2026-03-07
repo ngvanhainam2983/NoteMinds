@@ -52,6 +52,7 @@ import { sendVerificationEmail, sendPasswordResetEmail, generateVerificationToke
 import {
   initNotificationsTable, createNotification, createBulkNotifications,
   NOTIFICATION_TYPES, getNotificationTemplate,
+  getAllNotifications, getNotificationStats, cleanupOldNotifications,
 } from './services/notificationService.js';
 import Database from 'better-sqlite3';
 import jwt from 'jsonwebtoken';
@@ -261,6 +262,32 @@ function broadcastDocEvent(docId, eventType, data) {
   }
 }
 
+// ── SSE: live notification listeners per user ──
+// Map<userId, Set<Response>>
+const notifListeners = new Map();
+
+function addNotifListener(userId, res) {
+  if (!notifListeners.has(userId)) notifListeners.set(userId, new Set());
+  notifListeners.get(userId).add(res);
+}
+
+function removeNotifListener(userId, res) {
+  const set = notifListeners.get(userId);
+  if (set) {
+    set.delete(res);
+    if (set.size === 0) notifListeners.delete(userId);
+  }
+}
+
+function broadcastNotifEvent(userId, eventType, data) {
+  const set = notifListeners.get(userId);
+  if (!set || set.size === 0) return;
+  const payload = `event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`;
+  for (const res of set) {
+    try { res.write(payload); } catch { /* client gone */ }
+  }
+}
+
 // Database path for document persistence
 const DB_PATH = path.join(__dirname, 'data', 'notemind.db');
 
@@ -391,6 +418,7 @@ app.post('/api/auth/verify-email', async (req, res) => {
         data: { email: user.email },
       }
     );
+    broadcastNotifEvent(user.id, 'new_notification', { type: 'email_verified', title: 'Email Verified' });
     
     res.json({ user, message: 'Email đã được xác minh thành công!' });
   } catch (err) {
@@ -441,6 +469,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
         data: { email: user.email },
       }
     );
+    broadcastNotifEvent(user.id, 'new_notification', { type: 'password_reset_requested', title: 'Password Reset Request' });
     
     await sendPasswordResetEmail(email, resetToken, user.username);
     res.json({ message: 'Nếu email tồn tại, bạn sẽ nhận được link đặt lại mật khẩu.' });
@@ -470,6 +499,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
         data: { email: user.email },
       }
     );
+    broadcastNotifEvent(user.id, 'new_notification', { type: 'password_reset_success', title: 'Password Changed' });
     
     res.json({ user, message: 'Mật khẩu đã được đặt lại thành công!' });
   } catch (err) {
@@ -854,6 +884,7 @@ app.put('/api/admin/users/:userId/plan', requireAuth, requireAdmin, (req, res) =
         icon: template.icon || 'upgrade',
         data: { plan, expiresAt },
       });
+      broadcastNotifEvent(userId, 'new_notification', { type: 'plan_changed', title: template.title });
     }
     
     res.json({ user: updated });
@@ -892,6 +923,7 @@ app.put('/api/admin/users/:userId/ban', requireAuth, requireAdmin, (req, res) =>
         data: { reason },
       }
     );
+    broadcastNotifEvent(userId, 'new_notification', { type: 'account_banned', title: 'Account Suspended' });
     
     res.json({ user: updated });
   } catch (err) {
@@ -1397,6 +1429,7 @@ app.post('/api/documents/:docId/mindmap', async (req, res) => {
           icon: template.icon || 'mindmap',
           data: { docId: req.params.docId, fileName: doc.fileName },
         });
+        broadcastNotifEvent(doc.owner_id, 'new_notification', { type: 'mindmap_ready', title: template.title });
       }
     }
     
@@ -1436,6 +1469,7 @@ app.post('/api/documents/:docId/summary', async (req, res) => {
           icon: template.icon || 'summary',
           data: { docId: req.params.docId, fileName: doc.fileName },
         });
+        broadcastNotifEvent(doc.owner_id, 'new_notification', { type: 'summary_ready', title: template.title });
       }
     }
     
@@ -1475,6 +1509,7 @@ app.post('/api/documents/:docId/flashcards', async (req, res) => {
           icon: template.icon || 'flashcard',
           data: { docId: req.params.docId, fileName: doc.fileName },
         });
+        broadcastNotifEvent(doc.owner_id, 'new_notification', { type: 'flashcards_ready', title: template.title });
       }
     }
     
@@ -1583,6 +1618,7 @@ app.post('/api/documents/:docId/quiz', async (req, res) => {
           icon: template.icon || 'quiz',
           data: { docId: req.params.docId, fileName: doc_data.fileName },
         });
+        broadcastNotifEvent(doc_data.owner_id, 'new_notification', { type: 'quiz_ready', title: template.title });
       }
     }
     
@@ -1759,6 +1795,125 @@ app.use('/api', featureRoutes);
 
 // Notification routes
 app.use('/api/notifications', notificationRoutes);
+
+// SSE: notification stream for authenticated users (token via query param since EventSource can't set headers)
+app.get('/api/notifications/stream', (req, res) => {
+  const token = req.query.token;
+  if (!token) return res.status(401).json({ error: 'Token required' });
+  
+  let decoded;
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET || 'notemind-secret-key-2024');
+  } catch {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+  
+  const userId = decoded.id;
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'X-Accel-Buffering': 'no',
+  });
+  res.write(`event: connected\ndata: ${JSON.stringify({ userId })}\n\n`);
+
+  addNotifListener(userId, res);
+  const heartbeat = setInterval(() => {
+    try { res.write(': heartbeat\n\n'); } catch { /* gone */ }
+  }, 30000);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    removeNotifListener(userId, res);
+  });
+});
+
+// Admin notification routes
+app.get('/api/admin/notifications', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const { limit = 50, offset = 0, userId, type, search } = req.query;
+    const result = getAllNotifications({
+      limit: Math.min(parseInt(limit) || 50, 200),
+      offset: parseInt(offset) || 0,
+      userId: userId ? parseInt(userId) : null,
+      type: type || null,
+      search: search || null,
+    });
+    res.json(result);
+  } catch (error) {
+    console.error('Admin get notifications error:', error);
+    res.status(500).json({ error: 'Failed to fetch notifications' });
+  }
+});
+
+app.get('/api/admin/notifications/stats', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const stats = getNotificationStats();
+    res.json(stats);
+  } catch (error) {
+    console.error('Admin notification stats error:', error);
+    res.status(500).json({ error: 'Failed to fetch notification stats' });
+  }
+});
+
+app.post('/api/admin/notifications/send', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const { userIds, title, message, type, icon, actionUrl } = req.body;
+    if (!title || !message) {
+      return res.status(400).json({ error: 'Title and message are required' });
+    }
+
+    const targetType = type || 'admin_message';
+    const targetIcon = icon || 'admin';
+
+    if (userIds && Array.isArray(userIds) && userIds.length > 0) {
+      createBulkNotifications(userIds, targetType, title, message, {
+        icon: targetIcon, actionUrl: actionUrl || null, data: { sentBy: req.user.username },
+      });
+      for (const uid of userIds) {
+        broadcastNotifEvent(uid, 'new_notification', { type: targetType, title, message });
+      }
+      res.json({ success: true, sentTo: userIds.length });
+    } else {
+      // Send to all users
+      const allUsers = db.prepare('SELECT id FROM users WHERE is_banned = 0').all();
+      const allIds = allUsers.map(u => u.id);
+      createBulkNotifications(allIds, targetType, title, message, {
+        icon: targetIcon, actionUrl: actionUrl || null, data: { sentBy: req.user.username },
+      });
+      for (const uid of allIds) {
+        broadcastNotifEvent(uid, 'new_notification', { type: targetType, title, message });
+      }
+      res.json({ success: true, sentTo: allIds.length });
+    }
+  } catch (error) {
+    console.error('Admin send notification error:', error);
+    res.status(500).json({ error: 'Failed to send notification' });
+  }
+});
+
+app.delete('/api/admin/notifications/:id', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const stmt = db.prepare('DELETE FROM notifications WHERE id = ?');
+    const result = stmt.run(id);
+    res.json({ success: result.changes > 0 });
+  } catch (error) {
+    console.error('Admin delete notification error:', error);
+    res.status(500).json({ error: 'Failed to delete notification' });
+  }
+});
+
+app.post('/api/admin/notifications/cleanup', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const { daysOld = 30 } = req.body;
+    const count = cleanupOldNotifications(parseInt(daysOld) || 30);
+    res.json({ success: true, deleted: count });
+  } catch (error) {
+    console.error('Admin cleanup notifications error:', error);
+    res.status(500).json({ error: 'Failed to cleanup notifications' });
+  }
+});
 
 // Stats & Leaderboard routes
 app.use('/api', statsRoutes);
@@ -2193,6 +2348,7 @@ app.put('/api/documents/:id/public', requireAuth, async (req, res) => {
           icon: template.icon || 'globe',
           data: { docId: id, fileName: docInfo.file_name },
         });
+        broadcastNotifEvent(req.user.id, 'new_notification', { type: 'document_published', title: template.title });
       }
     }
 
