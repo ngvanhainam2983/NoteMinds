@@ -165,6 +165,7 @@ server {
         proxy_set_header Connection "";
         proxy_read_timeout 360s;
         proxy_send_timeout 360s;
+        rewrite ^(.*)$ /api\$1 break;
         proxy_pass http://notemind_backend;
     }
 
@@ -178,6 +179,7 @@ server {
         proxy_set_header Connection "";
         proxy_read_timeout 360s;
         proxy_send_timeout 360s;
+        rewrite ^(.*)$ /api\$1 break;
         proxy_pass http://notemind_backend;
     }
 }
