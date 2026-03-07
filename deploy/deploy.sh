@@ -36,6 +36,9 @@ upstream notemind_backend {
     keepalive 32;
 }
 
+limit_req_zone \$binary_remote_addr zone=api_per_ip:10m rate=20r/s;
+limit_req_zone \$binary_remote_addr zone=auth_per_ip:10m rate=10r/m;
+
 server {
     listen 80;
     server_name ${DOMAIN} ${WWW_DOMAIN} ${API_DOMAIN};
@@ -43,6 +46,22 @@ server {
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
     }
+
+  location ~* ^/(wp-admin|wp-login\\.php|xmlrpc\\.php|wordpress|setup/setup\\.php|app_dev\\.php|down\\.html|scripts/(deploy|db)\\.sh|key\\.pem|backup/database\\.zip|install\\.sql)$ {
+    return 444;
+  }
+
+  location ~ /\\.(?!well-known) {
+    deny all;
+    access_log off;
+    log_not_found off;
+  }
+
+  location ~* \\.(env|ini|log|sql|bak|old|swp|pem|sh)$ {
+    return 404;
+    access_log off;
+    log_not_found off;
+  }
 
     location / {
         proxy_http_version 1.1;
@@ -64,6 +83,9 @@ upstream notemind_backend {
     keepalive 32;
 }
 
+limit_req_zone \$binary_remote_addr zone=api_per_ip:10m rate=20r/s;
+limit_req_zone \$binary_remote_addr zone=auth_per_ip:10m rate=10r/m;
+
 server {
     listen 80;
     server_name ${DOMAIN} ${WWW_DOMAIN} ${API_DOMAIN};
@@ -71,6 +93,22 @@ server {
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
     }
+
+  location ~* ^/(wp-admin|wp-login\\.php|xmlrpc\\.php|wordpress|setup/setup\\.php|app_dev\\.php|down\\.html|scripts/(deploy|db)\\.sh|key\\.pem|backup/database\\.zip|install\\.sql)$ {
+    return 444;
+  }
+
+  location ~ /\\.(?!well-known) {
+    deny all;
+    access_log off;
+    log_not_found off;
+  }
+
+  location ~* \\.(env|ini|log|sql|bak|old|swp|pem|sh)$ {
+    return 404;
+    access_log off;
+    log_not_found off;
+  }
 
     location / {
         return 301 https://\$host\$request_uri;
@@ -87,6 +125,22 @@ server {
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    location ~* ^/(wp-admin|wp-login\\.php|xmlrpc\\.php|wordpress|setup/setup\\.php|app_dev\\.php|down\\.html|scripts/(deploy|db)\\.sh|key\\.pem|backup/database\\.zip|install\\.sql)$ {
+      return 444;
+    }
+
+    location ~ /\\.(?!well-known) {
+      deny all;
+      access_log off;
+      log_not_found off;
+    }
+
+    location ~* \\.(env|ini|log|sql|bak|old|swp|pem|sh)$ {
+      return 404;
+      access_log off;
+      log_not_found off;
+    }
 
     location / {
         proxy_http_version 1.1;
@@ -113,7 +167,37 @@ server {
 
     client_max_body_size 50m;
 
+    location ~* ^/(wp-admin|wp-login\\.php|xmlrpc\\.php|wordpress|setup/setup\\.php|app_dev\\.php|down\\.html|scripts/(deploy|db)\\.sh|key\\.pem|backup/database\\.zip|install\\.sql)$ {
+      return 444;
+    }
+
+    location ~ /\\.(?!well-known) {
+      deny all;
+      access_log off;
+      log_not_found off;
+    }
+
+    location ~* \\.(env|ini|log|sql|bak|old|swp|pem|sh)$ {
+      return 404;
+      access_log off;
+      log_not_found off;
+    }
+
+    location ~* ^/auth/(login|register|forgot-password|reset-password)$ {
+      limit_req zone=auth_per_ip burst=20 nodelay;
+      proxy_http_version 1.1;
+      proxy_set_header Host \$host;
+      proxy_set_header X-Real-IP \$remote_addr;
+      proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto \$scheme;
+      proxy_set_header Connection "";
+      proxy_read_timeout 360s;
+      proxy_send_timeout 360s;
+      proxy_pass http://notemind_backend;
+    }
+
     location / {
+      limit_req zone=api_per_ip burst=120 nodelay;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
