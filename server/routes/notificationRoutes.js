@@ -1,7 +1,7 @@
 import express from 'express';
 import {
   getUserNotifications, markNotificationAsRead, markAllNotificationsAsRead,
-  deleteNotification, deleteAllNotifications, getUnreadCount,
+  deleteNotification, deleteAllNotifications, getUnreadCount, createNotification,
 } from '../services/notificationService.js';
 import { requireAuth } from '../services/authService.js';
 
@@ -98,6 +98,44 @@ router.delete('/:id', requireAuth, (req, res) => {
   } catch (error) {
     console.error('Error deleting notification:', error);
     res.status(500).json({ error: 'Failed to delete notification' });
+  }
+});
+
+/**
+ * POST /api/notifications/test
+ * Create sample notifications for testing
+ */
+router.post('/test', requireAuth, (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const samples = [
+      { type: 'mindmap_ready',     title: 'Mindmap Generated',      message: 'Your mindmap for "Machine Learning Basics" is ready!',          icon: 'mindmap',    actionUrl: null },
+      { type: 'flashcards_ready',  title: 'Flashcards Generated',   message: '"Data Structures" flashcards are ready to study!',               icon: 'flashcard',  actionUrl: null },
+      { type: 'quiz_ready',        title: 'Quiz Generated',         message: 'A new quiz for "Algorithms 101" is ready!',                      icon: 'quiz',       actionUrl: null },
+      { type: 'summary_ready',     title: 'Summary Generated',      message: 'Your summary for "History of AI" is ready!',                     icon: 'summary',    actionUrl: null },
+      { type: 'document_published',title: 'Document Published',     message: 'Your document "React Hooks Guide" is now public!',               icon: 'globe',      actionUrl: null },
+      { type: 'plan_changed',      title: 'Plan Updated',           message: 'Your plan was upgraded to Pro!',                                 icon: 'upgrade',    actionUrl: null },
+      { type: 'streak_milestone',  title: 'Streak Milestone',       message: 'Amazing! You have a 7-day streak!',                              icon: 'flame',      actionUrl: null },
+      { type: 'leaderboard_achievement', title: 'Leaderboard Achievement', message: 'You ranked #3 in Weekly Top Learners!',                   icon: 'trophy',     actionUrl: null },
+      { type: 'security_alert',    title: 'Security Alert',         message: 'New login detected from Chrome on Windows.',                     icon: 'lock',       actionUrl: null },
+      { type: 'admin_message',     title: 'Admin Message',          message: 'System maintenance scheduled for tonight at 2:00 AM.',           icon: 'admin',      actionUrl: null },
+    ];
+
+    const created = [];
+    for (const s of samples) {
+      const n = createNotification(userId, s.type, s.title, s.message, {
+        icon: s.icon,
+        actionUrl: s.actionUrl,
+        data: { source: 'test' },
+      });
+      created.push(n);
+    }
+
+    res.json({ success: true, count: created.length, notifications: created });
+  } catch (error) {
+    console.error('Error creating test notifications:', error);
+    res.status(500).json({ error: 'Failed to create test notifications' });
   }
 });
 

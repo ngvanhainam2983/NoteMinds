@@ -5,6 +5,9 @@ import {
   Lock, ArrowUpCircle, AlertTriangle, ShieldAlert, Users, Settings
 } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
+import { getApiBaseUrl } from '../api';
+
+const API = getApiBaseUrl();
 
 /* ─── Icon mapping: lucide icons with themed colors ─── */
 const ICON_MAP = {
@@ -143,7 +146,7 @@ export function NotificationBell({ userId, className = '', onOpenManager }) {
       setIsLoading(true);
       const unreadOnly = selectedFilter === 'unread';
       const response = await fetch(
-        `/api/notifications?limit=10&offset=${pageNum * 10}&unreadOnly=${unreadOnly}`,
+        `${API}/notifications?limit=10&offset=${pageNum * 10}&unreadOnly=${unreadOnly}`,
         { credentials: 'include' }
       );
       if (!response.ok) throw new Error('Failed to fetch');
@@ -164,7 +167,7 @@ export function NotificationBell({ userId, className = '', onOpenManager }) {
   const fetchUnreadCount = useCallback(async () => {
     if (!userId) return;
     try {
-      const response = await fetch('/api/notifications/unread-count', { credentials: 'include' });
+      const response = await fetch(`${API}/notifications/unread-count`, { credentials: 'include' });
       if (!response.ok) return;
       const data = await response.json();
       setUnreadCount(data.unread_count);
@@ -180,7 +183,7 @@ export function NotificationBell({ userId, className = '', onOpenManager }) {
 
   const handleMarkAsRead = async (notificationId) => {
     try {
-      await fetch(`/api/notifications/${notificationId}/read`, { method: 'PUT', credentials: 'include' });
+      await fetch(`${API}/notifications/${notificationId}/read`, { method: 'PUT', credentials: 'include' });
       setNotifications((prev) =>
         prev.map((n) => n.id === notificationId ? { ...n, is_read: 1, read_at: new Date().toISOString() } : n)
       );
@@ -191,7 +194,7 @@ export function NotificationBell({ userId, className = '', onOpenManager }) {
   const handleDelete = async (notificationId) => {
     setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
     try {
-      await fetch(`/api/notifications/${notificationId}`, { method: 'DELETE', credentials: 'include' });
+      await fetch(`${API}/notifications/${notificationId}`, { method: 'DELETE', credentials: 'include' });
       fetchUnreadCount();
     } catch { /* silent */ }
   };
@@ -199,7 +202,7 @@ export function NotificationBell({ userId, className = '', onOpenManager }) {
   const handleMarkAllRead = async () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: 1, read_at: new Date().toISOString() })));
     try {
-      await fetch('/api/notifications/mark-all-read', { method: 'POST', credentials: 'include' });
+      await fetch(`${API}/notifications/mark-all-read`, { method: 'POST', credentials: 'include' });
       fetchUnreadCount();
     } catch { /* silent */ }
   };
