@@ -6,9 +6,14 @@ import {
   ChevronDown, MoreVertical, Inbox
 } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
-import { getApiBaseUrl } from '../api';
+import { getApiBaseUrl, getStoredToken } from '../api';
 
 const API = getApiBaseUrl();
+
+function authHeaders(extra = {}) {
+  const token = getStoredToken();
+  return { ...extra, ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+}
 
 /* ─── Icon mapping (mirrors NotificationBell) ─── */
 const ICON_MAP = {
@@ -115,7 +120,7 @@ export default function NotificationManager({ onBack }) {
       const unreadOnly = readFilter === 'unread';
       const res = await fetch(
         `${API}/notifications?limit=30&offset=${pageNum * 30}&unreadOnly=${unreadOnly}`,
-        { credentials: 'include' }
+        { credentials: 'include', headers: authHeaders() }
       );
       if (!res.ok) throw new Error('Fetch failed');
       const data = await res.json();
@@ -138,7 +143,7 @@ export default function NotificationManager({ onBack }) {
 
   const fetchUnreadCount = useCallback(async () => {
     try {
-      const res = await fetch(`${API}/notifications/unread-count`, { credentials: 'include' });
+      const res = await fetch(`${API}/notifications/unread-count`, { credentials: 'include', headers: authHeaders() });
       if (!res.ok) return;
       const data = await res.json();
       setUnreadCount(data.unread_count);
@@ -152,7 +157,7 @@ export default function NotificationManager({ onBack }) {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: 1, read_at: new Date().toISOString() } : n));
     if (selectedNotification?.id === id) setSelectedNotification(prev => ({ ...prev, is_read: 1 }));
     try {
-      await fetch(`${API}/notifications/${id}/read`, { method: 'PUT', credentials: 'include' });
+      await fetch(`${API}/notifications/${id}/read`, { method: 'PUT', credentials: 'include', headers: authHeaders() });
       fetchUnreadCount();
     } catch { /* silent */ }
   };
@@ -160,7 +165,7 @@ export default function NotificationManager({ onBack }) {
   const markAllRead = async () => {
     setNotifications(prev => prev.map(n => ({ ...n, is_read: 1, read_at: new Date().toISOString() })));
     try {
-      await fetch(`${API}/notifications/mark-all-read`, { method: 'POST', credentials: 'include' });
+      await fetch(`${API}/notifications/mark-all-read`, { method: 'POST', credentials: 'include', headers: authHeaders() });
       fetchUnreadCount();
     } catch { /* silent */ }
   };
@@ -169,7 +174,7 @@ export default function NotificationManager({ onBack }) {
     setNotifications(prev => prev.filter(n => n.id !== id));
     if (selectedNotification?.id === id) setSelectedNotification(null);
     try {
-      await fetch(`${API}/notifications/${id}`, { method: 'DELETE', credentials: 'include' });
+      await fetch(`${API}/notifications/${id}`, { method: 'DELETE', credentials: 'include', headers: authHeaders() });
       fetchUnreadCount();
     } catch { /* silent */ }
   };
@@ -178,7 +183,7 @@ export default function NotificationManager({ onBack }) {
     setNotifications([]);
     setSelectedNotification(null);
     try {
-      await fetch(`${API}/notifications`, { method: 'DELETE', credentials: 'include' });
+      await fetch(`${API}/notifications`, { method: 'DELETE', credentials: 'include', headers: authHeaders() });
       fetchUnreadCount();
     } catch { /* silent */ }
   };
@@ -189,7 +194,7 @@ export default function NotificationManager({ onBack }) {
     setSelectedIds(new Set());
     setSelectionMode(false);
     for (const id of ids) {
-      try { await fetch(`${API}/notifications/${id}/read`, { method: 'PUT', credentials: 'include' }); } catch { /* */ }
+      try { await fetch(`${API}/notifications/${id}/read`, { method: 'PUT', credentials: 'include', headers: authHeaders() }); } catch { /* */ }
     }
     fetchUnreadCount();
   };
@@ -201,7 +206,7 @@ export default function NotificationManager({ onBack }) {
     setSelectedIds(new Set());
     setSelectionMode(false);
     for (const id of ids) {
-      try { await fetch(`${API}/notifications/${id}`, { method: 'DELETE', credentials: 'include' }); } catch { /* */ }
+      try { await fetch(`${API}/notifications/${id}`, { method: 'DELETE', credentials: 'include', headers: authHeaders() }); } catch { /* */ }
     }
     fetchUnreadCount();
   };
