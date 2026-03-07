@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { encryptDataForServer, decryptDataFromServer } from './encryptionService.js';
 
 // Determine API base URL based on environment
 export const getApiBaseUrl = () => {
@@ -73,20 +72,6 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  // Encrypt POST, PUT, PATCH requests (except file uploads)
-  if (['POST', 'PUT', 'PATCH'].includes(config.method.toUpperCase())) {
-    if (config.data && !(config.data instanceof FormData)) {
-      try {
-        const encrypted = encryptDataForServer(config.data);
-        config.data = encrypted;
-        config.headers['X-Encrypted'] = 'true';
-      } catch (error) {
-        console.error('Request encryption failed:', error);
-        // Continue without encryption if it fails
-      }
-    }
-  }
-
   return config;
 });
 
@@ -115,16 +100,6 @@ function fixDates(obj) {
 // Decrypt responses and fix dates
 api.interceptors.response.use(
   (response) => {
-    // Decrypt response if it contains encrypted data
-    if (response.data && response.data.encrypted && response.data.iv) {
-      try {
-        response.data = decryptDataFromServer(response.data);
-      } catch (error) {
-        console.error('Response decryption failed:', error);
-        // Continue with original response if decryption fails
-      }
-    }
-
     // Fix SQLite UTC date strings
     if (response.data) {
       response.data = fixDates(response.data);

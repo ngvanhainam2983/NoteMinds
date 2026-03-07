@@ -4,7 +4,7 @@ import {
   Star, Loader2, Copy, Check, Trash2, Plus, Clock, TrendingUp,
   MessageSquare, FileText, CreditCard, ExternalLink, Download, Image as ImageIcon
 } from 'lucide-react';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 import {
   searchDocuments, searchChat, getAnalytics, createShareLink, getSharedDocuments, deleteShareLink,
   getUserTags, createTag, addTagToDocument, removeTagFromDocument, getDocumentTags,
@@ -702,11 +702,10 @@ export function ExportButton({ documentId, type = 'flashcards' }) {
       } else if (type === 'mindmap') {
         const mindmapElement = document.querySelector('.react-flow');
         if (mindmapElement) {
-          const canvas = await html2canvas(mindmapElement, {
-            backgroundColor: '#0f1117', // Match dark theme
-            scale: 2 // Higher resolution
+          const url = await toPng(mindmapElement, {
+            backgroundColor: '#0f1117',
+            pixelRatio: 2
           });
-          const url = canvas.toDataURL('image/png');
           const a = document.createElement('a');
           a.href = url;
           a.download = `mindmap_${documentId}.png`;

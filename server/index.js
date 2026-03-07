@@ -38,7 +38,7 @@ import {
   generateDiscoverableAuthOptions, verifyDiscoverableAuth,
   getPasskeyList, removePasskey, renamePasskey,
 } from './services/passkeyService.js';
-import { decryptMiddleware } from './middleware/encryptionMiddleware.js';
+
 import { initializeIndexes, getDatabaseStats } from './services/databaseIndexes.js';
 import { initializeEnhancedTables } from './services/enhancedDatabase.js';
 import { initDocumentCleanup } from './services/documentCleanup.js';
@@ -182,9 +182,6 @@ app.use((req, res, next) => {
 
 // Request logging middleware
 app.use(requestLoggerMiddleware);
-
-// Decryption middleware for encrypted requests
-app.use(decryptMiddleware);
 
 // Serve static frontend in production
 const publicDir = path.join(__dirname, 'public');
