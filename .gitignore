@@ -82,6 +82,10 @@ gen-og.ps1
 .cache/
 tmp/
 
+# SSL certificates (Cloudflare origin certs)
+certs/
+certbot/
+
 # PM2
 ecosystem.config.cjs.bak
 pids/
