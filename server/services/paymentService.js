@@ -13,7 +13,7 @@ const SEPAY_ACCOUNT_NAME = process.env.SEPAY_ACCOUNT_NAME || '';
 
 // Plan prices in VND
 export const PLAN_PRICES = {
-  basic: 49000,
+  basic: 2000,
   pro: 99000,
   unlimited: 199000,
 };
