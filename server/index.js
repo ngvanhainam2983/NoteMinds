@@ -2625,18 +2625,10 @@ app.get('/api/payment/prices', (req, res) => {
 // SePay webhook
 app.post('/api/payment/webhook/sepay', express.json(), (req, res) => {
   try {
-    // Verify webhook signature if configured
-    const signature = req.headers['x-sepay-signature'] || req.headers['authorization'];
-    if (process.env.SEPAY_WEBHOOK_SECRET) {
-      try {
-        if (!verifySepayWebhook(req.body, signature)) {
-          logger.warn('[Payment] Invalid webhook signature');
-          return res.status(401).json({ error: 'Invalid signature' });
-        }
-      } catch {
-        logger.warn('[Payment] Webhook signature verification failed');
-        return res.status(401).json({ error: 'Invalid signature' });
-      }
+    // Verify API key from Authorization header
+    if (!verifySepayWebhook(req.headers['authorization'])) {
+      logger.warn('[Payment] Invalid webhook API key');
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const result = processSepayWebhook(req.body);

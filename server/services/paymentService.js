@@ -7,7 +7,6 @@ import './envLoader.js';
 
 // ── SePay Configuration ──
 const SEPAY_API_KEY = process.env.SEPAY_API_KEY || '';
-const SEPAY_WEBHOOK_SECRET = process.env.SEPAY_WEBHOOK_SECRET || '';
 const SEPAY_BANK_ACCOUNT = process.env.SEPAY_BANK_ACCOUNT || '';
 const SEPAY_BANK_NAME = process.env.SEPAY_BANK_NAME || 'MB Bank';
 const SEPAY_ACCOUNT_NAME = process.env.SEPAY_ACCOUNT_NAME || '';
@@ -185,18 +184,20 @@ export function confirmPayment(transferContent, transactionId) {
   return order;
 }
 
-// ── Verify SePay webhook signature ──
-export function verifySepayWebhook(payload, signature) {
-  if (!SEPAY_WEBHOOK_SECRET) {
-    // If no secret configured, skip verification (development)
-    logger.warn('[Payment] SEPAY_WEBHOOK_SECRET not set, skipping webhook signature verification');
+// ── Verify SePay webhook via API key ──
+export function verifySepayWebhook(authHeader) {
+  if (!SEPAY_API_KEY) {
+    logger.warn('[Payment] SEPAY_API_KEY not set, skipping webhook verification');
     return true;
   }
-  const computed = crypto
-    .createHmac('sha256', SEPAY_WEBHOOK_SECRET)
-    .update(JSON.stringify(payload))
-    .digest('hex');
-  return crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(signature || ''));
+  // SePay sends: Authorization: Apikey <key>
+  const token = (authHeader || '').replace(/^Apikey\s+/i, '').trim();
+  if (!token) return false;
+  try {
+    return crypto.timingSafeEqual(Buffer.from(token), Buffer.from(SEPAY_API_KEY));
+  } catch {
+    return false;
+  }
 }
 
 // ── Process SePay webhook ──
