@@ -27,15 +27,45 @@ function logAiUsage(userId, action, modelName, usage, latencyMs, success = true,
   } catch { /* silent */ }
 }
 
+const MAX_RETRIES = 3;
+const RETRY_BASE_DELAY_MS = 1000;
+
+function isRetryable(error) {
+  const msg = (error.message || '').toLowerCase();
+  return msg.includes('connection error') || msg.includes('econnreset') ||
+    msg.includes('etimedout') || msg.includes('enotfound') ||
+    msg.includes('socket hang up') || msg.includes('fetch failed') ||
+    error.status === 429 || error.status === 502 || error.status === 503 || error.status === 504;
+}
+
+async function callWithRetry(createFn, userId, action) {
+  let lastError;
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    const start = Date.now();
+    try {
+      const response = await createFn();
+      logAiUsage(userId, action, model, response.usage, Date.now() - start, true);
+      return response.choices[0].message.content;
+    } catch (error) {
+      lastError = error;
+      logAiUsage(userId, action, model, null, Date.now() - start, false, error.message);
+      if (!isRetryable(error) || attempt === MAX_RETRIES - 1) break;
+      const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
+      console.warn(`Qwen API attempt ${attempt + 1} failed (${error.message}), retrying in ${delay}ms...`);
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+  console.error('Qwen API error:', lastError.message);
+  throw new Error(`AI processing failed: ${lastError.message}`);
+}
+
 /**
  * Call Qwen3 with a system prompt and user message
  */
 export async function callQwen(systemPrompt, userMessage, options = {}) {
   const { temperature = 0.7, maxTokens = 4096, userId = null, action = 'unknown' } = options;
-  const start = Date.now();
-
-  try {
-    const response = await client.chat.completions.create({
+  return callWithRetry(
+    () => client.chat.completions.create({
       model,
       messages: [
         { role: 'system', content: systemPrompt },
@@ -43,15 +73,10 @@ export async function callQwen(systemPrompt, userMessage, options = {}) {
       ],
       temperature,
       max_tokens: maxTokens,
-    });
-
-    logAiUsage(userId, action, model, response.usage, Date.now() - start, true);
-    return response.choices[0].message.content;
-  } catch (error) {
-    logAiUsage(userId, action, model, null, Date.now() - start, false, error.message);
-    console.error('Qwen API error:', error.message);
-    throw new Error(`AI processing failed: ${error.message}`);
-  }
+    }),
+    userId,
+    action
+  );
 }
 
 /**
@@ -59,10 +84,8 @@ export async function callQwen(systemPrompt, userMessage, options = {}) {
  */
 export async function callQwenChat(systemPrompt, messages, options = {}) {
   const { temperature = 0.7, maxTokens = 2048, userId = null, action = 'chat' } = options;
-  const start = Date.now();
-
-  try {
-    const response = await client.chat.completions.create({
+  return callWithRetry(
+    () => client.chat.completions.create({
       model,
       messages: [
         { role: 'system', content: systemPrompt },
@@ -70,15 +93,10 @@ export async function callQwenChat(systemPrompt, messages, options = {}) {
       ],
       temperature,
       max_tokens: maxTokens,
-    });
-
-    logAiUsage(userId, action, model, response.usage, Date.now() - start, true);
-    return response.choices[0].message.content;
-  } catch (error) {
-    logAiUsage(userId, action, model, null, Date.now() - start, false, error.message);
-    console.error('Qwen Chat API error:', error.message);
-    throw new Error(`AI chat failed: ${error.message}`);
-  }
+    }),
+    userId,
+    action
+  );
 }
 
 export default client;

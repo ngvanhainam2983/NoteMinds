@@ -19,6 +19,8 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - QWEN_API_KEY=${QWEN_API_KEY}
+      - QWEN_API_BASE_URL=${QWEN_API_BASE_URL:-https://dashscope-intl.aliyuncs.com/compatible-mode/v1}
+      - QWEN_MODEL=${QWEN_MODEL:-qwen3-max}
       - TURNSTILE_SECRET=${TURNSTILE_SECRET}
       - SMTP_HOST=${SMTP_HOST:-}
       - SMTP_PORT=${SMTP_PORT:-}
