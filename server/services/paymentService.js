@@ -56,10 +56,10 @@ db.exec(`
 `);
 
 // ── Generate unique transfer content ──
-// Format: NM<userId><random> — kept short for easy transfer
-function generateTransferContent(userId) {
-  const random = crypto.randomInt(100000, 999999);
-  return `NM${userId}P${random}`;
+// Format: NM<random8> — matches SePay content pattern
+function generateTransferContent() {
+  const random = crypto.randomInt(10000000, 99999999);
+  return `NM${random}`;
 }
 
 // ── Create payment order ──
@@ -76,7 +76,7 @@ export function createPaymentOrder(userId, plan) {
 
   const id = crypto.randomUUID();
   const amount = PLAN_PRICES[plan];
-  const transferContent = generateTransferContent(userId);
+  const transferContent = generateTransferContent();
   // Order expires in 30 minutes
   const expiredAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
 
@@ -218,7 +218,7 @@ export function processSepayWebhook(data) {
 
   // Try to match transfer content to a pending order
   // SePay may have extra text, so try extracting our code
-  const nmMatch = content.match(/NM\d+P\d{6}/);
+  const nmMatch = content.match(/NM\d{8}/);
   const matchedContent = nmMatch ? nmMatch[0] : content;
 
   const order = getOrderByTransferContent(matchedContent);
