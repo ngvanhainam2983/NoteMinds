@@ -1027,4 +1027,31 @@ export async function adminCleanupNotifications(daysOld = 30) {
   return response.data;
 }
 
+// ── Payment ──
+
+export async function createPaymentOrder(plan) {
+  const response = await api.post('/payment/orders', { plan });
+  return response.data.order;
+}
+
+export async function checkPaymentOrder(orderId) {
+  const response = await api.get(`/payment/orders/${orderId}`);
+  return response.data.order;
+}
+
+export async function getPaymentHistory() {
+  const response = await api.get('/payment/history');
+  return response.data.history;
+}
+
+export async function getPlanPrices() {
+  const response = await api.get('/payment/prices');
+  return response.data.prices;
+}
+
+export async function adminGetPayments(limit = 50) {
+  const response = await api.get(`/admin/payments?limit=${limit}`);
+  return response.data.payments;
+}
+
 export default api;

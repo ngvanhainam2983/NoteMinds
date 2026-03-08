@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   ArrowLeft, Check, Crown, Zap, Star, Package,
   Sparkles, Shield, Loader2, CheckCircle2, AlertCircle,
+  QrCode, Clock, Copy, CopyCheck, RefreshCw,
 } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
+import { createPaymentOrder, checkPaymentOrder } from '../api';
 
 const PLANS = [
   {
@@ -263,6 +265,7 @@ export default function PricingPage({ user, onLoginClick }) {
         <ContactModal
           plan={PLANS.find(p => p.key === contactPlan)}
           currentPlan={currentPlan}
+          user={user}
           onClose={() => setShowContact(false)}
         />
       )}
@@ -289,24 +292,21 @@ function FaqItem({ q, a }) {
   );
 }
 
-function ContactModal({ plan, currentPlan, onClose }) {
+function ContactModal({ plan, currentPlan, onClose, user }) {
   const { t } = useLanguage();
   if (!plan) return null;
 
   const PLAN_ORDER = ['free', 'basic', 'pro', 'unlimited'];
   const isDowngrade = PLAN_ORDER.indexOf(plan.key) < PLAN_ORDER.indexOf(currentPlan);
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-sm bg-surface border border-line rounded-2xl shadow-2xl animate-fade-in p-6 text-center">
-        <div className="text-4xl mb-3">{plan.badge}</div>
-        <h3 className="text-lg font-bold mb-1">
-          {isDowngrade ? t('pricing.downgradeToName', { name: plan.name }) : t('pricing.upgradeToName', { name: plan.name })}
-        </h3>
-        <p className="text-muted text-sm mb-4">{plan.price} {plan.priceNote}</p>
-
-        {isDowngrade ? (
+  if (isDowngrade) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+        <div className="relative w-full max-w-sm bg-surface border border-line rounded-2xl shadow-2xl animate-fade-in p-6 text-center">
+          <div className="text-4xl mb-3">{plan.badge}</div>
+          <h3 className="text-lg font-bold mb-1">{t('pricing.downgradeToName', { name: plan.name })}</h3>
+          <p className="text-muted text-sm mb-4">{plan.price} {plan.priceNote}</p>
           <div className="bg-bg rounded-xl p-4 mb-4 text-left space-y-2">
             <p className="text-sm font-medium text-yellow-400">{t('pricing.downgradeNote')}</p>
             <p className="text-xs text-muted">• {t('pricing.downgradeDesc1')}</p>
@@ -316,31 +316,285 @@ function ContactModal({ plan, currentPlan, onClose }) {
               <p className="text-xs text-muted">{t('pricing.downgradeContact')}</p>
             </div>
           </div>
-        ) : (
-          <div className="bg-bg rounded-xl p-4 mb-4 text-left space-y-2">
-            <p className="text-sm font-medium text-primary-400">{t('pricing.paymentGuide')}</p>
-            <p className="text-xs text-muted">1. {t('pricing.paymentStep1', { price: plan.price })}</p>
-            <p className="text-xs text-muted">2. {t('pricing.paymentStep2')}</p>
-            <p className="text-xs text-muted">3. {t('pricing.paymentStep3')}</p>
+          <button onClick={onClose} className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 rounded-xl text-sm font-semibold transition-colors">
+            {t('pricing.understood')}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-            <div className="border-t border-line pt-2 mt-2">
-              <p className="text-xs text-muted">{t('pricing.bank')} <strong className="text-txt">{t('pricing.bankName')}</strong></p>
-              <p className="text-xs text-muted">{t('pricing.accountNo')} <strong className="text-txt font-mono">{t('pricing.accountNoValue')}</strong></p>
-              <p className="text-xs text-muted">{t('pricing.accountName')} <strong className="text-txt">{t('pricing.accountNameValue')}</strong></p>
+  return <PaymentModal plan={plan} user={user} onClose={onClose} />;
+}
+
+function PaymentModal({ plan, user, onClose }) {
+  const { t } = useLanguage();
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [status, setStatus] = useState('creating'); // creating | pending | paid | expired | error
+  const [copied, setCopied] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const pollRef = useRef(null);
+  const timerRef = useRef(null);
+
+  // Create order on mount
+  useEffect(() => {
+    let cancelled = false;
+    async function create() {
+      try {
+        setLoading(true);
+        setError(null);
+        const newOrder = await createPaymentOrder(plan.key);
+        if (cancelled) return;
+        setOrder(newOrder);
+        setStatus('pending');
+        setTimeLeft(Math.max(0, Math.floor((new Date(newOrder.expiredAt).getTime() - Date.now()) / 1000)));
+      } catch (err) {
+        if (cancelled) return;
+        setError(err.response?.data?.error || err.message);
+        setStatus('error');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    create();
+    return () => { cancelled = true; };
+  }, [plan.key]);
+
+  // Countdown timer
+  useEffect(() => {
+    if (status !== 'pending' || timeLeft <= 0) return;
+    timerRef.current = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          setStatus('expired');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timerRef.current);
+  }, [status, timeLeft]);
+
+  // Poll order status every 5 seconds
+  useEffect(() => {
+    if (status !== 'pending' || !order) return;
+    pollRef.current = setInterval(async () => {
+      try {
+        const updated = await checkPaymentOrder(order.id);
+        if (updated.status === 'paid') {
+          setStatus('paid');
+          clearInterval(pollRef.current);
+        } else if (updated.status === 'expired' || updated.status === 'cancelled') {
+          setStatus('expired');
+          clearInterval(pollRef.current);
+        }
+      } catch {
+        // silent — will retry next interval
+      }
+    }, 5000);
+    return () => clearInterval(pollRef.current);
+  }, [status, order]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      clearInterval(pollRef.current);
+      clearInterval(timerRef.current);
+    };
+  }, []);
+
+  const handleCopy = useCallback(async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* ignore */ }
+  }, []);
+
+  const handleRetry = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    setStatus('creating');
+    try {
+      const newOrder = await createPaymentOrder(plan.key);
+      setOrder(newOrder);
+      setStatus('pending');
+      setTimeLeft(Math.max(0, Math.floor((new Date(newOrder.expiredAt).getTime() - Date.now()) / 1000)));
+    } catch (err) {
+      setError(err.response?.data?.error || err.message);
+      setStatus('error');
+    } finally {
+      setLoading(false);
+    }
+  }, [plan.key]);
+
+  const formatTime = (s) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${sec.toString().padStart(2, '0')}`;
+  };
+
+  const formatPrice = (amount) => {
+    return new Intl.NumberFormat('vi-VN').format(amount) + '₫';
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-md bg-surface border border-line rounded-2xl shadow-2xl animate-fade-in overflow-hidden">
+
+        {/* Header */}
+        <div className="p-5 pb-3 text-center border-b border-line">
+          <div className="text-3xl mb-2">{plan.badge}</div>
+          <h3 className="text-lg font-bold">
+            {t('pricing.upgradeToName', { name: plan.name })}
+          </h3>
+          <p className="text-muted text-sm">{plan.price} {plan.priceNote}</p>
+        </div>
+
+        {/* Body */}
+        <div className="p-5">
+
+          {/* Loading state */}
+          {loading && (
+            <div className="flex flex-col items-center gap-3 py-8">
+              <Loader2 className="animate-spin text-primary-500" size={32} />
+              <p className="text-sm text-muted">{t('pricing.payment.creatingOrder')}</p>
             </div>
+          )}
+
+          {/* Error state */}
+          {status === 'error' && (
+            <div className="flex flex-col items-center gap-3 py-8">
+              <AlertCircle className="text-red-400" size={32} />
+              <p className="text-sm text-red-400">{error}</p>
+              <button onClick={handleRetry} className="flex items-center gap-2 px-4 py-2 bg-surface-2 hover:bg-line rounded-lg text-sm transition-colors">
+                <RefreshCw size={14} /> {t('pricing.payment.retry')}
+              </button>
+            </div>
+          )}
+
+          {/* Payment success! */}
+          {status === 'paid' && (
+            <div className="flex flex-col items-center gap-3 py-8">
+              <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                <CheckCircle2 className="text-emerald-400" size={36} />
+              </div>
+              <h4 className="text-lg font-bold text-emerald-400">{t('pricing.payment.success')}</h4>
+              <p className="text-sm text-muted text-center">{t('pricing.payment.successDesc', { name: plan.name })}</p>
+              <button onClick={() => { onClose(); window.location.reload(); }} className="mt-2 px-6 py-2.5 bg-primary-600 hover:bg-primary-700 rounded-xl text-sm font-semibold transition-colors">
+                {t('pricing.payment.continue')}
+              </button>
+            </div>
+          )}
+
+          {/* Expired */}
+          {status === 'expired' && (
+            <div className="flex flex-col items-center gap-3 py-8">
+              <Clock className="text-yellow-400" size={32} />
+              <h4 className="text-base font-bold text-yellow-400">{t('pricing.payment.expired')}</h4>
+              <p className="text-sm text-muted text-center">{t('pricing.payment.expiredDesc')}</p>
+              <button onClick={handleRetry} className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-xl text-sm font-semibold transition-colors">
+                <RefreshCw size={14} /> {t('pricing.payment.newOrder')}
+              </button>
+            </div>
+          )}
+
+          {/* Pending — show QR and payment details */}
+          {status === 'pending' && order && (
+            <div className="space-y-4">
+              {/* QR Code */}
+              {order.qrUrl && (
+                <div className="flex justify-center">
+                  <div className="bg-white rounded-xl p-3">
+                    <img
+                      src={order.qrUrl}
+                      alt="Payment QR"
+                      className="w-48 h-48 object-contain"
+                      loading="eager"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Timer */}
+              <div className="flex items-center justify-center gap-2 text-sm">
+                <Clock size={14} className="text-yellow-400" />
+                <span className="text-muted">{t('pricing.payment.expiresIn')}</span>
+                <span className={`font-mono font-bold ${timeLeft < 60 ? 'text-red-400' : 'text-yellow-400'}`}>
+                  {formatTime(timeLeft)}
+                </span>
+              </div>
+
+              {/* Transfer details */}
+              <div className="bg-bg rounded-xl p-4 space-y-2.5">
+                <p className="text-xs font-semibold text-primary-400 uppercase tracking-wider mb-2">{t('pricing.payment.transferInfo')}</p>
+
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted">{t('pricing.bank')}</span>
+                  <span className="font-semibold">{order.bankName}</span>
+                </div>
+
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted">{t('pricing.accountNo')}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-mono font-semibold">{order.bankAccount}</span>
+                    <button onClick={() => handleCopy(order.bankAccount)} className="p-1 hover:bg-surface-2 rounded transition-colors">
+                      {copied ? <CopyCheck size={13} className="text-emerald-400" /> : <Copy size={13} className="text-muted" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted">{t('pricing.accountName')}</span>
+                  <span className="font-semibold">{order.accountName}</span>
+                </div>
+
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted">{t('pricing.payment.amount')}</span>
+                  <span className="font-bold text-primary-400">{formatPrice(order.amount)}</span>
+                </div>
+
+                <div className="border-t border-line pt-2.5">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted">{t('pricing.payment.content')}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono font-bold text-primary-400">{order.transferContent}</span>
+                      <button onClick={() => handleCopy(order.transferContent)} className="p-1 hover:bg-surface-2 rounded transition-colors">
+                        {copied ? <CopyCheck size={13} className="text-emerald-400" /> : <Copy size={13} className="text-muted" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Warning */}
+              <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3">
+                <p className="text-xs text-yellow-400 leading-relaxed">
+                  <AlertCircle size={12} className="inline mr-1 -mt-0.5" />
+                  {t('pricing.payment.warning')}
+                </p>
+              </div>
+
+              {/* Waiting indicator */}
+              <div className="flex items-center justify-center gap-2 py-1">
+                <Loader2 className="animate-spin text-primary-500" size={16} />
+                <span className="text-xs text-muted">{t('pricing.payment.waiting')}</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        {status !== 'paid' && (
+          <div className="px-5 pb-5">
+            <button onClick={onClose} className="w-full py-2.5 bg-surface-2 hover:bg-line rounded-xl text-sm font-medium transition-colors text-muted">
+              {t('pricing.payment.cancel')}
+            </button>
           </div>
         )}
-
-        <p className="text-xs text-muted mb-4">
-          {t('pricing.contactSupportMsg')}
-        </p>
-
-        <button
-          onClick={onClose}
-          className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 rounded-xl text-sm font-semibold transition-colors"
-        >
-          {t('pricing.understood')}
-        </button>
       </div>
     </div>
   );

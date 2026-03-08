@@ -513,7 +513,24 @@
         "downgradeDesc3": "Sau khi hết hạn, tài khoản sẽ tự động chuyển sang gói {name}",
         "contactSupportMsg": "Hoặc liên hệ qua Zalo/Telegram để được hỗ trợ nhanh nhất",
         "applyReset": "Áp dụng & đặt lại",
-        "customizeTime": "Tuỳ chỉnh thời gian"
+        "customizeTime": "Tuỳ chỉnh thời gian",
+        "payment": {
+            "creatingOrder": "Đang tạo đơn thanh toán...",
+            "retry": "Thử lại",
+            "success": "Thanh toán thành công!",
+            "successDesc": "Gói {name} đã được kích hoạt cho tài khoản của bạn.",
+            "continue": "Tiếp tục sử dụng",
+            "expired": "Đơn hàng đã hết hạn",
+            "expiredDesc": "Thời gian thanh toán đã hết. Bạn có thể tạo đơn mới.",
+            "newOrder": "Tạo đơn mới",
+            "expiresIn": "Hết hạn trong:",
+            "transferInfo": "Thông tin chuyển khoản",
+            "amount": "Số tiền:",
+            "content": "Nội dung CK:",
+            "warning": "Vui lòng nhập chính xác nội dung chuyển khoản để hệ thống tự động xác nhận. Gói sẽ được kích hoạt ngay sau khi nhận được thanh toán.",
+            "waiting": "Đang chờ thanh toán... hệ thống sẽ tự động xác nhận",
+            "cancel": "Hủy"
+        }
     },
     "community": {
         "title": "Cộng đồng",

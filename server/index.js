@@ -56,6 +56,11 @@ import {
   NOTIFICATION_TYPES, getNotificationTemplate,
   getAllNotifications, getNotificationStats, cleanupOldNotifications,
 } from './services/notificationService.js';
+import {
+  createPaymentOrder, checkOrderStatus, getUserPaymentHistory,
+  getRecentPayments, processSepayWebhook, verifySepayWebhook,
+  cleanupExpiredOrders, PLAN_PRICES,
+} from './services/paymentService.js';
 import './services/envLoader.js';
 import Database from 'better-sqlite3';
 import jwt from 'jsonwebtoken';
@@ -2570,6 +2575,91 @@ function runDocumentCleanup() {
 // Run cleanup on startup then every 30 minutes
 setTimeout(runDocumentCleanup, 5000);
 setInterval(runDocumentCleanup, 30 * 60 * 1000);
+
+// ── Payment: Cleanup expired orders every 5 minutes ──
+setInterval(cleanupExpiredOrders, 5 * 60 * 1000);
+
+// ── Payment Routes ──
+
+// Create payment order
+app.post('/api/payment/orders', requireAuth, (req, res) => {
+  try {
+    const { plan } = req.body;
+    if (!plan || !PLAN_PRICES[plan]) {
+      return res.status(400).json({ error: 'Gói không hợp lệ' });
+    }
+    const order = createPaymentOrder(req.user.id, plan);
+    res.json({ order });
+  } catch (error) {
+    console.error('[Payment] Create order error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Check order status (polling)
+app.get('/api/payment/orders/:orderId', requireAuth, (req, res) => {
+  try {
+    const order = checkOrderStatus(req.params.orderId, req.user.id);
+    if (!order) return res.status(404).json({ error: 'Không tìm thấy đơn hàng' });
+    res.json({ order });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get user payment history
+app.get('/api/payment/history', requireAuth, (req, res) => {
+  try {
+    const history = getUserPaymentHistory(req.user.id);
+    res.json({ history });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get plan prices
+app.get('/api/payment/prices', (req, res) => {
+  res.json({ prices: PLAN_PRICES });
+});
+
+// SePay webhook
+app.post('/api/payment/webhook/sepay', express.json(), (req, res) => {
+  try {
+    // Verify webhook signature if configured
+    const signature = req.headers['x-sepay-signature'] || req.headers['authorization'];
+    if (process.env.SEPAY_WEBHOOK_SECRET) {
+      try {
+        if (!verifySepayWebhook(req.body, signature)) {
+          logger.warn('[Payment] Invalid webhook signature');
+          return res.status(401).json({ error: 'Invalid signature' });
+        }
+      } catch {
+        logger.warn('[Payment] Webhook signature verification failed');
+        return res.status(401).json({ error: 'Invalid signature' });
+      }
+    }
+
+    const result = processSepayWebhook(req.body);
+    logger.info('[Payment] Webhook processed:', result);
+
+    // SePay expects 200 OK
+    res.json({ success: true });
+  } catch (error) {
+    console.error('[Payment] Webhook error:', error.message);
+    // Still return 200 to prevent retries for malformed data
+    res.json({ success: false });
+  }
+});
+
+// Admin: get recent payments
+app.get('/api/admin/payments', requireAuth, requireAdmin, (req, res) => {
+  try {
+    const payments = getRecentPayments(Number(req.query.limit) || 50);
+    res.json({ payments });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 app.listen(PORT, () => {
   logger.info(`🚀 NoteMinds server running on http://localhost:${PORT} [${NODE_ENV}]`);

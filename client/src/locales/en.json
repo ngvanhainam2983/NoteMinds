@@ -515,7 +515,24 @@
         "downgradeDesc3": "After expiration, your account will automatically switch to the {name} plan",
         "contactSupportMsg": "Or contact via Zalo/Telegram for fastest support",
         "applyReset": "Apply & reset",
-        "customizeTime": "Customize time"
+        "customizeTime": "Customize time",
+        "payment": {
+            "creatingOrder": "Creating payment order...",
+            "retry": "Retry",
+            "success": "Payment successful!",
+            "successDesc": "{name} plan has been activated for your account.",
+            "continue": "Continue",
+            "expired": "Order expired",
+            "expiredDesc": "Payment time has expired. You can create a new order.",
+            "newOrder": "Create new order",
+            "expiresIn": "Expires in:",
+            "transferInfo": "Transfer information",
+            "amount": "Amount:",
+            "content": "Transfer note:",
+            "warning": "Please enter the exact transfer content for automatic confirmation. Your plan will be activated immediately after payment is received.",
+            "waiting": "Waiting for payment... system will confirm automatically",
+            "cancel": "Cancel"
+        }
     },
     "community": {
         "title": "Community",
